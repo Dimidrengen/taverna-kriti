@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Restaurant Menu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root { --cream: #FAF7F2; --ink: #1C1917; --muted: #78716C; --accent: #C2692A; --accent-light: #F4E3D7; --border: rgba(28,25,23,0.12); --card: #FFFFFF; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { font-family: 'DM Sans', sans-serif; background: var(--cream); min-height: 100vh; }
+    .phone-wrap { max-width: 480px; margin: 0 auto; background: var(--cream); min-height: 100vh; display: flex; flex-direction: column; }
+    .loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 16px; }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 14px; color: var(--muted); }
+    .app-header { background: var(--ink); color: white; padding: 20px 20px 16px; }
+    .restaurant-name { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+    .table-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 10px; font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 6px; }
+    .lang-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+    .lang-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 3px 10px; font-size: 11px; color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+    .lang-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .cat-scroll { display: flex; gap: 8px; padding: 16px 20px 12px; overflow-x: auto; scrollbar-width: none; background: var(--cream); border-bottom: 1px solid var(--border); }
+    .cat-scroll::-webkit-scrollbar { display: none; }
+    .cat-tab { flex-shrink: 0; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid var(--border); background: transparent; color: var(--muted); transition: all 0.15s; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
+    .cat-tab.active { background: var(--ink); border-color: var(--ink); color: white; }
+    .menu-scroll { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; overflow-y: auto; }
+    .menu-item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; gap: 12px; align-items: flex-start; }
+    .item-emoji { font-size: 32px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--cream); border-radius: 10px; flex-shrink: 0; }
+    .item-body { flex: 1; min-width: 0; }
+    .item-name { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 500; color: var(--ink); line-height: 1.3; }
+    .item-desc { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+    .item-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+    .item-price { font-size: 15px; font-weight: 500; color: var(--ink); }
+    .add-btn { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: white; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.1s; font-family: 'DM Sans', sans-serif; }
+    .add-btn:hover { background: var(--accent); }
+    .add-btn:active { transform: scale(0.92); }
+    .qty-ctrl { display: flex; align-items: center; gap: 8px; }
+    .qty-ctrl button { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border); background: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; color: var(--ink); transition: border-color 0.12s; }
+    .qty-ctrl button:hover { border-color: var(--ink); }
+    .qty-num { font-size: 14px; font-weight: 500; color: var(--ink); min-width: 16px; text-align: center; }
+    .upsell-bar { margin: 0 20px 12px; background: var(--accent-light); border: 1px solid rgba(194,105,42,0.25); border-radius: 12px; padding: 12px 14px; display: none; }
+    .upsell-bar.visible { display: block; }
+    .upsell-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .upsell-item-name { font-size: 12px; font-weight: 500; color: var(--ink); }
+    .upsell-label { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; }
+    .upsell-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .upsell-chip { background: white; border: 1px solid rgba(194,105,42,0.3); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--accent); cursor: pointer; transition: all 0.12s; font-family: 'DM Sans', sans-serif; }
+    .upsell-chip:hover { background: var(--accent); color: white; }
+    .cart-bar { margin: 0 20px 12px; background: var(--ink); border-radius: 14px; padding: 14px 16px; display: none; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.15s; }
+    .cart-bar.visible { display: flex; }
+    .cart-bar:hover { background: #2D2926; }
+    .cart-count { font-size: 12px; color: rgba(255,255,255,0.6); }
+    .cart-total { font-size: 17px; font-weight: 500; color: white; }
+    .cart-cta { color: var(--accent); font-size: 13px; font-weight: 500; }
+    .order-panel { display: none; flex-direction: column; }
+    .order-panel.visible { display: flex; }
+    .order-header { padding: 16px 20px 8px; display: flex; align-items: center; gap: 10px; }
+    .back-btn { width: 32px; height: 32px; background: var(--card); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: background 0.12s; }
+    .back-btn:hover { background: var(--accent-light); }
+    .order-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--ink); }
+    .order-items { padding: 8px 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+    .order-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+    .order-row-name { flex: 1; font-size: 14px; color: var(--ink); }
+    .order-row-qty { font-size: 13px; color: var(--muted); }
+    .order-row-price { font-size: 14px; font-weight: 500; color: var(--ink); }
+    .order-note-wrap { padding: 10px 20px; }
+    .order-note { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; font-size: 13px; font-family: 'DM Sans', sans-serif; background: var(--card); color: var(--ink); resize: none; outline: none; }
+    .order-note:focus { border-color: var(--accent); }
+    .order-total-row { padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); margin: 0 20px; }
+    .order-total-label { font-size: 14px; color: var(--muted); }
+    .order-total-val { font-size: 22px; font-family: 'Playfair Display', serif; color: var(--ink); }
+    .send-btn { margin: 12px 20px 24px; background: var(--accent); color: white; border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 500; width: calc(100% - 40px); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s, transform 0.1s; }
+    .send-btn:hover { background: #A8572A; }
+    .send-btn:active { transform: scale(0.98); }
+    .confirm-screen { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 60px 30px; text-align: center; min-height: 400px; gap: 16px; }
+    .confirm-screen.visible { display: flex; }
+    .confirm-icon { width: 72px; height: 72px; background: #EBF5EF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .confirm-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--ink); }
+    .confirm-sub { font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .confirm-table { font-size: 13px; color: var(--accent); font-weight: 500; }
+  </style>
+</head>
+<body>
+<div class="phone-wrap">
+
+  <div class="loading-screen" id="loading-screen">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading menu...</div>
+  </div>
+
+  <div class="app-header" id="app-header" style="display:none">
+    <div class="restaurant-name" id="rest-name"></div>
+    <div class="table-badge" id="table-badge">🪑 Loading...</div>
+    <div class="lang-row">
+      <button class="lang-btn active" onclick="setLang('en')">🇬🇧 EN</button>
+      <button class="lang-btn" onclick="setLang('da')">🇩🇰 DA</button>
+      <button class="lang-btn" onclick="setLang('de')">🇩🇪 DE</button>
+      <button class="lang-btn" onclick="setLang('el')">🇬🇷 GR</button>
+      <button class="lang-btn" onclick="setLang('fr')">🇫🇷 FR</button>
+    </div>
+  </div>
+
+  <div id="menu-view" style="display:none">
+    <div class="cat-scroll" id="cat-row"></div>
+    <div class="upsell-bar" id="upsell-bar">
+      <div class="upsell-header">
+        <span class="upsell-item-name" id="upsell-item-name"></span>
+        <span class="upsell-label">— goes well with</span>
+      </div>
+      <div class="upsell-chips" id="upsell-chips"></div>
+    </div>
+    <div class="menu-scroll" id="menu-list"></div>
+    <div class="cart-bar" id="cart-bar" onclick="showOrder()">
+      <div>
+        <div class="cart-count" id="cart-count-label">0 items</div>
+        <div class="cart-total" id="cart-total-label">€0.00</div>
+      </div>
+      <div class="cart-cta">View order →</div>
+    </div>
+  </div>
+
+  <div class="order-panel" id="order-view">
+    <div class="order-header">
+      <div class="back-btn" onclick="showMenu()">←</div>
+      <div class="order-title">Your order</div>
+    </div>
+    <div class="order-items" id="order-items-list"></div>
+    <div class="order-note-wrap">
+      <textarea class="order-note" rows="2" id="order-note" placeholder="Any notes? (e.g. no onions, allergy info...)"></textarea>
+    </div>
+    <div class="order-total-row">
+      <span class="order-total-label">Total</span>
+      <span class="order-total-val" id="order-total-val">€0.00</span>
+    </div>
+    <button class="send-btn" onclick="sendOrder()">Send order to kitchen</button>
+  </div>
+
+  <div class="confirm-screen" id="confirm-view">
+    <div class="confirm-icon">✓</div>
+    <div class="confirm-title">Order sent!</div>
+    <div class="confirm-sub">Your order is on its way to the kitchen and bar. Sit back and relax.</div>
+    <div class="confirm-table" id="confirm-table"></div>
+  </div>
+
+</div>
+<script>
+  let allItems    = [];
+  let categories  = [];
+  let currentCat  = 0;
+  let cart        = {};
+  let tableToken  = '';
+  let lastAddedId = null;
+
+  // Upsell regler — liste af forslag per produkt-navn
+  // Hvert forslag er et navn der matcher en vare i databasen
+  const UPSELL_RULES = [
+    { match: ['tzatziki'],        suggest: ['Dolmades','Feta saganaki','Pita bread','House white wine','Mythos beer'] },
+    { match: ['taramosalata'],    suggest: ['Tzatziki','Pita bread','House white wine','Ouzo'] },
+    { match: ['melitzanosalata'], suggest: ['Pita bread','Tzatziki','House white wine','Ouzo'] },
+    { match: ['hummus'],          suggest: ['Pita bread','Tzatziki','Spanakopita','House white wine'] },
+    { match: ['tirokafteri'],     suggest: ['Pita bread','Mythos beer','Ouzo','Fix beer'] },
+    { match: ['dolmades'],        suggest: ['Tzatziki','House white wine','Pita bread','Ouzo'] },
+    { match: ['saganaki'],        suggest: ['House white wine','Ouzo','Raki / Tsikoudia','Pita bread'] },
+    { match: ['spanakopita'],     suggest: ['Tzatziki','House white wine','Horiatiki','Sparkling water'] },
+    { match: ['oktapodi'],        suggest: ['House white wine','Ouzo','Horiatiki','Sparkling water'] },
+    { match: ['gavros'],          suggest: ['House white wine','Ouzo','Pita bread','Sparkling water'] },
+    { match: ['dakos'],           suggest: ['House white wine','House rosé wine','Tzatziki','Sparkling water'] },
+    { match: ['horiatiki'],       suggest: ['Pita bread','House white wine','House rosé wine','Sparkling water'] },
+    { match: ['salad'],           suggest: ['Pita bread','House white wine','House rosé wine','Sparkling water'] },
+    { match: ['rocket'],          suggest: ['House white wine','Pita bread','Sparkling water'] },
+    { match: ['halloumi'],        suggest: ['House rosé wine','House white wine','Sparkling water'] },
+    { match: ['moussaka'],        suggest: ['Horiatiki','Greek fries','House red wine','Sparkling water'] },
+    { match: ['pastitsio'],       suggest: ['Horiatiki','House red wine','Greek fries','Sparkling water'] },
+    { match: ['stifado'],         suggest: ['House red wine','Bottle red wine','Roasted potatoes','Horiatiki'] },
+    { match: ['kleftiko'],        suggest: ['Bottle red wine','House red wine','Roasted potatoes','Horiatiki'] },
+    { match: ['souvlaki'],        suggest: ['Greek fries','Tzatziki','Mythos beer','Draft beer'] },
+    { match: ['gemista'],         suggest: ['Horiatiki','House white wine','Pita bread','Sparkling water'] },
+    { match: ['bream'],           suggest: ['House white wine','Bottle white wine','Horiatiki','Sparkling water'] },
+    { match: ['bass'],            suggest: ['House white wine','Bottle white wine','Horiatiki','Sparkling water'] },
+    { match: ['prawn'],           suggest: ['House white wine','Ouzo','Horiatiki','Sparkling water'] },
+    { match: ['vegetarian'],      suggest: ['Horiatiki','House white wine','Greek fries','Sparkling water'] },
+    { match: ['fries'],           suggest: ['Mythos beer','Draft beer','Cola','Tzatziki'] },
+    { match: ['potatoes'],        suggest: ['Mythos beer','House red wine','Cola'] },
+    { match: ['rice'],            suggest: ['Sparkling water','Cola','House white wine'] },
+    { match: ['vegetables'],      suggest: ['House white wine','Sparkling water','Pita bread'] },
+    { match: ['baklava'],         suggest: ['Greek coffee','Freddo espresso','Metaxa 5 star','Raki / Tsikoudia'] },
+    { match: ['galaktoboureko'],  suggest: ['Greek coffee','Mountain tea','Metaxa 5 star'] },
+    { match: ['loukoumades'],     suggest: ['Greek coffee','Freddo espresso','Raki / Tsikoudia'] },
+    { match: ['bougatsa'],        suggest: ['Greek coffee','Cappuccino','Mountain tea'] },
+    { match: ['yogurt','yoghurt'],suggest: ['Greek coffee','Mountain tea','Cappuccino'] },
+  ];
+
+  // Finder forslag for et produkt — altid mindst 3 forslag
+  // Springer over varer der allerede er i kurven
+  // Hvis alle primære forslag er taget, finder den alternativer
+  function getUpsellsForItem(item) {
+    const nameLower = item.name.toLowerCase();
+    let suggestNames = [];
+
+    // Find matchende regel
+    for (const rule of UPSELL_RULES) {
+      if (rule.match.some(m => nameLower.includes(m))) {
+        suggestNames = rule.suggest;
+        break;
+      }
+    }
+
+    // Default hvis ingen regel matcher
+    if (suggestNames.length === 0) {
+      suggestNames = ['Mythos beer', 'House white wine', 'Cola', 'Sparkling water', 'Greek fries', 'Horiatiki'];
+    }
+
+    // Find varer der ikke er i kurven endnu
+    let suggestions = suggestNames
+      .map(name => allItems.find(i => i.name === name && !cart[i.id]))
+      .filter(Boolean);
+
+    // Hvis færre end 2 forslag tilbage, tilføj ekstra forslag
+    if (suggestions.length < 2) {
+      // Tilføj varer fra andre kategorier der ikke er i kurven
+      const extras = allItems.filter(i =>
+        i.id !== item.id &&
+        !cart[i.id] &&
+        !suggestions.find(s => s.id === i.id) &&
+        i.category !== item.category
+      );
+      // Bland lidt fra bar og kitchen
+      const barExtras     = extras.filter(i => i.station === 'bar').slice(0, 2);
+      const kitchenExtras = extras.filter(i => i.station === 'kitchen' && i.category !== 'Mains').slice(0, 1);
+      suggestions = [...suggestions, ...barExtras, ...kitchenExtras];
+    }
+
+    return suggestions.slice(0, 3);
+  }
+
+  async function init() {
+    const params = new URLSearchParams(window.location.search);
+    const restaurantSlug = params.get('restaurant') || 'taverna-kriti';
+    tableToken = params.get('table') || 'tbl-005';
+
+    try {
+      const res  = await fetch(`/api/menu?restaurant=${restaurantSlug}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      allItems   = data.items;
+      categories = [...new Set(allItems.map(i => i.category))];
+
+      document.getElementById('rest-name').textContent = data.restaurant.name;
+      const tName = tableToken.replace('tbl-0', 'Table ').replace('tbl-', 'Table ');
+      document.getElementById('table-badge').textContent   = `🪑 ${tName}`;
+      document.getElementById('confirm-table').textContent = tName;
+
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('app-header').style.display     = 'block';
+      document.getElementById('menu-view').style.display      = 'block';
+
+      renderCats();
+      renderMenu();
+    } catch (err) {
+      document.querySelector('.loading-text').textContent = 'Could not load menu. Please try again.';
+    }
+  }
+
+  function setLang(l) {
+    document.querySelectorAll('.lang-btn').forEach((btn, i) => {
+      btn.classList.toggle('active', ['en','da','de','el','fr'][i] === l);
+    });
+  }
+
+  function renderCats() {
+    document.getElementById('cat-row').innerHTML = categories.map((c, i) =>
+      `<button class="cat-tab${i === currentCat ? ' active' : ''}" onclick="selectCat(${i})">${c}</button>`
+    ).join('');
+  }
+
+  function selectCat(i) {
+    currentCat = i;
+    renderCats();
+    renderMenu();
+    if (lastAddedId) showUpsellFor(lastAddedId);
+  }
+
+  function renderMenu() {
+    const cat   = categories[currentCat];
+    const items = allItems.filter(it => it.category === cat);
+    document.getElementById('menu-list').innerHTML = items.map(item => {
+      const qty = cart[item.id] ? cart[item.id].qty : 0;
+      return `
+        <div class="menu-item">
+          <div class="item-emoji">${item.emoji || '🍽️'}</div>
+          <div class="item-body">
+            <div class="item-name">${item.name}</div>
+            <div class="item-desc">${item.description || ''}</div>
+            <div class="item-foot">
+              <div class="item-price">€${Number(item.price).toFixed(2)}</div>
+              ${qty === 0
+                ? `<button class="add-btn" onclick="addItem('${item.id}')">+</button>`
+                : `<div class="qty-ctrl">
+                    <button onclick="removeItem('${item.id}')">−</button>
+                    <span class="qty-num">${qty}</span>
+                    <button onclick="addItem('${item.id}')" style="background:var(--ink);color:white;border:none">+</button>
+                  </div>`
+              }
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function showUpsellFor(itemId) {
+    const item = allItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    const suggestions = getUpsellsForItem(item);
+    const bar         = document.getElementById('upsell-bar');
+    const chips       = document.getElementById('upsell-chips');
+
+    if (suggestions.length === 0) {
+      bar.classList.remove('visible');
+      return;
+    }
+
+    document.getElementById('upsell-item-name').textContent = item.name;
+    bar.classList.add('visible');
+    chips.innerHTML = suggestions.map(s =>
+      `<div class="upsell-chip" onclick="addItem('${s.id}')">${s.emoji || '🍽️'} ${s.name} +€${Number(s.price).toFixed(2)}</div>`
+    ).join('');
+  }
+
+  function addItem(id) {
+    const item = allItems.find(i => i.id === id);
+    if (!item) return;
+    if (!cart[id]) cart[id] = { ...item, qty: 0 };
+    cart[id].qty++;
+    lastAddedId = id;
+    renderMenu();
+    updateCart();
+    showUpsellFor(id);
+  }
+
+  function removeItem(id) {
+    if (!cart[id]) return;
+    cart[id].qty--;
+    if (cart[id].qty <= 0) delete cart[id];
+    renderMenu();
+    updateCart();
+    if (Object.keys(cart).length === 0) {
+      document.getElementById('upsell-bar').classList.remove('visible');
+      lastAddedId = null;
+    } else if (lastAddedId) {
+      showUpsellFor(lastAddedId);
+    }
+  }
+
+  function updateCart() {
+    const entries = Object.values(cart);
+    const total   = entries.reduce((s, i) => s + i.price * i.qty, 0);
+    const count   = entries.reduce((s, i) => s + i.qty, 0);
+    document.getElementById('cart-bar').classList.toggle('visible', count > 0);
+    document.getElementById('cart-count-label').textContent = `${count} item${count !== 1 ? 's' : ''}`;
+    document.getElementById('cart-total-label').textContent = `€${total.toFixed(2)}`;
+  }
+
+  function showOrder() {
+    document.getElementById('menu-view').style.display = 'none';
+    document.getElementById('order-view').classList.add('visible');
+    const entries = Object.values(cart);
+    const total   = entries.reduce((s, i) => s + i.price * i.qty, 0);
+    document.getElementById('order-items-list').innerHTML = entries.map(item => `
+      <div class="order-row">
+        <span>${item.emoji || '🍽️'}</span>
+        <span class="order-row-name">${item.name}</span>
+        <span class="order-row-qty">×${item.qty}</span>
+        <span class="order-row-price">€${(item.price * item.qty).toFixed(2)}</span>
+      </div>`).join('');
+    document.getElementById('order-total-val').textContent = `€${total.toFixed(2)}`;
+  }
+
+  function showMenu() {
+    document.getElementById('menu-view').style.display = 'block';
+    document.getElementById('order-view').classList.remove('visible');
+  }
+
+  async function sendOrder() {
+    const entries = Object.values(cart);
+    const total   = entries.reduce((s, i) => s + i.price * i.qty, 0);
+    const payload = {
+      tableToken,
+      note:  document.getElementById('order-note').value.trim(),
+      total,
+      lines: entries.map(i => ({ itemId: i.id, name: i.name, qty: i.qty, price: i.price, station: i.station }))
+    };
+    try {
+      const res  = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('order-view').classList.remove('visible');
+        document.getElementById('confirm-view').classList.add('visible');
+        cart = {};
+      }
+    } catch (err) {
+      alert('Could not send order. Please try again.');
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
