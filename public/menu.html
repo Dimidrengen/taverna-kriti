@@ -99,6 +99,9 @@
       <button class="lang-btn" onclick="setLang('de')">🇩🇪 DE</button>
       <button class="lang-btn" onclick="setLang('el')">🇬🇷 GR</button>
       <button class="lang-btn" onclick="setLang('fr')">🇫🇷 FR</button>
+      <button class="lang-btn" onclick="setLang('sv')">🇸🇪 SV</button>
+      <button class="lang-btn" onclick="setLang('no')">🇳🇴 NO</button>
+      <button class="lang-btn" onclick="setLang('fi')">🇫🇮 FI</button>
     </div>
   </div>
 
@@ -117,44 +120,47 @@
         <div class="cart-count" id="cart-count-label">0 items</div>
         <div class="cart-total" id="cart-total-label">€0.00</div>
       </div>
-      <div class="cart-cta">View order →</div>
+      <div class="cart-cta" id="cart-cta">View order →</div>
     </div>
   </div>
 
   <div class="order-panel" id="order-view">
     <div class="order-header">
       <div class="back-btn" onclick="showMenu()">←</div>
-      <div class="order-title">Your order</div>
+      <div class="order-title" id="order-title">Your order</div>
     </div>
     <div class="order-items" id="order-items-list"></div>
     <div class="order-note-wrap">
-      <textarea class="order-note" rows="2" id="order-note" placeholder="Any notes? (e.g. no onions, allergy info...)"></textarea>
+      <textarea class="order-note" rows="2" id="order-note" placeholder="Any notes?"></textarea>
     </div>
     <div class="order-total-row">
-      <span class="order-total-label">Total</span>
+      <span class="order-total-label" id="total-label">Total</span>
       <span class="order-total-val" id="order-total-val">€0.00</span>
     </div>
-    <button class="send-btn" onclick="sendOrder()">Send order to kitchen</button>
+    <button class="send-btn" id="send-btn" onclick="sendOrder()">Send order to kitchen</button>
   </div>
 
   <div class="confirm-screen" id="confirm-view">
     <div class="confirm-icon">✓</div>
-    <div class="confirm-title">Order sent!</div>
-    <div class="confirm-sub">Your order is on its way to the kitchen and bar. Sit back and relax.</div>
+    <div class="confirm-title" id="confirm-title">Order sent!</div>
+    <div class="confirm-sub" id="confirm-sub">Your order is on its way to the kitchen and bar.</div>
     <div class="confirm-table" id="confirm-table"></div>
   </div>
 
 </div>
 <script>
-  let allItems    = [];
-  let categories  = [];
-  let currentCat  = 0;
-  let cart        = {};
-  let tableToken  = '';
-  let lastAddedId = null;
+  // UI tekster per sprog
+  const UI_TEXT = {
+    en: { viewOrder: 'View order →', sendBtn: 'Send order to kitchen', notePlaceholder: 'Any notes? (e.g. no onions, allergy info...)', total: 'Total', orderTitle: 'Your order', confirmTitle: 'Order sent!', confirmSub: 'Your order is on its way to the kitchen and bar. Sit back and relax.', upsellLabel: '— goes well with' },
+    da: { viewOrder: 'Se bestilling →', sendBtn: 'Send bestilling til køkkenet', notePlaceholder: 'Bemærkninger? (fx ingen løg, allergier...)', total: 'I alt', orderTitle: 'Din bestilling', confirmTitle: 'Bestilling sendt!', confirmSub: 'Din bestilling er på vej til køkken og bar. Slap af og nyd det.', upsellLabel: '— passer godt til' },
+    de: { viewOrder: 'Bestellung anzeigen →', sendBtn: 'Bestellung senden', notePlaceholder: 'Anmerkungen? (z.B. keine Zwiebeln...)', total: 'Gesamt', orderTitle: 'Ihre Bestellung', confirmTitle: 'Bestellung gesendet!', confirmSub: 'Ihre Bestellung ist auf dem Weg in Küche und Bar.', upsellLabel: '— passt gut dazu' },
+    fr: { viewOrder: 'Voir la commande →', sendBtn: 'Envoyer la commande', notePlaceholder: 'Remarques ? (sans oignons, allergies...)', total: 'Total', orderTitle: 'Votre commande', confirmTitle: 'Commande envoyée !', confirmSub: 'Votre commande est en route vers la cuisine et le bar.', upsellLabel: '— va bien avec' },
+    el: { viewOrder: 'Δείτε παραγγελία →', sendBtn: 'Αποστολή στην κουζίνα', notePlaceholder: 'Σημειώσεις; (π.χ. χωρίς κρεμμύδι...)', total: 'Σύνολο', orderTitle: 'Η παραγγελία σας', confirmTitle: 'Η παραγγελία στάλθηκε!', confirmSub: 'Η παραγγελία σας πηγαίνει στην κουζίνα και στο μπαρ.', upsellLabel: '— ταιριάζει με' },
+    sv: { viewOrder: 'Visa beställning →', sendBtn: 'Skicka beställning', notePlaceholder: 'Anteckningar? (t.ex. utan lök...)', total: 'Totalt', orderTitle: 'Din beställning', confirmTitle: 'Beställning skickad!', confirmSub: 'Din beställning är på väg till köket och baren.', upsellLabel: '— passar bra till' },
+    no: { viewOrder: 'Se bestilling →', sendBtn: 'Send bestilling', notePlaceholder: 'Merknader? (f.eks. uten løk...)', total: 'Totalt', orderTitle: 'Din bestilling', confirmTitle: 'Bestilling sendt!', confirmSub: 'Din bestilling er på vei til kjøkkenet og baren.', upsellLabel: '— passer godt til' },
+    fi: { viewOrder: 'Näytä tilaus →', sendBtn: 'Lähetä tilaus keittiöön', notePlaceholder: 'Huomioita? (esim. ei sipulia...)', total: 'Yhteensä', orderTitle: 'Tilauksesi', confirmTitle: 'Tilaus lähetetty!', confirmSub: 'Tilauksesi on matkalla keittiöön ja baariin.', upsellLabel: '— sopii hyvin kanssa' },
+  };
 
-  // Upsell regler — liste af forslag per produkt-navn
-  // Hvert forslag er et navn der matcher en vare i databasen
   const UPSELL_RULES = [
     { match: ['tzatziki'],        suggest: ['Dolmades','Feta saganaki','Pita bread','House white wine','Mythos beer'] },
     { match: ['taramosalata'],    suggest: ['Tzatziki','Pita bread','House white wine','Ouzo'] },
@@ -167,8 +173,7 @@
     { match: ['oktapodi'],        suggest: ['House white wine','Ouzo','Horiatiki','Sparkling water'] },
     { match: ['gavros'],          suggest: ['House white wine','Ouzo','Pita bread','Sparkling water'] },
     { match: ['dakos'],           suggest: ['House white wine','House rosé wine','Tzatziki','Sparkling water'] },
-    { match: ['horiatiki'],       suggest: ['Pita bread','House white wine','House rosé wine','Sparkling water'] },
-    { match: ['salad'],           suggest: ['Pita bread','House white wine','House rosé wine','Sparkling water'] },
+    { match: ['horiatiki','salad'],suggest: ['Pita bread','House white wine','House rosé wine','Sparkling water'] },
     { match: ['rocket'],          suggest: ['House white wine','Pita bread','Sparkling water'] },
     { match: ['halloumi'],        suggest: ['House rosé wine','House white wine','Sparkling water'] },
     { match: ['moussaka'],        suggest: ['Horiatiki','Greek fries','House red wine','Sparkling water'] },
@@ -177,71 +182,41 @@
     { match: ['kleftiko'],        suggest: ['Bottle red wine','House red wine','Roasted potatoes','Horiatiki'] },
     { match: ['souvlaki'],        suggest: ['Greek fries','Tzatziki','Mythos beer','Draft beer'] },
     { match: ['gemista'],         suggest: ['Horiatiki','House white wine','Pita bread','Sparkling water'] },
-    { match: ['bream'],           suggest: ['House white wine','Bottle white wine','Horiatiki','Sparkling water'] },
-    { match: ['bass'],            suggest: ['House white wine','Bottle white wine','Horiatiki','Sparkling water'] },
+    { match: ['bream','bass'],    suggest: ['House white wine','Bottle white wine','Horiatiki','Sparkling water'] },
     { match: ['prawn'],           suggest: ['House white wine','Ouzo','Horiatiki','Sparkling water'] },
     { match: ['vegetarian'],      suggest: ['Horiatiki','House white wine','Greek fries','Sparkling water'] },
     { match: ['fries'],           suggest: ['Mythos beer','Draft beer','Cola','Tzatziki'] },
     { match: ['potatoes'],        suggest: ['Mythos beer','House red wine','Cola'] },
-    { match: ['rice'],            suggest: ['Sparkling water','Cola','House white wine'] },
-    { match: ['vegetables'],      suggest: ['House white wine','Sparkling water','Pita bread'] },
     { match: ['baklava'],         suggest: ['Greek coffee','Freddo espresso','Metaxa 5 star','Raki / Tsikoudia'] },
     { match: ['galaktoboureko'],  suggest: ['Greek coffee','Mountain tea','Metaxa 5 star'] },
     { match: ['loukoumades'],     suggest: ['Greek coffee','Freddo espresso','Raki / Tsikoudia'] },
     { match: ['bougatsa'],        suggest: ['Greek coffee','Cappuccino','Mountain tea'] },
-    { match: ['yogurt','yoghurt'],suggest: ['Greek coffee','Mountain tea','Cappuccino'] },
+    { match: ['yogurt'],          suggest: ['Greek coffee','Mountain tea','Cappuccino'] },
   ];
 
-  // Finder forslag for et produkt — altid mindst 3 forslag
-  // Springer over varer der allerede er i kurven
-  // Hvis alle primære forslag er taget, finder den alternativer
-  function getUpsellsForItem(item) {
-    const nameLower = item.name.toLowerCase();
-    let suggestNames = [];
+  let allItems    = [];
+  let categories  = [];
+  let currentCat  = 0;
+  let cart        = {};
+  let tableToken  = '';
+  let lang        = 'en';
+  let restaurantSlug = '';
+  let lastAddedId = null;
 
-    // Find matchende regel
-    for (const rule of UPSELL_RULES) {
-      if (rule.match.some(m => nameLower.includes(m))) {
-        suggestNames = rule.suggest;
-        break;
-      }
-    }
+  function ui(key) { return UI_TEXT[lang]?.[key] || UI_TEXT.en[key]; }
 
-    // Default hvis ingen regel matcher
-    if (suggestNames.length === 0) {
-      suggestNames = ['Mythos beer', 'House white wine', 'Cola', 'Sparkling water', 'Greek fries', 'Horiatiki'];
-    }
-
-    // Find varer der ikke er i kurven endnu
-    let suggestions = suggestNames
-      .map(name => allItems.find(i => i.name === name && !cart[i.id]))
-      .filter(Boolean);
-
-    // Hvis færre end 2 forslag tilbage, tilføj ekstra forslag
-    if (suggestions.length < 2) {
-      // Tilføj varer fra andre kategorier der ikke er i kurven
-      const extras = allItems.filter(i =>
-        i.id !== item.id &&
-        !cart[i.id] &&
-        !suggestions.find(s => s.id === i.id) &&
-        i.category !== item.category
-      );
-      // Bland lidt fra bar og kitchen
-      const barExtras     = extras.filter(i => i.station === 'bar').slice(0, 2);
-      const kitchenExtras = extras.filter(i => i.station === 'kitchen' && i.category !== 'Mains').slice(0, 1);
-      suggestions = [...suggestions, ...barExtras, ...kitchenExtras];
-    }
-
-    return suggestions.slice(0, 3);
+  function updateUITexts() {
+    document.getElementById('cart-cta').textContent       = ui('viewOrder');
+    document.getElementById('send-btn').textContent       = ui('sendBtn');
+    document.getElementById('order-note').placeholder     = ui('notePlaceholder');
+    document.getElementById('total-label').textContent    = ui('total');
+    document.getElementById('order-title').textContent    = ui('orderTitle');
+    document.querySelector('.upsell-label').textContent   = ui('upsellLabel');
   }
 
-  async function init() {
-    const params = new URLSearchParams(window.location.search);
-    const restaurantSlug = params.get('restaurant') || 'taverna-kriti';
-    tableToken = params.get('table') || 'tbl-005';
-
+  async function loadMenu() {
     try {
-      const res  = await fetch(`/api/menu?restaurant=${restaurantSlug}`);
+      const res  = await fetch(`/api/menu?restaurant=${restaurantSlug}&lang=${lang}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
@@ -249,25 +224,54 @@
       categories = [...new Set(allItems.map(i => i.category))];
 
       document.getElementById('rest-name').textContent = data.restaurant.name;
-      const tName = tableToken.replace('tbl-0', 'Table ').replace('tbl-', 'Table ');
-      document.getElementById('table-badge').textContent   = `🪑 ${tName}`;
-      document.getElementById('confirm-table').textContent = tName;
-
-      document.getElementById('loading-screen').style.display = 'none';
-      document.getElementById('app-header').style.display     = 'block';
-      document.getElementById('menu-view').style.display      = 'block';
-
-      renderCats();
-      renderMenu();
+      return data;
     } catch (err) {
-      document.querySelector('.loading-text').textContent = 'Could not load menu. Please try again.';
+      document.querySelector('.loading-text').textContent = 'Could not load menu.';
+      throw err;
     }
   }
 
-  function setLang(l) {
+  async function init() {
+    const params = new URLSearchParams(window.location.search);
+    restaurantSlug = params.get('restaurant') || 'taverna-kriti';
+    tableToken     = params.get('table')      || 'tbl-005';
+    lang           = params.get('lang')       || navigator.language.split('-')[0] || 'en';
+    if (!UI_TEXT[lang]) lang = 'en';
+
+    await loadMenu();
+
+    const tName = tableToken.replace('tbl-0','Table ').replace('tbl-','Table ');
+    document.getElementById('table-badge').textContent   = `🪑 ${tName}`;
+    document.getElementById('confirm-table').textContent = tName;
+
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('app-header').style.display     = 'block';
+    document.getElementById('menu-view').style.display      = 'block';
+
+    // Marker aktiv sprogknap
     document.querySelectorAll('.lang-btn').forEach((btn, i) => {
-      btn.classList.toggle('active', ['en','da','de','el','fr'][i] === l);
+      btn.classList.toggle('active', ['en','da','de','el','fr','sv','no','fi'][i] === lang);
     });
+
+    updateUITexts();
+    renderCats();
+    renderMenu();
+  }
+
+  async function setLang(l) {
+    lang = l;
+    document.querySelectorAll('.lang-btn').forEach((btn, i) => {
+      btn.classList.toggle('active', ['en','da','de','el','fr','sv','no','fi'][i] === l);
+    });
+
+    // Hent menu på nyt sprog
+    await loadMenu();
+    currentCat = 0;
+    updateUITexts();
+    renderCats();
+    renderMenu();
+    updateCart();
+    if (lastAddedId) showUpsellFor(lastAddedId);
   }
 
   function renderCats() {
@@ -310,22 +314,34 @@
     }).join('');
   }
 
+  function getUpsellsForItem(item) {
+    const nameLower = item.name.toLowerCase();
+    let suggestNames = [];
+    for (const rule of UPSELL_RULES) {
+      if (rule.match.some(m => nameLower.includes(m))) { suggestNames = rule.suggest; break; }
+    }
+    if (!suggestNames.length) suggestNames = ['Mythos beer','House white wine','Cola','Sparkling water'];
+
+    let suggestions = suggestNames
+      .map(name => allItems.find(i => i.name === name && !cart[i.id]))
+      .filter(Boolean);
+
+    if (suggestions.length < 2) {
+      const extras = allItems.filter(i => i.id !== item.id && !cart[i.id] && !suggestions.find(s => s.id === i.id) && i.category !== item.category);
+      suggestions = [...suggestions, ...extras.filter(i => i.station === 'bar').slice(0,2), ...extras.filter(i => i.station === 'kitchen').slice(0,1)];
+    }
+    return suggestions.slice(0, 3);
+  }
+
   function showUpsellFor(itemId) {
     const item = allItems.find(i => i.id === itemId);
     if (!item) return;
-
     const suggestions = getUpsellsForItem(item);
-    const bar         = document.getElementById('upsell-bar');
-    const chips       = document.getElementById('upsell-chips');
-
-    if (suggestions.length === 0) {
-      bar.classList.remove('visible');
-      return;
-    }
-
+    const bar = document.getElementById('upsell-bar');
+    if (!suggestions.length) { bar.classList.remove('visible'); return; }
     document.getElementById('upsell-item-name').textContent = item.name;
     bar.classList.add('visible');
-    chips.innerHTML = suggestions.map(s =>
+    document.getElementById('upsell-chips').innerHTML = suggestions.map(s =>
       `<div class="upsell-chip" onclick="addItem('${s.id}')">${s.emoji || '🍽️'} ${s.name} +€${Number(s.price).toFixed(2)}</div>`
     ).join('');
   }
@@ -347,12 +363,8 @@
     if (cart[id].qty <= 0) delete cart[id];
     renderMenu();
     updateCart();
-    if (Object.keys(cart).length === 0) {
-      document.getElementById('upsell-bar').classList.remove('visible');
-      lastAddedId = null;
-    } else if (lastAddedId) {
-      showUpsellFor(lastAddedId);
-    }
+    if (!Object.keys(cart).length) { document.getElementById('upsell-bar').classList.remove('visible'); lastAddedId = null; }
+    else if (lastAddedId) showUpsellFor(lastAddedId);
   }
 
   function updateCart() {
@@ -398,6 +410,8 @@
       const data = await res.json();
       if (data.success) {
         document.getElementById('order-view').classList.remove('visible');
+        document.getElementById('confirm-title').textContent = ui('confirmTitle');
+        document.getElementById('confirm-sub').textContent   = ui('confirmSub');
         document.getElementById('confirm-view').classList.add('visible');
         cart = {};
       }

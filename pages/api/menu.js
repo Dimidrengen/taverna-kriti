@@ -6,11 +6,9 @@ const supabase = createClient(
 )
 
 export default async function handler(req, res) {
-  const { restaurant } = req.query
+  const { restaurant, lang = 'en' } = req.query
 
-  if (!restaurant) {
-    return res.status(400).json({ error: 'Missing restaurant' })
-  }
+  if (!restaurant) return res.status(400).json({ error: 'Missing restaurant' })
 
   const { data: restaurantData } = await supabase
     .from('restaurants')
@@ -18,9 +16,7 @@ export default async function handler(req, res) {
     .eq('slug', restaurant)
     .single()
 
-  if (!restaurantData) {
-    return res.status(404).json({ error: 'Restaurant not found' })
-  }
+  if (!restaurantData) return res.status(404).json({ error: 'Restaurant not found' })
 
   const { data: items } = await supabase
     .from('menu_items')
@@ -29,8 +25,35 @@ export default async function handler(req, res) {
     .eq('available', true)
     .order('sort_order', { ascending: true })
 
+  const { data: translations } = await supabase
+    .from('menu_item_translations')
+    .select('*')
+    .eq('lang', lang)
+    .in('item_id', items.map(i => i.id))
+
+  const { data: catTranslations } = await supabase
+    .from('category_translations')
+    .select('*')
+    .eq('restaurant_id', restaurantData.id)
+    .eq('lang', lang)
+
+  const translationMap = {}
+  translations?.forEach(t => { translationMap[t.item_id] = t })
+
+  const catMap = {}
+  catTranslations?.forEach(t => { catMap[t.category] = t.translation })
+
+  const translatedItems = items.map(item => ({
+    ...item,
+    name: translationMap[item.id]?.name || item.name,
+    description: translationMap[item.id]?.description || item.description,
+    category: catMap[item.category] || item.category,
+    originalCategory: item.category,
+  }))
+
   res.status(200).json({
     restaurant: restaurantData,
-    items: items || []
+    items: translatedItems,
+    lang
   })
 }
