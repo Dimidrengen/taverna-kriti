@@ -7,14 +7,15 @@ const supabase = createClient(
 )
 
 const LANGS = {
-  el: { title:'Μπαρ', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', drinks:'Ποτά', flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά', closeTable:'Κλείσιμο & Πληρωμή', closing:'Κλείνει…', bill:'Λογαριασμός', total:'Σύνολο' },
-  en: { title:'Bar', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', drinks:'Drinks', flowAll:'All at once', flowSeq:'By course', closeTable:'Close & Payment', closing:'Closing…', bill:'Bill', total:'Total' },
-  da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', flowAll:'Alt på én gang', flowSeq:'Kursvis', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total' },
+  el: { title:'Μπαρ', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', drinks:'Ποτά', flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά', closeTable:'Κλείσιμο & Πληρωμή', closing:'Κλείνει…', bill:'Λογαριασμός', total:'Σύνολο', allTables:'Όλα τα τραπέζια', activeDrinks:'Ενεργά ποτά' },
+  en: { title:'Bar', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', drinks:'Drinks', flowAll:'All at once', flowSeq:'By course', closeTable:'Close & Payment', closing:'Closing…', bill:'Bill', total:'Total', allTables:'All tables', activeDrinks:'Active drinks' },
+  da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', flowAll:'Alt på én gang', flowSeq:'Kursvis', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total', allTables:'Alle borde', activeDrinks:'Aktive drikkevarer' },
 }
 
-function groupByTable(rows, translations) {
+function groupDrinkOrders(rows, translations) {
   const map = {}
   for (const row of rows) {
+    if (row.course !== 'drinks') continue
     const key = row.table_token
     if (!map[key]) {
       map[key] = { table_label:row.table_label, table_token:row.table_token, orders:{} }
@@ -22,27 +23,22 @@ function groupByTable(rows, translations) {
     if (!map[key].orders[row.order_id]) {
       map[key].orders[row.order_id] = { order_id:row.order_id, flow_type:row.flow_type, created_at:row.created_at, drinks:[] }
     }
-    if (row.course === 'drinks') {
-      const translatedName = translations[row.item_id] || row.name
-      map[key].orders[row.order_id].drinks.push({ ...row, name: translatedName })
-    }
+    const translatedName = translations[row.item_id] || row.name
+    map[key].orders[row.order_id].drinks.push({ ...row, name: translatedName })
   }
-  return Object.values(map).filter(t => Object.values(t.orders).some(o => o.drinks.length > 0))
-    .sort((a,b) => {
-      const aTime = Math.min(...Object.values(a.orders).map(o => new Date(o.created_at)))
-      const bTime = Math.min(...Object.values(b.orders).map(o => new Date(o.created_at)))
-      return aTime - bTime
-    })
+  return Object.values(map)
 }
 
 export default function BarPage() {
-  const [tables, setTables]      = useState([])
-  const [loading, setLoading]    = useState(true)
-  const [pending, setPending]    = useState({})
-  const [closing, setClosing]    = useState({})
-  const [bills, setBills]        = useState({})
-  const [lang, setLang]          = useState('el')
-  const [translations, setTrans] = useState({})
+  const [drinkOrders, setDrinkOrders] = useState([])
+  const [allTables, setAllTables]     = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [pending, setPending]         = useState({})
+  const [closing, setClosing]         = useState({})
+  const [bills, setBills]             = useState({})
+  const [tab, setTab]                 = useState('drinks')
+  const [lang, setLang]               = useState('el')
+  const [translations, setTrans]      = useState({})
   const t = LANGS[lang]
 
   const fetchTranslations = useCallback(async (l) => {
@@ -55,21 +51,37 @@ export default function BarPage() {
   }, [])
 
   const fetchOrders = useCallback(async () => {
-    const { data, error } = await supabase.from('kitchen_active_orders').select('*')
-    if (!error && data) setTables(groupByTable(data, translations))
+    const { data } = await supabase.from('kitchen_active_orders').select('*')
+    if (data) setDrinkOrders(groupDrinkOrders(data, translations))
     setLoading(false)
   }, [translations])
 
+  const fetchAllTables = useCallback(async () => {
+    // Hent alle borde med åbne ordrer
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('table_id, status')
+      .eq('status', 'open')
+    if (!orders) return
+    const tableIds = [...new Set(orders.map(o => o.table_id))]
+    if (tableIds.length === 0) { setAllTables([]); return }
+    const { data: tables } = await supabase
+      .from('tables')
+      .select('id, name, token')
+      .in('id', tableIds)
+    if (tables) setAllTables(tables)
+  }, [])
+
   useEffect(() => { fetchTranslations(lang) }, [lang])
-  useEffect(() => { fetchOrders() }, [translations])
+  useEffect(() => { fetchOrders(); fetchAllTables() }, [translations])
 
   useEffect(() => {
     const channel = supabase.channel('bar-realtime')
-      .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, fetchOrders)
+      .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, () => { fetchOrders(); fetchAllTables() })
       .on('postgres_changes', { event:'*', schema:'public', table:'order_lines' }, fetchOrders)
       .subscribe()
     return () => supabase.removeChannel(channel)
-  }, [fetchOrders])
+  }, [fetchOrders, fetchAllTables])
 
   const changeLang = (l) => {
     setLang(l)
@@ -88,15 +100,14 @@ export default function BarPage() {
   }
 
   const fetchBill = async (tableToken) => {
-    const shown = bills[tableToken]
-    if (shown) { setBills(p => { const n={...p}; delete n[tableToken]; return n }); return }
+    if (bills[tableToken]) { setBills(p => { const n={...p}; delete n[tableToken]; return n }); return }
     const res = await fetch(`/api/table-bill?tableToken=${tableToken}`)
     const data = await res.json()
     setBills(p => ({ ...p, [tableToken]: data }))
   }
 
   const closeTable = async (tableToken, tableLabel) => {
-    if (!confirm(`Luk ${tableLabel} og marker som betalt?`)) return
+    if (!confirm(`Luk ${tableLabel}?`)) return
     setClosing(p => ({ ...p, [tableToken]: true }))
     try {
       await fetch('/api/close-table', {
@@ -104,11 +115,12 @@ export default function BarPage() {
         body: JSON.stringify({ tableToken }),
       })
       setBills(p => { const n={...p}; delete n[tableToken]; return n })
+      fetchAllTables()
     } catch(e) { console.error(e) }
     finally { setClosing(p => { const n={...p}; delete n[tableToken]; return n }) }
   }
 
-  if (loading) return <div style={styles.center}><p style={{color:'#aaa',fontSize:18}}>{t.noOrders}</p></div>
+  if (loading) return <div style={styles.center}><p style={{color:'#aaa'}}>...</p></div>
 
   return (
     <div style={styles.page}>
@@ -124,32 +136,37 @@ export default function BarPage() {
             }}>{l.toUpperCase()}</button>
           ))}
         </div>
-        <span style={{fontSize:14,color:'#6b7280'}}>{tables.length}</span>
       </header>
 
-      {tables.length === 0
-        ? <div style={styles.emptyWrap}><div style={{fontSize:64}}>🍹</div><p style={{color:'#aaa',fontSize:20,marginTop:16}}>{t.noOrders}</p></div>
-        : <div style={styles.grid}>
-            {tables.map(table => {
-              const bill = bills[table.table_token]
-              const isClosing = closing[table.table_token]
-              const allOrders = Object.values(table.orders)
-              const firstTime = Math.min(...allOrders.map(o => new Date(o.created_at)))
-              const age = Math.floor((Date.now() - firstTime) / 60000)
+      {/* Tab-knapper */}
+      <div style={{display:'flex',gap:0,borderBottom:'1px solid #222',padding:'0 24px'}}>
+        <button onClick={() => setTab('drinks')} style={{
+          padding:'12px 20px', fontSize:14, fontWeight:600, cursor:'pointer', background:'transparent', border:'none',
+          color: tab==='drinks' ? '#0ea5e9' : '#666',
+          borderBottom: tab==='drinks' ? '2px solid #0ea5e9' : '2px solid transparent',
+        }}>🍹 {t.activeDrinks} {drinkOrders.length > 0 && <span style={{background:'#0ea5e9',color:'#000',borderRadius:10,padding:'1px 7px',fontSize:11,marginLeft:6}}>{drinkOrders.length}</span>}</button>
+        <button onClick={() => setTab('tables')} style={{
+          padding:'12px 20px', fontSize:14, fontWeight:600, cursor:'pointer', background:'transparent', border:'none',
+          color: tab==='tables' ? '#0ea5e9' : '#666',
+          borderBottom: tab==='tables' ? '2px solid #0ea5e9' : '2px solid transparent',
+        }}>🪑 {t.allTables} {allTables.length > 0 && <span style={{background:'#444',color:'#fff',borderRadius:10,padding:'1px 7px',fontSize:11,marginLeft:6}}>{allTables.length}</span>}</button>
+      </div>
 
-              return (
+      {/* Aktive drikkevarer */}
+      {tab === 'drinks' && (
+        drinkOrders.length === 0
+          ? <div style={styles.emptyWrap}><div style={{fontSize:48}}>🍹</div><p style={{color:'#aaa',fontSize:18,marginTop:12}}>{t.noOrders}</p></div>
+          : <div style={styles.grid}>
+              {drinkOrders.map(table => (
                 <div key={table.table_token} style={styles.card}>
                   <div style={styles.cardHeader}>
                     <span style={styles.tableLabel}>{table.table_label}</span>
-                    <span style={{fontSize:13,color:age>30?'#ef4444':'#9ca3af'}}>{age} min</span>
                   </div>
-
-                  {/* Drikkevarer per ordre */}
-                  {allOrders.filter(o => o.drinks.length > 0).map(order => (
-                    <div key={order.order_id} style={styles.drinkBlock}>
+                  {Object.values(table.orders).filter(o => o.drinks.length > 0).map(order => (
+                    <div key={order.order_id}>
                       <div style={styles.drinksLabel}>
                         <span style={{width:8,height:8,borderRadius:'50%',background:'#0ea5e9',display:'inline-block',marginRight:8}}/>
-                        <span style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#0ea5e9'}}>{t.drinks}</span>
+                        <span style={{fontSize:13,fontWeight:700,textTransform:'uppercase',color:'#0ea5e9'}}>{t.drinks}</span>
                       </div>
                       <div style={styles.lineList}>
                         {order.drinks.map(line => (
@@ -159,55 +176,67 @@ export default function BarPage() {
                           </div>
                         ))}
                       </div>
-                      <div style={{padding:'0 16px 12px'}}>
+                      <div style={{padding:'8px 16px 16px'}}>
                         <button
-                          style={{width:'100%',padding:'10px 0',background:'transparent',
-                            border:'1px solid #0ea5e9',borderRadius:8,fontSize:14,fontWeight:600,
-                            color:'#0ea5e9',opacity:pending[order.order_id]?0.5:1,cursor:pending[order.order_id]?'wait':'pointer'}}
                           disabled={pending[order.order_id]}
-                          onClick={() => markDone(order.order_id)}>
+                          onClick={() => markDone(order.order_id)}
+                          style={{width:'100%',padding:'10px 0',background:'transparent',border:'1px solid #0ea5e9',borderRadius:8,fontSize:14,fontWeight:600,color:'#0ea5e9',opacity:pending[order.order_id]?0.5:1,cursor:'pointer'}}>
                           {pending[order.order_id] ? t.sending : t.done}
                         </button>
                       </div>
                     </div>
                   ))}
-
-                  {/* Regning */}
-                  {bill && (
-                    <div style={{padding:'12px 16px',borderTop:'1px solid #222'}}>
-                      <div style={{fontSize:12,color:'#6b7280',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>{t.bill}</div>
-                      {bill.orders && bill.orders.map(o => o.lines.map(l => (
-                        <div key={l.name+l.qty} style={{display:'flex',justifyContent:'space-between',fontSize:14,padding:'2px 0',color:'#ccc'}}>
-                          <span>{l.qty}× {l.name}</span>
-                          <span>€{(l.price*l.qty).toFixed(2)}</span>
-                        </div>
-                      )))}
-                      <div style={{display:'flex',justifyContent:'space-between',fontSize:16,fontWeight:700,color:'white',marginTop:8,paddingTop:8,borderTop:'1px solid #333'}}>
-                        <span>{t.total}</span>
-                        <span>€{bill.grandTotal?.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Knapper */}
-                  <div style={{padding:'12px 16px',display:'flex',gap:8}}>
-                    <button
-                      onClick={() => fetchBill(table.table_token)}
-                      style={{flex:1,padding:'10px 0',background:'transparent',border:'1px solid #444',borderRadius:8,fontSize:14,fontWeight:600,color:'#aaa',cursor:'pointer'}}>
-                      {bill ? '▲ Skjul' : `📋 ${t.bill}`}
-                    </button>
-                    <button
-                      onClick={() => closeTable(table.table_token, table.table_label)}
-                      disabled={isClosing}
-                      style={{flex:1,padding:'10px 0',background:'transparent',border:'1px solid #dc2626',borderRadius:8,fontSize:14,fontWeight:600,color:'#dc2626',opacity:isClosing?0.5:1,cursor:isClosing?'wait':'pointer'}}>
-                      {isClosing ? t.closing : t.closeTable}
-                    </button>
-                  </div>
                 </div>
-              )
-            })}
-          </div>
-      }
+              ))}
+            </div>
+      )}
+
+      {/* Alle borde — regning og luk */}
+      {tab === 'tables' && (
+        allTables.length === 0
+          ? <div style={styles.emptyWrap}><div style={{fontSize:48}}>🪑</div><p style={{color:'#aaa',fontSize:18,marginTop:12}}>{t.noOrders}</p></div>
+          : <div style={styles.grid}>
+              {allTables.map(table => {
+                const bill = bills[table.token]
+                const isClosing = closing[table.token]
+                return (
+                  <div key={table.token} style={styles.card}>
+                    <div style={styles.cardHeader}>
+                      <span style={styles.tableLabel}>{table.name}</span>
+                    </div>
+
+                    {bill && (
+                      <div style={{padding:'12px 16px'}}>
+                        <div style={{fontSize:12,color:'#6b7280',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>{t.bill}</div>
+                        {bill.orders && bill.orders.flatMap(o => o.lines).map((l,i) => (
+                          <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:14,padding:'3px 0',color:'#ccc'}}>
+                            <span>{l.qty}× {l.name}</span>
+                            <span>€{(l.price*l.qty).toFixed(2)}</span>
+                          </div>
+                        ))}
+                        <div style={{display:'flex',justifyContent:'space-between',fontSize:17,fontWeight:700,color:'white',marginTop:10,paddingTop:10,borderTop:'1px solid #333'}}>
+                          <span>{t.total}</span>
+                          <span>€{bill.grandTotal?.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{padding:'12px 16px',display:'flex',gap:8}}>
+                      <button onClick={() => fetchBill(table.token)} style={{flex:1,padding:'10px 0',background:'transparent',border:'1px solid #444',borderRadius:8,fontSize:14,fontWeight:600,color:'#aaa',cursor:'pointer'}}>
+                        {bill ? '▲ Skjul' : `📋 ${t.bill}`}
+                      </button>
+                      <button
+                        disabled={isClosing}
+                        onClick={() => closeTable(table.token, table.name)}
+                        style={{flex:1,padding:'10px 0',background:'transparent',border:'1px solid #dc2626',borderRadius:8,fontSize:14,fontWeight:600,color:'#dc2626',opacity:isClosing?0.5:1,cursor:'pointer'}}>
+                        {isClosing ? t.closing : t.closeTable}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+      )}
     </div>
   )
 }
@@ -220,10 +249,9 @@ const styles = {
   card:       {background:'#1a1a1a',borderRadius:14,border:'1px solid #2a2a2a',overflow:'hidden'},
   cardHeader: {display:'flex',alignItems:'center',gap:10,padding:'14px 16px',borderBottom:'1px solid #222'},
   tableLabel: {fontSize:18,fontWeight:700,flex:1},
-  drinkBlock: {borderBottom:'1px solid #222'},
   drinksLabel:{display:'flex',alignItems:'center',padding:'12px 16px 4px'},
   lineList:   {padding:'4px 16px 8px',display:'flex',flexDirection:'column',gap:6},
   lineItem:   {display:'flex',gap:8,alignItems:'center'},
-  emptyWrap:  {display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'calc(100dvh - 73px)'},
+  emptyWrap:  {display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'calc(100dvh - 120px)'},
   center:     {display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'100dvh',background:'#0d0d0d',color:'#f1f1f1'},
 }
