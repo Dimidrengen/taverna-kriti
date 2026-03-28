@@ -23,7 +23,6 @@ function groupOrders(rows, translations) {
       map[row.order_id] = { order_id:row.order_id, table_label:row.table_label, flow_type:row.flow_type, created_at:row.created_at, courses:{} }
     }
     if (!map[row.order_id].courses[row.course]) map[row.order_id].courses[row.course] = []
-    // Brug oversat navn hvis det findes
     const translatedName = translations[row.item_id] || row.name
     map[row.order_id].courses[row.course].push({ ...row, name: translatedName })
   }
@@ -31,18 +30,15 @@ function groupOrders(rows, translations) {
 }
 
 export default function KitchenPage() {
-  const [orders, setOrders]     = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [pending, setPending]   = useState({})
-  const [lang, setLang]         = useState('el')
+  const [orders, setOrders]      = useState([])
+  const [loading, setLoading]    = useState(true)
+  const [pending, setPending]    = useState({})
+  const [lang, setLang]          = useState('el')
   const [translations, setTrans] = useState({})
   const t = LANGS[lang]
 
   const fetchTranslations = useCallback(async (l) => {
-    const { data } = await supabase
-      .from('menu_item_translations')
-      .select('item_id, name')
-      .eq('lang', l)
+    const { data } = await supabase.from('menu_item_translations').select('item_id, name').eq('lang', l)
     if (data) {
       const map = {}
       data.forEach(r => { map[r.item_id] = r.name })
@@ -52,7 +48,7 @@ export default function KitchenPage() {
 
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase.from('kitchen_active_orders').select('*')
-    if (!error && data) setOrders(prev => groupOrders(data, translations))
+    if (!error && data) setOrders(groupOrders(data, translations))
     setLoading(false)
   }, [translations])
 
