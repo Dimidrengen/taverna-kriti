@@ -5,9 +5,12 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+// Drikkevarer sendes ALTID med det samme til baren
+// Sequential: kun første mad-kursus (starters) sendes — resten venter på Færdig
+// All at once: al mad sendes med det samme (undtagen dessert)
 const INITIAL_COURSES = {
   all_at_once: ['drinks', 'starters', 'mains', 'sides', 'salads'],
-  sequential:  ['drinks'],
+  sequential:  ['drinks', 'starters'],
 }
 
 export default async function handler(req, res) {
