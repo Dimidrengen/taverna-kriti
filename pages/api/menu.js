@@ -45,6 +45,7 @@ export default async function handler(req, res) {
 
   const translatedItems = items.map(item => ({
     ...item,
+    originalName: item.name,
     name: translationMap[item.id]?.name || item.name,
     description: translationMap[item.id]?.description || item.description,
     category: catMap[item.category] || item.category,
