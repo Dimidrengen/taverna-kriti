@@ -130,7 +130,7 @@
     <div class="cart-bar" id="cart-bar" onclick="showOrder()">
       <div>
         <div class="cart-count" id="cart-count-label">0 items</div>
-        <div class="cart-total" id="cart-total-label">&#8364;0.00</div>
+        <div class="cart-total" id="cart-total-label">€0.00</div>
       </div>
       <div class="cart-cta" id="cart-cta">View order</div>
     </div>
@@ -162,7 +162,7 @@
     </div>
     <div class="order-total-row">
       <span class="order-total-label" id="total-label">Total</span>
-      <span class="order-total-val" id="order-total-val">&#8364;0.00</span>
+      <span class="order-total-val" id="order-total-val">€0.00</span>
     </div>
     <button class="send-btn" id="send-btn" onclick="sendOrder()">Send order to kitchen</button>
   </div>
@@ -318,7 +318,7 @@ function renderMenu(){
     } else {
       ctrl='<div class="qty-ctrl"><button onclick="removeItem(\''+item.id+'\')">&#8722;</button><span class="qty-num">'+qty+'</span><button onclick="addItem(\''+item.id+'\')" style="background:var(--ink);color:white;border:none">+</button></div>';
     }
-    return '<div class="menu-item"><div class="item-emoji">'+(item.emoji||'&#127869;&#65039;')+'</div><div class="item-body"><div class="item-name">'+item.name+'</div><div class="item-desc">'+(item.description||'')+'</div><div class="item-foot"><div class="item-price">&#8364;'+Number(item.price).toFixed(2)+'</div>'+ctrl+'</div></div></div>';
+    return '<div class="menu-item"><div class="item-emoji">'+(item.emoji||'&#127869;&#65039;')+'</div><div class="item-body"><div class="item-name">'+item.name+'</div><div class="item-desc">'+(item.description||'')+'</div><div class="item-foot"><div class="item-price">€'+Number(item.price).toFixed(2)+'</div>'+ctrl+'</div></div></div>';
   }).join('');
 }
 function groupCartByCourse(){
@@ -336,9 +336,9 @@ function renderCourseGroups(){
   document.getElementById('course-groups').innerHTML=groups.map(function(group){
     var total=group.items.reduce(function(s,i){return s+i.price*i.qty;},0);
     var rows=group.items.map(function(item){
-      return '<div class="course-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="course-row-name">'+item.name+'</span><span class="course-row-qty">x'+item.qty+'</span><span class="course-row-price">&#8364;'+(item.price*item.qty).toFixed(2)+'</span></div>';
+      return '<div class="course-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="course-row-name">'+item.name+'</span><span class="course-row-qty">x'+item.qty+'</span><span class="course-row-price">€'+(item.price*item.qty).toFixed(2)+'</span></div>';
     }).join('');
-    return '<div class="course-group"><div class="course-header"><span class="course-name">'+(labels[group.category]||group.category)+'</span><span class="course-badge">&#8364;'+total.toFixed(2)+'</span></div><div class="course-items">'+rows+'</div></div>';
+    return '<div class="course-group"><div class="course-header"><span class="course-name">'+(labels[group.category]||group.category)+'</span><span class="course-badge">€'+total.toFixed(2)+'</span></div><div class="course-items">'+rows+'</div></div>';
   }).join('');
 }
 function getUpsellsForItem(item){
@@ -368,7 +368,7 @@ function showUpsellFor(itemId){
   document.getElementById('upsell-item-name').textContent=item.name;
   bar.classList.add('visible');
   document.getElementById('upsell-chips').innerHTML=s.map(function(x){
-    return '<div class="upsell-chip" onclick="addItem(\''+x.id+'\')">'+(x.emoji||'&#127869;&#65039;')+' '+x.name+' +&#8364;'+Number(x.price).toFixed(2)+'</div>';
+    return '<div class="upsell-chip" onclick="addItem(\''+x.id+'\')">'+(x.emoji||'&#127869;&#65039;')+' '+x.name+' +€'+Number(x.price).toFixed(2)+'</div>';
   }).join('');
 }
 function addItem(id){
@@ -392,7 +392,7 @@ function updateCart(){
   var count=e.reduce(function(s,i){return s+i.qty;},0);
   document.getElementById('cart-bar').classList.toggle('visible',count>0);
   document.getElementById('cart-count-label').textContent=count+' item'+(count!==1?'s':'');
-  document.getElementById('cart-total-label').textContent='&#8364;'+total.toFixed(2);
+  document.getElementById('cart-total-label').textContent='€'+total.toFixed(2);
 }
 function showOrder(){
   document.getElementById('menu-view').style.display='none';
@@ -400,9 +400,9 @@ function showOrder(){
   var e=Object.values(cart);
   var total=e.reduce(function(s,i){return s+i.price*i.qty;},0);
   document.getElementById('order-items-list').innerHTML=e.map(function(item){
-    return '<div class="order-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="order-row-name">'+item.name+'</span><span class="order-row-qty">x'+item.qty+'</span><span class="order-row-price">&#8364;'+(item.price*item.qty).toFixed(2)+'</span></div>';
+    return '<div class="order-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="order-row-name">'+item.name+'</span><span class="order-row-qty">x'+item.qty+'</span><span class="order-row-price">€'+(item.price*item.qty).toFixed(2)+'</span></div>';
   }).join('');
-  document.getElementById('order-total-val').textContent='&#8364;'+total.toFixed(2);
+  document.getElementById('order-total-val').textContent='€'+total.toFixed(2);
   if(servingMode==='courses')renderCourseGroups();
 }
 function showMenu(){
