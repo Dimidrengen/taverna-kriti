@@ -33,9 +33,9 @@
     .item-desc { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
     .item-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
     .item-price { font-size: 15px; font-weight: 500; color: var(--ink); }
-    .add-btn { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: white; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; }
+    .add-btn { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: white; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .qty-ctrl { display: flex; align-items: center; gap: 8px; }
-    .qty-ctrl button { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border); background: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; color: var(--ink); }
+    .qty-ctrl button { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border); background: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink); }
     .qty-num { font-size: 14px; font-weight: 500; color: var(--ink); min-width: 16px; text-align: center; }
     .upsell-bar { margin: 0 20px 12px; background: var(--accent-light); border: 1px solid rgba(194,105,42,0.25); border-radius: 12px; padding: 12px 14px; display: none; }
     .upsell-bar.visible { display: block; }
@@ -43,7 +43,7 @@
     .upsell-item-name { font-size: 12px; font-weight: 500; color: var(--ink); }
     .upsell-label { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; }
     .upsell-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-    .upsell-chip { background: white; border: 1px solid rgba(194,105,42,0.3); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--accent); cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .upsell-chip { background: white; border: 1px solid rgba(194,105,42,0.3); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--accent); cursor: pointer; }
     .upsell-chip:hover { background: var(--accent); color: white; }
     .cart-bar { margin: 0 20px 12px; background: var(--ink); border-radius: 14px; padding: 14px 16px; display: none; align-items: center; justify-content: space-between; cursor: pointer; }
     .cart-bar.visible { display: flex; }
@@ -64,7 +64,7 @@
     .serving-option-label { font-size: 13px; font-weight: 500; color: var(--ink); }
     .serving-option-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .course-group { margin: 0 20px 12px; }
-    .course-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--ink); border-radius: 12px 12px 0 0; }
+    .course-header-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--ink); border-radius: 12px 12px 0 0; }
     .course-name { font-size: 13px; font-weight: 500; color: white; }
     .course-badge { font-size: 11px; color: rgba(255,255,255,0.6); }
     .course-items { border: 1px solid var(--border); border-top: none; border-radius: 0 0 12px 12px; overflow: hidden; }
@@ -85,15 +85,15 @@
     .order-total-val { font-size: 22px; font-family: 'Playfair Display', serif; color: var(--ink); }
     .send-btn { margin: 12px 20px 24px; background: var(--accent); color: white; border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 500; width: calc(100% - 40px); cursor: pointer; font-family: 'DM Sans', sans-serif; }
     .send-btn:hover { background: #A8572A; }
-    .confirm-screen { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 60px 30px; text-align: center; min-height: 400px; gap: 16px; }
+    .confirm-screen { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 60px 30px; text-align: center; min-height: 100vh; gap: 16px; }
     .confirm-screen.visible { display: flex; }
-    .confirm-icon { width: 72px; height: 72px; background: #EBF5EF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .confirm-icon { width: 72px; height: 72px; background: #EBF5EF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; color: var(--green); }
     .confirm-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--ink); }
-    .confirm-sub { font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .confirm-sub { font-size: 14px; color: var(--muted); line-height: 1.6; max-width: 280px; }
     .confirm-table { font-size: 13px; color: var(--accent); font-weight: 500; }
-    .pending-courses { background: #EBF5EF; border: 1px solid rgba(45,122,79,0.2); border-radius: 12px; padding: 12px 14px; width: 100%; }
-    .pending-title { font-size: 11px; font-weight: 500; color: var(--green); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-    .pending-item { font-size: 13px; color: var(--ink); }
+    .coming-next-box { background: #EBF5EF; border: 1px solid rgba(45,122,79,0.2); border-radius: 12px; padding: 14px 16px; width: 100%; text-align: left; }
+    .coming-next-title { font-size: 11px; font-weight: 600; color: var(--green); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .coming-next-item { font-size: 13px; color: var(--ink); padding: 3px 0; }
   </style>
 </head>
 <body>
@@ -170,80 +170,66 @@
     <div class="confirm-title" id="confirm-title">Order sent!</div>
     <div class="confirm-sub" id="confirm-sub">Your order is on its way.</div>
     <div class="confirm-table" id="confirm-table"></div>
-    <div class="pending-courses" id="pending-courses-box" style="display:none">
-      <div class="pending-title" id="pending-title">Coming up next</div>
-      <div id="pending-list"></div>
+    <div class="coming-next-box" id="coming-next-box" style="display:none">
+      <div class="coming-next-title" id="coming-next-title">Coming up next</div>
+      <div id="coming-next-list"></div>
     </div>
   </div>
 </div>
 <script>
-var UI_TEXT = {
-  en: { viewOrder:'View order', sendBtn:'Send order to kitchen', notePlaceholder:'Any notes? (e.g. no onions, allergy info...)', total:'Total', orderTitle:'Your order', confirmTitle:'Order sent!', confirmSub:'Your order is on its way to the kitchen and bar.', upsellLabel:'goes well with', servingModeTitle:'How would you like your food?', modeAllLabel:'All at once', modeAllDesc:'Everything together', modeCoursesLabel:'By course', modeCoursesDesc:'Starters first, then mains', pendingTitle:'Coming up next', allDoneTitle:'All done!', allDoneSub:'Enjoy your meal!' },
-  da: { viewOrder:'Se bestilling', sendBtn:'Send bestilling til kokken', notePlaceholder:'Bemaerkninger? (fx ingen log...)', total:'I alt', orderTitle:'Din bestilling', confirmTitle:'Bestilling sendt!', confirmSub:'Din bestilling er pa vej til kokken og bar.', upsellLabel:'passer godt til', servingModeTitle:'Hvordan vil du have maden?', modeAllLabel:'Alt pa en gang', modeAllDesc:'Alt serveres sammen', modeCoursesLabel:'Kursvis', modeCoursesDesc:'Forretter forst, derefter hovedretter', pendingTitle:'Kommer naeste', allDoneTitle:'Alle kursus sendt!', allDoneSub:'Velbekomme!' },
-  de: { viewOrder:'Bestellung', sendBtn:'Bestellung senden', notePlaceholder:'Anmerkungen?', total:'Gesamt', orderTitle:'Ihre Bestellung', confirmTitle:'Bestellung gesendet!', confirmSub:'Ihre Bestellung ist auf dem Weg.', upsellLabel:'passt gut dazu', servingModeTitle:'Wie mochten Sie Ihr Essen?', modeAllLabel:'Alles auf einmal', modeAllDesc:'Alles zusammen', modeCoursesLabel:'Nach Gang', modeCoursesDesc:'Erst Vorspeise, dann Hauptgang', pendingTitle:'Als nachstes', allDoneTitle:'Alle Gange gesendet!', allDoneSub:'Guten Appetit!' },
-  fr: { viewOrder:'Voir la commande', sendBtn:'Envoyer la commande', notePlaceholder:'Remarques ?', total:'Total', orderTitle:'Votre commande', confirmTitle:'Commande envoyee!', confirmSub:'Votre commande est en route.', upsellLabel:'va bien avec', servingModeTitle:'Comment souhaitez-vous votre repas?', modeAllLabel:'Tout ensemble', modeAllDesc:'Tout en meme temps', modeCoursesLabel:'Par plat', modeCoursesDesc:'Entree puis plat', pendingTitle:'A venir', allDoneTitle:'Tous les plats envoyes!', allDoneSub:'Bon appetit!' },
-  el: { viewOrder:'Deite paraggelia', sendBtn:'Apostoli stin kouzina', notePlaceholder:'Simeiosis;', total:'Synolo', orderTitle:'I paraggelia sas', confirmTitle:'Stalthike!', confirmSub:'I paraggelia sas pigainei stin kouzina.', upsellLabel:'tairiazei me', servingModeTitle:'Pos thelete to fagito sas?', modeAllLabel:'Ola mazi', modeAllDesc:'Ola taytoxrona', modeCoursesLabel:'Ana seira', modeCoursesDesc:'Prota orektika, meta kyrios', pendingTitle:'Epomeno', allDoneTitle:'Oles oi seires staltikan!', allDoneSub:'Kali orexi!' },
-  sv: { viewOrder:'Visa bestallning', sendBtn:'Skicka bestallning', notePlaceholder:'Anteckningar?', total:'Totalt', orderTitle:'Din bestallning', confirmTitle:'Bestallning skickad!', confirmSub:'Din bestallning ar pa vag.', upsellLabel:'passar bra till', servingModeTitle:'Hur vill du ha din mat?', modeAllLabel:'Allt pa en gang', modeAllDesc:'Allt tillsammans', modeCoursesLabel:'Per kurs', modeCoursesDesc:'Forratt forst, sedan huvudratt', pendingTitle:'Kommer harnaest', allDoneTitle:'Alla kurser skickade!', allDoneSub:'Smaklig maltid!' },
-  no: { viewOrder:'Se bestilling', sendBtn:'Send bestilling', notePlaceholder:'Merknader?', total:'Totalt', orderTitle:'Din bestilling', confirmTitle:'Bestilling sendt!', confirmSub:'Din bestilling er pa vei.', upsellLabel:'passer godt til', servingModeTitle:'Hvordan vil du ha maten?', modeAllLabel:'Alt pa en gang', modeAllDesc:'Alt sammen', modeCoursesLabel:'Kursvis', modeCoursesDesc:'Forrett forst, deretter hovedrett', pendingTitle:'Kommer neste', allDoneTitle:'Alle kurs sendt!', allDoneSub:'Vaer sa god!' },
-  fi: { viewOrder:'Nayta tilaus', sendBtn:'Laheta tilaus keittioon', notePlaceholder:'Huomioita?', total:'Yhteensa', orderTitle:'Tilauksesi', confirmTitle:'Tilaus lahetetty!', confirmSub:'Tilauksesi on matkalla keittioon.', upsellLabel:'sopii hyvin kanssa', servingModeTitle:'Miten haluatte ruokanne?', modeAllLabel:'Kaikki kerralla', modeAllDesc:'Kaikki yhta aikaa', modeCoursesLabel:'Annoksittain', modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat', pendingTitle:'Seuraavaksi', allDoneTitle:'Kaikki annokset lahetetty!', allDoneSub:'Hyvaa ruokahalua!' }
+var UI_TEXT={
+  en:{viewOrder:'View order',sendBtn:'Send order to kitchen',notePlaceholder:'Any notes? (e.g. no onions, allergy info...)',total:'Total',orderTitle:'Your order',confirmTitle:'Order sent!',confirmSub:'Your order is on its way. The kitchen will serve each course when ready.',upsellLabel:'goes well with',servingModeTitle:'How would you like your food?',modeAllLabel:'All at once',modeAllDesc:'Everything together',modeCoursesLabel:'By course',modeCoursesDesc:'Starters first, then mains',comingNext:'Coming up next'},
+  da:{viewOrder:'Se bestilling',sendBtn:'Send bestilling til kokken',notePlaceholder:'Bemaerkninger?',total:'I alt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vej. Kokken serverer hvert kursus nar det er klar.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du have maden?',modeAllLabel:'Alt pa en gang',modeAllDesc:'Alt serveres sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forretter forst, derefter hovedretter',comingNext:'Kommer naeste'},
+  de:{viewOrder:'Bestellung',sendBtn:'Bestellung senden',notePlaceholder:'Anmerkungen?',total:'Gesamt',orderTitle:'Ihre Bestellung',confirmTitle:'Bestellung gesendet!',confirmSub:'Ihre Bestellung ist auf dem Weg.',upsellLabel:'passt gut dazu',servingModeTitle:'Wie mochten Sie Ihr Essen?',modeAllLabel:'Alles auf einmal',modeAllDesc:'Alles zusammen',modeCoursesLabel:'Nach Gang',modeCoursesDesc:'Erst Vorspeise, dann Hauptgang',comingNext:'Als nachstes'},
+  fr:{viewOrder:'Voir la commande',sendBtn:'Envoyer la commande',notePlaceholder:'Remarques?',total:'Total',orderTitle:'Votre commande',confirmTitle:'Commande envoyee!',confirmSub:'Votre commande est en route.',upsellLabel:'va bien avec',servingModeTitle:'Comment souhaitez-vous votre repas?',modeAllLabel:'Tout ensemble',modeAllDesc:'Tout en meme temps',modeCoursesLabel:'Par plat',modeCoursesDesc:'Entree puis plat',comingNext:'A venir'},
+  el:{viewOrder:'\u0394\u03b5\u03af\u03c4\u03b5 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1',sendBtn:'\u0391\u03c0\u03bf\u03c3\u03c4\u03bf\u03bb\u03ae \u03c3\u03c4\u03b7\u03bd \u03ba\u03bf\u03c5\u03b6\u03af\u03bd\u03b1',notePlaceholder:'\u03a3\u03b7\u03bc\u03b5\u03b9\u03ce\u03c3\u03b5\u03b9\u03c2;',total:'\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf',orderTitle:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2',confirmTitle:'\u0395\u03c3\u03c4\u03ac\u03bb\u03b7!',confirmSub:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2 \u03b5\u03af\u03bd\u03b1\u03b9 \u03ba\u03b1\u03c4\u03ac \u03c4\u03b7\u03bd \u03bf\u03b4\u03cc.',upsellLabel:'\u03c4\u03b1\u03b9\u03c1\u03b9\u03ac\u03b6\u03b5\u03b9 \u03bc\u03b5',servingModeTitle:'\u03a0\u03ce\u03c2 \u03b8\u03ad\u03bb\u03b5\u03c4\u03b5 \u03c4\u03bf \u03c6\u03b1\u03b3\u03b7\u03c4\u03cc \u03c3\u03b1\u03c2;',modeAllLabel:'\u038c\u03bb\u03b1 \u03bc\u03b1\u03b6\u03af',modeAllDesc:'\u038c\u03bb\u03b1 \u03c4\u03b1\u03c5\u03c4\u03cc\u03c7\u03c1\u03bf\u03bd\u03b1',modeCoursesLabel:'\u0391\u03bd\u03ac \u03c3\u03b5\u03b9\u03c1\u03ac',modeCoursesDesc:'\u03a0\u03c1\u03ce\u03c4\u03b1 \u03bf\u03c1\u03b5\u03ba\u03c4\u03b9\u03ba\u03ac, \u03bc\u03b5\u03c4\u03ac \u03ba\u03c5\u03c1\u03af\u03c9\u03c2',comingNext:'\u0395\u03c0\u03cc\u03bc\u03b5\u03bd\u03bf'},
+  sv:{viewOrder:'Visa bestallning',sendBtn:'Skicka bestallning',notePlaceholder:'Anteckningar?',total:'Totalt',orderTitle:'Din bestallning',confirmTitle:'Bestallning skickad!',confirmSub:'Din bestallning ar pa vag.',upsellLabel:'passar bra till',servingModeTitle:'Hur vill du ha din mat?',modeAllLabel:'Allt pa en gang',modeAllDesc:'Allt tillsammans',modeCoursesLabel:'Per kurs',modeCoursesDesc:'Forratt forst, sedan huvudratt',comingNext:'Kommer harnaest'},
+  no:{viewOrder:'Se bestilling',sendBtn:'Send bestilling',notePlaceholder:'Merknader?',total:'Totalt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vei.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du ha maten?',modeAllLabel:'Alt pa en gang',modeAllDesc:'Alt sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forrett forst, deretter hovedrett',comingNext:'Kommer neste'},
+  fi:{viewOrder:'Nayta tilaus',sendBtn:'Laheta tilaus keittioon',notePlaceholder:'Huomioita?',total:'Yhteensa',orderTitle:'Tilauksesi',confirmTitle:'Tilaus lahetetty!',confirmSub:'Tilauksesi on matkalla keittioon.',upsellLabel:'sopii hyvin kanssa',servingModeTitle:'Miten haluatte ruokanne?',modeAllLabel:'Kaikki kerralla',modeAllDesc:'Kaikki yhta aikaa',modeCoursesLabel:'Annoksittain',modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat',comingNext:'Seuraavaksi'}
 };
-
-// Hvilken originalCategory svarer til hvilken course-nøgle i databasen
-var CAT_TO_COURSE = {
-  'Starters': 'starters',
-  'Salads':   'salads',
-  'Mains':    'mains',
-  'Sides':    'sides',
-  'Desserts': 'dessert',
-  'Drinks':   'drinks'
+var CAT_TO_COURSE={'Starters':'starters','Salads':'salads','Mains':'mains','Sides':'sides','Desserts':'dessert','Drinks':'drinks'};
+var COURSE_ORDER=['Drinks','Starters','Mains','Sides','Salads','Desserts'];
+var COURSE_LABELS={
+  en:{Starters:'Starters',Salads:'Salads',Mains:'Mains',Sides:'Sides',Desserts:'Desserts',Drinks:'Drinks'},
+  da:{Starters:'Forretter',Salads:'Salater',Mains:'Hovedretter',Sides:'Tilbehor',Desserts:'Desserter',Drinks:'Drikkevarer'},
+  de:{Starters:'Vorspeisen',Salads:'Salate',Mains:'Hauptspeisen',Sides:'Beilagen',Desserts:'Desserts',Drinks:'Getranke'},
+  fr:{Starters:'Entrees',Salads:'Salades',Mains:'Plats',Sides:'Accompagnements',Desserts:'Desserts',Drinks:'Boissons'},
+  el:{Starters:'\u039f\u03c1\u03b5\u03ba\u03c4\u03b9\u03ba\u03ac',Salads:'\u03a3\u03b1\u03bb\u03ac\u03c4\u03b5\u03c2',Mains:'\u039a\u03c5\u03c1\u03af\u03c9\u03c2',Sides:'\u03a3\u03c5\u03bd\u03bf\u03b4\u03b5\u03c5\u03c4\u03b9\u03ba\u03ac',Desserts:'\u0395\u03c0\u03b9\u03b4\u03cc\u03c1\u03c0\u03b9\u03b1',Drinks:'\u03a0\u03bf\u03c4\u03ac'},
+  sv:{Starters:'Forreatter',Salads:'Sallader',Mains:'Huvudratter',Sides:'Tillbehor',Desserts:'Desserter',Drinks:'Drycker'},
+  no:{Starters:'Forretter',Salads:'Salater',Mains:'Hovedretter',Sides:'Tilbehor',Desserts:'Desserter',Drinks:'Drikkevarer'},
+  fi:{Starters:'Alkuruoat',Salads:'Salaatit',Mains:'Paaruoat',Sides:'Lisakkeet',Desserts:'Jalkiruoat',Drinks:'Juomat'}
 };
-
-var COURSE_ORDER = ['Starters','Mains','Sides','Salads','Desserts','Drinks'];
-var COURSE_LABELS = {
-  en: { Starters:'Starters', Salads:'Salads', Mains:'Mains', Sides:'Sides', Desserts:'Desserts', Drinks:'Drinks' },
-  da: { Starters:'Forretter', Salads:'Salater', Mains:'Hovedretter', Sides:'Tilbehor', Desserts:'Desserter', Drinks:'Drikkevarer' },
-  de: { Starters:'Vorspeisen', Salads:'Salate', Mains:'Hauptspeisen', Sides:'Beilagen', Desserts:'Desserts', Drinks:'Getranke' },
-  fr: { Starters:'Entrees', Salads:'Salades', Mains:'Plats', Sides:'Accompagnements', Desserts:'Desserts', Drinks:'Boissons' },
-  el: { Starters:'Orektika', Salads:'Salates', Mains:'Kyrios', Sides:'Synodeytika', Desserts:'Epidorpia', Drinks:'Pota' },
-  sv: { Starters:'Forreatter', Salads:'Sallader', Mains:'Huvudratter', Sides:'Tillbehor', Desserts:'Desserter', Drinks:'Drycker' },
-  no: { Starters:'Forretter', Salads:'Salater', Mains:'Hovedretter', Sides:'Tilbehor', Desserts:'Desserter', Drinks:'Drikkevarer' },
-  fi: { Starters:'Alkuruoat', Salads:'Salaatit', Mains:'Paaruoat', Sides:'Lisakkeet', Desserts:'Jalkiruoat', Drinks:'Juomat' }
-};
-var UPSELL_RULES = [
-  { match: ['tzatziki'],         suggest: ['Pita bread','Dolmades','Feta saganaki','House white wine','Mythos beer'] },
-  { match: ['taramosalata'],     suggest: ['Pita bread','Tzatziki','House white wine','Ouzo'] },
-  { match: ['melitzanosalata'],  suggest: ['Pita bread','Tzatziki','House white wine','Ouzo'] },
-  { match: ['hummus'],           suggest: ['Pita bread','Tzatziki','Spanakopita','House white wine'] },
-  { match: ['tirokafteri'],      suggest: ['Pita bread','Mythos beer','Ouzo','Fix beer'] },
-  { match: ['dolmades'],         suggest: ['Pita bread','Tzatziki','House white wine','Ouzo'] },
-  { match: ['saganaki'],         suggest: ['Pita bread','House white wine','Ouzo','Raki / Tsikoudia'] },
-  { match: ['spanakopita'],      suggest: ['Pita bread','Tzatziki','House white wine','Horiatiki'] },
-  { match: ['oktapodi'],         suggest: ['House white wine','Ouzo','Horiatiki','Sparkling water'] },
-  { match: ['gavros'],           suggest: ['Pita bread','House white wine','Ouzo','Sparkling water'] },
-  { match: ['dakos'],            suggest: ['House white wine','House rose wine','Tzatziki','Sparkling water'] },
-  { match: ['horiatiki','salad'],suggest: ['Pita bread','House white wine','House rose wine','Sparkling water'] },
-  { match: ['moussaka'],         suggest: ['Horiatiki','Greek fries','House red wine','Sparkling water'] },
-  { match: ['pastitsio'],        suggest: ['Horiatiki','House red wine','Greek fries','Sparkling water'] },
-  { match: ['stifado'],          suggest: ['House red wine','Bottle red wine','Roasted potatoes','Horiatiki'] },
-  { match: ['kleftiko'],         suggest: ['Bottle red wine','House red wine','Roasted potatoes','Horiatiki'] },
-  { match: ['souvlaki'],         suggest: ['Greek fries','Tzatziki','Mythos beer','Draft beer'] },
-  { match: ['gemista'],          suggest: ['Pita bread','House white wine','Horiatiki','Sparkling water'] },
-  { match: ['bream','bass'],     suggest: ['House white wine','Bottle white wine','Horiatiki','Sparkling water'] },
-  { match: ['prawn'],            suggest: ['House white wine','Ouzo','Horiatiki','Sparkling water'] },
-  { match: ['fries'],            suggest: ['Mythos beer','Draft beer','Cola','Tzatziki'] },
-  { match: ['baklava'],          suggest: ['Greek coffee','Freddo espresso','Metaxa 5 star','Raki / Tsikoudia'] },
-  { match: ['galaktoboureko'],   suggest: ['Greek coffee','Mountain tea','Metaxa 5 star'] },
-  { match: ['loukoumades'],      suggest: ['Greek coffee','Freddo espresso','Raki / Tsikoudia'] },
-  { match: ['bougatsa'],         suggest: ['Greek coffee','Cappuccino','Mountain tea'] },
-  { match: ['yogurt'],           suggest: ['Greek coffee','Mountain tea','Cappuccino'] }
+var UPSELL_RULES=[
+  {match:['tzatziki'],suggest:['Pita bread','Dolmades','Feta saganaki','House white wine','Mythos beer']},
+  {match:['taramosalata'],suggest:['Pita bread','Tzatziki','House white wine','Ouzo']},
+  {match:['melitzanosalata'],suggest:['Pita bread','Tzatziki','House white wine','Ouzo']},
+  {match:['hummus'],suggest:['Pita bread','Tzatziki','Spanakopita','House white wine']},
+  {match:['tirokafteri'],suggest:['Pita bread','Mythos beer','Ouzo','Fix beer']},
+  {match:['dolmades'],suggest:['Pita bread','Tzatziki','House white wine','Ouzo']},
+  {match:['saganaki'],suggest:['Pita bread','House white wine','Ouzo','Raki / Tsikoudia']},
+  {match:['spanakopita'],suggest:['Pita bread','Tzatziki','House white wine','Horiatiki']},
+  {match:['oktapodi'],suggest:['House white wine','Ouzo','Horiatiki','Sparkling water']},
+  {match:['gavros'],suggest:['Pita bread','House white wine','Ouzo','Sparkling water']},
+  {match:['dakos'],suggest:['House white wine','House rose wine','Tzatziki','Sparkling water']},
+  {match:['horiatiki','salad'],suggest:['Pita bread','House white wine','House rose wine','Sparkling water']},
+  {match:['moussaka'],suggest:['Horiatiki','Greek fries','House red wine','Sparkling water']},
+  {match:['pastitsio'],suggest:['Horiatiki','House red wine','Greek fries','Sparkling water']},
+  {match:['stifado'],suggest:['House red wine','Bottle red wine','Roasted potatoes','Horiatiki']},
+  {match:['kleftiko'],suggest:['Bottle red wine','House red wine','Roasted potatoes','Horiatiki']},
+  {match:['souvlaki'],suggest:['Greek fries','Tzatziki','Mythos beer','Draft beer']},
+  {match:['gemista'],suggest:['Pita bread','House white wine','Horiatiki','Sparkling water']},
+  {match:['bream','bass'],suggest:['House white wine','Bottle white wine','Horiatiki','Sparkling water']},
+  {match:['prawn'],suggest:['House white wine','Ouzo','Horiatiki','Sparkling water']},
+  {match:['fries'],suggest:['Mythos beer','Draft beer','Cola','Tzatziki']},
+  {match:['baklava'],suggest:['Greek coffee','Freddo espresso','Metaxa 5 star','Raki / Tsikoudia']},
+  {match:['galaktoboureko'],suggest:['Greek coffee','Mountain tea','Metaxa 5 star']},
+  {match:['loukoumades'],suggest:['Greek coffee','Freddo espresso','Raki / Tsikoudia']},
+  {match:['bougatsa'],suggest:['Greek coffee','Cappuccino','Mountain tea']},
+  {match:['yogurt'],suggest:['Greek coffee','Mountain tea','Cappuccino']}
 ];
-
 var allItems=[],categories=[],currentCat=0,cart={};
-var tableToken='',lang='en',restaurantSlug='',lastAddedId=null;
-var servingMode='all';
-
-function ui(k){return (UI_TEXT[lang]&&UI_TEXT[lang][k])||UI_TEXT.en[k];}
-
+var tableToken='',lang='en',restaurantSlug='',lastAddedId=null,servingMode='all';
+function ui(k){return(UI_TEXT[lang]&&UI_TEXT[lang][k])||UI_TEXT.en[k]||'';}
 function updateUITexts(){
   document.getElementById('cart-cta').textContent=ui('viewOrder');
   document.getElementById('send-btn').textContent=ui('sendBtn');
@@ -256,9 +242,7 @@ function updateUITexts(){
   document.getElementById('mode-all-desc').textContent=ui('modeAllDesc');
   document.getElementById('mode-courses-label').textContent=ui('modeCoursesLabel');
   document.getElementById('mode-courses-desc').textContent=ui('modeCoursesDesc');
-  document.getElementById('pending-title').textContent=ui('pendingTitle');
 }
-
 function setServingMode(mode){
   servingMode=mode;
   document.getElementById('mode-all').classList.toggle('active',mode==='all');
@@ -267,20 +251,17 @@ function setServingMode(mode){
   document.getElementById('course-items-view').style.display=mode==='courses'?'block':'none';
   if(mode==='courses')renderCourseGroups();
 }
-
 function loadMenu(){
   return fetch('/api/menu?restaurant='+restaurantSlug+'&lang='+lang)
     .then(function(r){return r.json();})
     .then(function(data){
       if(data.error)throw new Error(data.error);
-      allItems=data.items;
-      categories=[];
+      allItems=data.items;categories=[];
       allItems.forEach(function(i){if(categories.indexOf(i.category)===-1)categories.push(i.category);});
       document.getElementById('rest-name').textContent=data.restaurant.name;
       return data;
     });
 }
-
 function init(){
   var p=new URLSearchParams(window.location.search);
   restaurantSlug=p.get('restaurant')||'taverna-kriti';
@@ -294,50 +275,33 @@ function init(){
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('app-header').style.display='block';
     document.getElementById('menu-view').style.display='block';
-    var langCodes=['en','da','de','el','fr','sv','no','fi'];
-    document.querySelectorAll('.lang-btn').forEach(function(btn,i){
-      btn.classList.toggle('active',langCodes[i]===lang);
-    });
+    var codes=['en','da','de','el','fr','sv','no','fi'];
+    document.querySelectorAll('.lang-btn').forEach(function(b,i){b.classList.toggle('active',codes[i]===lang);});
     updateUITexts();renderCats();renderMenu();
-  }).catch(function(){
-    document.querySelector('.loading-text').textContent='Could not load menu.';
-  });
+  }).catch(function(){document.querySelector('.loading-text').textContent='Could not load menu.';});
 }
-
 function setLang(l){
   lang=l;
-  var langCodes=['en','da','de','el','fr','sv','no','fi'];
-  document.querySelectorAll('.lang-btn').forEach(function(btn,i){
-    btn.classList.toggle('active',langCodes[i]===l);
-  });
-  loadMenu().then(function(){
-    currentCat=0;updateUITexts();renderCats();renderMenu();updateCart();
-    if(lastAddedId)showUpsellFor(lastAddedId);
-  });
+  var codes=['en','da','de','el','fr','sv','no','fi'];
+  document.querySelectorAll('.lang-btn').forEach(function(b,i){b.classList.toggle('active',codes[i]===l);});
+  loadMenu().then(function(){currentCat=0;updateUITexts();renderCats();renderMenu();updateCart();if(lastAddedId)showUpsellFor(lastAddedId);});
 }
-
 function renderCats(){
   document.getElementById('cat-row').innerHTML=categories.map(function(c,i){
     return '<button class="cat-tab'+(i===currentCat?' active':'')+'" onclick="selectCat('+i+')">'+c+'</button>';
   }).join('');
 }
-
 function selectCat(i){currentCat=i;renderCats();renderMenu();if(lastAddedId)showUpsellFor(lastAddedId);}
-
 function renderMenu(){
   var items=allItems.filter(function(it){return it.category===categories[currentCat];});
   document.getElementById('menu-list').innerHTML=items.map(function(item){
     var qty=cart[item.id]?cart[item.id].qty:0;
-    var ctrl;
-    if(qty===0){
-      ctrl='<button class="add-btn" onclick="addItem(\''+item.id+'\')">+</button>';
-    } else {
-      ctrl='<div class="qty-ctrl"><button onclick="removeItem(\''+item.id+'\')">&#8722;</button><span class="qty-num">'+qty+'</span><button onclick="addItem(\''+item.id+'\')" style="background:var(--ink);color:white;border:none">+</button></div>';
-    }
+    var ctrl=qty===0
+      ?'<button class="add-btn" onclick="addItem(\''+item.id+'\')">+</button>'
+      :'<div class="qty-ctrl"><button onclick="removeItem(\''+item.id+'\')">&#8722;</button><span class="qty-num">'+qty+'</span><button onclick="addItem(\''+item.id+'\')" style="background:var(--ink);color:white;border:none">+</button></div>';
     return '<div class="menu-item"><div class="item-emoji">'+(item.emoji||'&#127869;&#65039;')+'</div><div class="item-body"><div class="item-name">'+item.name+'</div><div class="item-desc">'+(item.description||'')+'</div><div class="item-foot"><div class="item-price">&#8364;'+Number(item.price).toFixed(2)+'</div>'+ctrl+'</div></div></div>';
   }).join('');
 }
-
 function groupCartByCourse(){
   var groups={};
   Object.values(cart).forEach(function(item){
@@ -345,9 +309,8 @@ function groupCartByCourse(){
     if(!groups[cat])groups[cat]=[];
     groups[cat].push(item);
   });
-  return COURSE_ORDER.filter(function(c){return groups[c];}).map(function(c){return {category:c,items:groups[c]};});
+  return COURSE_ORDER.filter(function(c){return groups[c];}).map(function(c){return{category:c,items:groups[c]};});
 }
-
 function renderCourseGroups(){
   var groups=groupCartByCourse();
   var labels=COURSE_LABELS[lang]||COURSE_LABELS.en;
@@ -356,29 +319,23 @@ function renderCourseGroups(){
     var rows=group.items.map(function(item){
       return '<div class="course-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="course-row-name">'+item.name+'</span><span class="course-row-qty">x'+item.qty+'</span><span class="course-row-price">&#8364;'+(item.price*item.qty).toFixed(2)+'</span></div>';
     }).join('');
-    return '<div class="course-group"><div class="course-header"><span class="course-name">'+(labels[group.category]||group.category)+'</span><span class="course-badge">&#8364;'+total.toFixed(2)+'</span></div><div class="course-items">'+rows+'</div></div>';
+    return '<div class="course-group"><div class="course-header-row"><span class="course-name">'+(labels[group.category]||group.category)+'</span><span class="course-badge">&#8364;'+total.toFixed(2)+'</span></div><div class="course-items">'+rows+'</div></div>';
   }).join('');
 }
-
 function getUpsellsForItem(item){
   var n=(item.originalName||item.name).toLowerCase();
   var names=[];
   for(var r=0;r<UPSELL_RULES.length;r++){
-    if(UPSELL_RULES[r].match.some(function(m){return n.indexOf(m)!==-1;})){
-      names=UPSELL_RULES[r].suggest;break;
-    }
+    if(UPSELL_RULES[r].match.some(function(m){return n.indexOf(m)!==-1;})){names=UPSELL_RULES[r].suggest;break;}
   }
   if(!names.length)names=['Mythos beer','House white wine','Cola','Sparkling water'];
-  var s=names.map(function(engName){
-    return allItems.find(function(i){return (i.originalName||i.name)===engName&&!cart[i.id];});
-  }).filter(Boolean);
+  var s=names.map(function(eng){return allItems.find(function(i){return(i.originalName||i.name)===eng&&!cart[i.id];});}).filter(Boolean);
   if(s.length<2){
     var ex=allItems.filter(function(i){return i.id!==item.id&&!cart[i.id]&&!s.find(function(x){return x.id===i.id;})&&i.category!==item.category;});
     s=s.concat(ex.filter(function(i){return i.station==='bar';}).slice(0,2)).concat(ex.filter(function(i){return i.station==='kitchen';}).slice(0,1));
   }
   return s.slice(0,3);
 }
-
 function showUpsellFor(itemId){
   var item=allItems.find(function(i){return i.id===itemId;});
   if(!item)return;
@@ -391,21 +348,14 @@ function showUpsellFor(itemId){
     return '<div class="upsell-chip" onclick="addItem(\''+x.id+'\')">'+(x.emoji||'&#127869;&#65039;')+' '+x.name+' +&#8364;'+Number(x.price).toFixed(2)+'</div>';
   }).join('');
 }
-
 function addItem(id){
   var item=allItems.find(function(i){return i.id===id;});
   if(!item)return;
   if(!cart[id])cart[id]=Object.assign({},item,{qty:0});
   cart[id].qty++;lastAddedId=id;
   renderMenu();updateCart();showUpsellFor(id);
-  setTimeout(function(){
-    var bar=document.getElementById('upsell-bar');
-    if(bar&&bar.classList.contains('visible')){
-      bar.scrollIntoView({behavior:'smooth',block:'start'});
-    }
-  },100);
+  setTimeout(function(){var bar=document.getElementById('upsell-bar');if(bar&&bar.classList.contains('visible')){bar.scrollIntoView({behavior:'smooth',block:'start'});}},100);
 }
-
 function removeItem(id){
   if(!cart[id])return;
   cart[id].qty--;
@@ -414,7 +364,6 @@ function removeItem(id){
   if(!Object.keys(cart).length){document.getElementById('upsell-bar').classList.remove('visible');lastAddedId=null;}
   else if(lastAddedId)showUpsellFor(lastAddedId);
 }
-
 function updateCart(){
   var e=Object.values(cart);
   var total=e.reduce(function(s,i){return s+i.price*i.qty;},0);
@@ -423,7 +372,6 @@ function updateCart(){
   document.getElementById('cart-count-label').textContent=count+' item'+(count!==1?'s':'');
   document.getElementById('cart-total-label').textContent='&#8364;'+total.toFixed(2);
 }
-
 function showOrder(){
   document.getElementById('menu-view').style.display='none';
   document.getElementById('order-view').classList.add('visible');
@@ -435,68 +383,45 @@ function showOrder(){
   document.getElementById('order-total-val').textContent='&#8364;'+total.toFixed(2);
   if(servingMode==='courses')renderCourseGroups();
 }
-
 function showMenu(){
   document.getElementById('menu-view').style.display='block';
   document.getElementById('order-view').classList.remove('visible');
 }
-
 function sendOrder(){
   var note=document.getElementById('order-note').value.trim();
   var total=Object.values(cart).reduce(function(s,i){return s+i.price*i.qty;},0);
   var flowType=servingMode==='courses'?'sequential':'all_at_once';
-
-  // Byg linjer med course felt
   var lines=Object.values(cart).map(function(i){
     var cat=i.originalCategory||i.category;
-    return {
-      item_id:  i.id,
-      name:     i.originalName||i.name,
-      qty:      i.qty,
-      price:    i.price,
-      station:  i.station,
-      course:   CAT_TO_COURSE[cat]||'mains'
-    };
+    return{item_id:i.id,name:i.originalName||i.name,qty:i.qty,price:i.price,station:i.station,course:CAT_TO_COURSE[cat]||'mains'};
   });
-
   fetch('/api/orders',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      tableToken: tableToken,
-      note:       note,
-      total:      total,
-      lines:      lines,
-      flowType:   flowType
-    })
-  })
-  .then(function(r){return r.json();})
-  .then(function(data){
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({tableToken:tableToken,note:note,total:total,lines:lines,flowType:flowType})
+  }).then(function(r){return r.json();}).then(function(data){
     if(data.success){
       document.getElementById('order-view').classList.remove('visible');
+      document.getElementById('menu-view').style.display='none';
       document.getElementById('confirm-view').classList.add('visible');
       document.getElementById('confirm-title').textContent=ui('confirmTitle');
       document.getElementById('confirm-sub').textContent=ui('confirmSub');
-
-      // Vis hvilke kurser der kommer automatisk
       if(flowType==='sequential'){
         var labels=COURSE_LABELS[lang]||COURSE_LABELS.en;
-        var groups=groupCartByCourse();
-        var later=groups.slice(1); // første er drikkevarer, resten kommer automatisk
+        var later=groupCartByCourse().slice(1);
         if(later.length){
-          document.getElementById('pending-courses-box').style.display='block';
-          document.getElementById('pending-list').innerHTML=later.map(function(g){
-            return '<div class="pending-item">&#8226; '+(labels[g.category]||g.category)+'</div>';
+          document.getElementById('coming-next-box').style.display='block';
+          document.getElementById('coming-next-title').textContent=ui('comingNext');
+          document.getElementById('coming-next-list').innerHTML=later.map(function(g){
+            return '<div class="coming-next-item">&#8226; '+(labels[g.category]||g.category)+'</div>';
           }).join('');
         }
       }
       cart={};
     }
-  })
-  .catch(function(){alert('Could not send order. Please try again.');});
+  }).catch(function(){alert('Could not send order. Please try again.');});
 }
-
 init();
 </script>
 </body>
 </html>
+
