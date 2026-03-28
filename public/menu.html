@@ -91,7 +91,6 @@
     .confirm-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--ink); }
     .confirm-sub { font-size: 14px; color: var(--muted); line-height: 1.6; }
     .confirm-table { font-size: 13px; color: var(--accent); font-weight: 500; }
-    .next-course-btn { width: 100%; padding: 14px; background: var(--green); color: white; border: none; border-radius: 14px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; margin-top: 12px; }
     .pending-courses { background: #EBF5EF; border: 1px solid rgba(45,122,79,0.2); border-radius: 12px; padding: 12px 14px; width: 100%; }
     .pending-title { font-size: 11px; font-weight: 500; color: var(--green); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
     .pending-item { font-size: 13px; color: var(--ink); }
@@ -171,26 +170,34 @@
     <div class="confirm-title" id="confirm-title">Order sent!</div>
     <div class="confirm-sub" id="confirm-sub">Your order is on its way.</div>
     <div class="confirm-table" id="confirm-table"></div>
-    <div id="next-course-section" style="display:none; width:100%; margin-top:16px;">
-      <div class="pending-courses">
-        <div class="pending-title" id="pending-title">Coming up next</div>
-        <div id="pending-list"></div>
-      </div>
-      <button class="next-course-btn" id="next-course-btn" onclick="sendNextCourse()">Send next course</button>
+    <div class="pending-courses" id="pending-courses-box" style="display:none">
+      <div class="pending-title" id="pending-title">Coming up next</div>
+      <div id="pending-list"></div>
     </div>
   </div>
 </div>
 <script>
 var UI_TEXT = {
-  en: { viewOrder:'View order', sendBtn:'Send order to kitchen', notePlaceholder:'Any notes? (e.g. no onions, allergy info...)', total:'Total', orderTitle:'Your order', confirmTitle:'Order sent!', confirmSub:'Your order is on its way to the kitchen and bar.', upsellLabel:'goes well with', servingModeTitle:'How would you like your food?', modeAllLabel:'All at once', modeAllDesc:'Everything together', modeCoursesLabel:'By course', modeCoursesDesc:'Starters first, then mains', pendingTitle:'Coming up next', nextCourseBtn:'Send next course', allDoneTitle:'All courses sent!', allDoneSub:'Enjoy your meal!' },
-  da: { viewOrder:'Se bestilling', sendBtn:'Send bestilling til kokkenet', notePlaceholder:'Bemaerkninger? (fx ingen log...)', total:'I alt', orderTitle:'Din bestilling', confirmTitle:'Bestilling sendt!', confirmSub:'Din bestilling er pa vej til kokken og bar.', upsellLabel:'passer godt til', servingModeTitle:'Hvordan vil du have maden?', modeAllLabel:'Alt pa en gang', modeAllDesc:'Alt serveres sammen', modeCoursesLabel:'Kursvis', modeCoursesDesc:'Forretter forst, derefter hovedretter', pendingTitle:'Kommer naeste', nextCourseBtn:'Send naeste kursus', allDoneTitle:'Alle kursus sendt!', allDoneSub:'Velbekomme!' },
-  de: { viewOrder:'Bestellung', sendBtn:'Bestellung senden', notePlaceholder:'Anmerkungen?', total:'Gesamt', orderTitle:'Ihre Bestellung', confirmTitle:'Bestellung gesendet!', confirmSub:'Ihre Bestellung ist auf dem Weg.', upsellLabel:'passt gut dazu', servingModeTitle:'Wie mochten Sie Ihr Essen?', modeAllLabel:'Alles auf einmal', modeAllDesc:'Alles zusammen', modeCoursesLabel:'Nach Gang', modeCoursesDesc:'Erst Vorspeise, dann Hauptgang', pendingTitle:'Als nachstes', nextCourseBtn:'Nachsten Gang senden', allDoneTitle:'Alle Gange gesendet!', allDoneSub:'Guten Appetit!' },
-  fr: { viewOrder:'Voir la commande', sendBtn:'Envoyer la commande', notePlaceholder:'Remarques ?', total:'Total', orderTitle:'Votre commande', confirmTitle:'Commande envoyee!', confirmSub:'Votre commande est en route.', upsellLabel:'va bien avec', servingModeTitle:'Comment souhaitez-vous votre repas?', modeAllLabel:'Tout ensemble', modeAllDesc:'Tout en meme temps', modeCoursesLabel:'Par plat', modeCoursesDesc:'Entree puis plat', pendingTitle:'A venir', nextCourseBtn:'Envoyer le prochain plat', allDoneTitle:'Tous les plats envoyes!', allDoneSub:'Bon appetit!' },
-  el: { viewOrder:'Deite paraggelia', sendBtn:'Apostoli stin kouzina', notePlaceholder:'Simeiosis;', total:'Synolo', orderTitle:'I paraggelia sas', confirmTitle:'Stalthike!', confirmSub:'I paraggelia sas pigainei stin kouzina.', upsellLabel:'tairiazei me', servingModeTitle:'Pos thelete to fagito sas?', modeAllLabel:'Ola mazi', modeAllDesc:'Ola taytoxrona', modeCoursesLabel:'Ana seira', modeCoursesDesc:'Prota orektika, meta kyrios', pendingTitle:'Epomeno', nextCourseBtn:'Apostoli epomenis seiras', allDoneTitle:'Oles oi seires staltikan!', allDoneSub:'Kali orexi!' },
-  sv: { viewOrder:'Visa bestallning', sendBtn:'Skicka bestallning', notePlaceholder:'Anteckningar?', total:'Totalt', orderTitle:'Din bestallning', confirmTitle:'Bestallning skickad!', confirmSub:'Din bestallning ar pa vag.', upsellLabel:'passar bra till', servingModeTitle:'Hur vill du ha din mat?', modeAllLabel:'Allt pa en gang', modeAllDesc:'Allt tillsammans', modeCoursesLabel:'Per kurs', modeCoursesDesc:'Forratt forst, sedan huvudratt', pendingTitle:'Kommer harnaest', nextCourseBtn:'Skicka nasta kurs', allDoneTitle:'Alla kurser skickade!', allDoneSub:'Smaklig maltid!' },
-  no: { viewOrder:'Se bestilling', sendBtn:'Send bestilling', notePlaceholder:'Merknader?', total:'Totalt', orderTitle:'Din bestilling', confirmTitle:'Bestilling sendt!', confirmSub:'Din bestilling er pa vei.', upsellLabel:'passer godt til', servingModeTitle:'Hvordan vil du ha maten?', modeAllLabel:'Alt pa en gang', modeAllDesc:'Alt sammen', modeCoursesLabel:'Kursvis', modeCoursesDesc:'Forrett forst, deretter hovedrett', pendingTitle:'Kommer neste', nextCourseBtn:'Send neste kurs', allDoneTitle:'Alle kurs sendt!', allDoneSub:'Vaer sa god!' },
-  fi: { viewOrder:'Nayta tilaus', sendBtn:'Laheta tilaus keittioon', notePlaceholder:'Huomioita?', total:'Yhteensa', orderTitle:'Tilauksesi', confirmTitle:'Tilaus lahetetty!', confirmSub:'Tilauksesi on matkalla keittioon.', upsellLabel:'sopii hyvin kanssa', servingModeTitle:'Miten haluatte ruokanne?', modeAllLabel:'Kaikki kerralla', modeAllDesc:'Kaikki yhta aikaa', modeCoursesLabel:'Annoksittain', modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat', pendingTitle:'Seuraavaksi', nextCourseBtn:'Laheta seuraava annos', allDoneTitle:'Kaikki annokset lahetetty!', allDoneSub:'Hyvaa ruokahalua!' }
+  en: { viewOrder:'View order', sendBtn:'Send order to kitchen', notePlaceholder:'Any notes? (e.g. no onions, allergy info...)', total:'Total', orderTitle:'Your order', confirmTitle:'Order sent!', confirmSub:'Your order is on its way to the kitchen and bar.', upsellLabel:'goes well with', servingModeTitle:'How would you like your food?', modeAllLabel:'All at once', modeAllDesc:'Everything together', modeCoursesLabel:'By course', modeCoursesDesc:'Starters first, then mains', pendingTitle:'Coming up next', allDoneTitle:'All done!', allDoneSub:'Enjoy your meal!' },
+  da: { viewOrder:'Se bestilling', sendBtn:'Send bestilling til kokken', notePlaceholder:'Bemaerkninger? (fx ingen log...)', total:'I alt', orderTitle:'Din bestilling', confirmTitle:'Bestilling sendt!', confirmSub:'Din bestilling er pa vej til kokken og bar.', upsellLabel:'passer godt til', servingModeTitle:'Hvordan vil du have maden?', modeAllLabel:'Alt pa en gang', modeAllDesc:'Alt serveres sammen', modeCoursesLabel:'Kursvis', modeCoursesDesc:'Forretter forst, derefter hovedretter', pendingTitle:'Kommer naeste', allDoneTitle:'Alle kursus sendt!', allDoneSub:'Velbekomme!' },
+  de: { viewOrder:'Bestellung', sendBtn:'Bestellung senden', notePlaceholder:'Anmerkungen?', total:'Gesamt', orderTitle:'Ihre Bestellung', confirmTitle:'Bestellung gesendet!', confirmSub:'Ihre Bestellung ist auf dem Weg.', upsellLabel:'passt gut dazu', servingModeTitle:'Wie mochten Sie Ihr Essen?', modeAllLabel:'Alles auf einmal', modeAllDesc:'Alles zusammen', modeCoursesLabel:'Nach Gang', modeCoursesDesc:'Erst Vorspeise, dann Hauptgang', pendingTitle:'Als nachstes', allDoneTitle:'Alle Gange gesendet!', allDoneSub:'Guten Appetit!' },
+  fr: { viewOrder:'Voir la commande', sendBtn:'Envoyer la commande', notePlaceholder:'Remarques ?', total:'Total', orderTitle:'Votre commande', confirmTitle:'Commande envoyee!', confirmSub:'Votre commande est en route.', upsellLabel:'va bien avec', servingModeTitle:'Comment souhaitez-vous votre repas?', modeAllLabel:'Tout ensemble', modeAllDesc:'Tout en meme temps', modeCoursesLabel:'Par plat', modeCoursesDesc:'Entree puis plat', pendingTitle:'A venir', allDoneTitle:'Tous les plats envoyes!', allDoneSub:'Bon appetit!' },
+  el: { viewOrder:'Deite paraggelia', sendBtn:'Apostoli stin kouzina', notePlaceholder:'Simeiosis;', total:'Synolo', orderTitle:'I paraggelia sas', confirmTitle:'Stalthike!', confirmSub:'I paraggelia sas pigainei stin kouzina.', upsellLabel:'tairiazei me', servingModeTitle:'Pos thelete to fagito sas?', modeAllLabel:'Ola mazi', modeAllDesc:'Ola taytoxrona', modeCoursesLabel:'Ana seira', modeCoursesDesc:'Prota orektika, meta kyrios', pendingTitle:'Epomeno', allDoneTitle:'Oles oi seires staltikan!', allDoneSub:'Kali orexi!' },
+  sv: { viewOrder:'Visa bestallning', sendBtn:'Skicka bestallning', notePlaceholder:'Anteckningar?', total:'Totalt', orderTitle:'Din bestallning', confirmTitle:'Bestallning skickad!', confirmSub:'Din bestallning ar pa vag.', upsellLabel:'passar bra till', servingModeTitle:'Hur vill du ha din mat?', modeAllLabel:'Allt pa en gang', modeAllDesc:'Allt tillsammans', modeCoursesLabel:'Per kurs', modeCoursesDesc:'Forratt forst, sedan huvudratt', pendingTitle:'Kommer harnaest', allDoneTitle:'Alla kurser skickade!', allDoneSub:'Smaklig maltid!' },
+  no: { viewOrder:'Se bestilling', sendBtn:'Send bestilling', notePlaceholder:'Merknader?', total:'Totalt', orderTitle:'Din bestilling', confirmTitle:'Bestilling sendt!', confirmSub:'Din bestilling er pa vei.', upsellLabel:'passer godt til', servingModeTitle:'Hvordan vil du ha maten?', modeAllLabel:'Alt pa en gang', modeAllDesc:'Alt sammen', modeCoursesLabel:'Kursvis', modeCoursesDesc:'Forrett forst, deretter hovedrett', pendingTitle:'Kommer neste', allDoneTitle:'Alle kurs sendt!', allDoneSub:'Vaer sa god!' },
+  fi: { viewOrder:'Nayta tilaus', sendBtn:'Laheta tilaus keittioon', notePlaceholder:'Huomioita?', total:'Yhteensa', orderTitle:'Tilauksesi', confirmTitle:'Tilaus lahetetty!', confirmSub:'Tilauksesi on matkalla keittioon.', upsellLabel:'sopii hyvin kanssa', servingModeTitle:'Miten haluatte ruokanne?', modeAllLabel:'Kaikki kerralla', modeAllDesc:'Kaikki yhta aikaa', modeCoursesLabel:'Annoksittain', modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat', pendingTitle:'Seuraavaksi', allDoneTitle:'Kaikki annokset lahetetty!', allDoneSub:'Hyvaa ruokahalua!' }
 };
+
+// Hvilken originalCategory svarer til hvilken course-nøgle i databasen
+var CAT_TO_COURSE = {
+  'Starters': 'starters',
+  'Salads':   'salads',
+  'Mains':    'mains',
+  'Sides':    'sides',
+  'Desserts': 'dessert',
+  'Drinks':   'drinks'
+};
+
 var COURSE_ORDER = ['Starters','Mains','Sides','Salads','Desserts','Drinks'];
 var COURSE_LABELS = {
   en: { Starters:'Starters', Salads:'Salads', Mains:'Mains', Sides:'Sides', Desserts:'Desserts', Drinks:'Drinks' },
@@ -230,10 +237,13 @@ var UPSELL_RULES = [
   { match: ['bougatsa'],         suggest: ['Greek coffee','Cappuccino','Mountain tea'] },
   { match: ['yogurt'],           suggest: ['Greek coffee','Mountain tea','Cappuccino'] }
 ];
+
 var allItems=[],categories=[],currentCat=0,cart={};
 var tableToken='',lang='en',restaurantSlug='',lastAddedId=null;
-var servingMode='all',pendingCourses=[],sentCourses=[];
+var servingMode='all';
+
 function ui(k){return (UI_TEXT[lang]&&UI_TEXT[lang][k])||UI_TEXT.en[k];}
+
 function updateUITexts(){
   document.getElementById('cart-cta').textContent=ui('viewOrder');
   document.getElementById('send-btn').textContent=ui('sendBtn');
@@ -247,8 +257,8 @@ function updateUITexts(){
   document.getElementById('mode-courses-label').textContent=ui('modeCoursesLabel');
   document.getElementById('mode-courses-desc').textContent=ui('modeCoursesDesc');
   document.getElementById('pending-title').textContent=ui('pendingTitle');
-  document.getElementById('next-course-btn').textContent=ui('nextCourseBtn');
 }
+
 function setServingMode(mode){
   servingMode=mode;
   document.getElementById('mode-all').classList.toggle('active',mode==='all');
@@ -257,6 +267,7 @@ function setServingMode(mode){
   document.getElementById('course-items-view').style.display=mode==='courses'?'block':'none';
   if(mode==='courses')renderCourseGroups();
 }
+
 function loadMenu(){
   return fetch('/api/menu?restaurant='+restaurantSlug+'&lang='+lang)
     .then(function(r){return r.json();})
@@ -269,6 +280,7 @@ function loadMenu(){
       return data;
     });
 }
+
 function init(){
   var p=new URLSearchParams(window.location.search);
   restaurantSlug=p.get('restaurant')||'taverna-kriti';
@@ -291,6 +303,7 @@ function init(){
     document.querySelector('.loading-text').textContent='Could not load menu.';
   });
 }
+
 function setLang(l){
   lang=l;
   var langCodes=['en','da','de','el','fr','sv','no','fi'];
@@ -302,12 +315,15 @@ function setLang(l){
     if(lastAddedId)showUpsellFor(lastAddedId);
   });
 }
+
 function renderCats(){
   document.getElementById('cat-row').innerHTML=categories.map(function(c,i){
     return '<button class="cat-tab'+(i===currentCat?' active':'')+'" onclick="selectCat('+i+')">'+c+'</button>';
   }).join('');
 }
+
 function selectCat(i){currentCat=i;renderCats();renderMenu();if(lastAddedId)showUpsellFor(lastAddedId);}
+
 function renderMenu(){
   var items=allItems.filter(function(it){return it.category===categories[currentCat];});
   document.getElementById('menu-list').innerHTML=items.map(function(item){
@@ -318,9 +334,10 @@ function renderMenu(){
     } else {
       ctrl='<div class="qty-ctrl"><button onclick="removeItem(\''+item.id+'\')">&#8722;</button><span class="qty-num">'+qty+'</span><button onclick="addItem(\''+item.id+'\')" style="background:var(--ink);color:white;border:none">+</button></div>';
     }
-    return '<div class="menu-item"><div class="item-emoji">'+(item.emoji||'&#127869;&#65039;')+'</div><div class="item-body"><div class="item-name">'+item.name+'</div><div class="item-desc">'+(item.description||'')+'</div><div class="item-foot"><div class="item-price">€'+Number(item.price).toFixed(2)+'</div>'+ctrl+'</div></div></div>';
+    return '<div class="menu-item"><div class="item-emoji">'+(item.emoji||'&#127869;&#65039;')+'</div><div class="item-body"><div class="item-name">'+item.name+'</div><div class="item-desc">'+(item.description||'')+'</div><div class="item-foot"><div class="item-price">&#8364;'+Number(item.price).toFixed(2)+'</div>'+ctrl+'</div></div></div>';
   }).join('');
 }
+
 function groupCartByCourse(){
   var groups={};
   Object.values(cart).forEach(function(item){
@@ -330,17 +347,19 @@ function groupCartByCourse(){
   });
   return COURSE_ORDER.filter(function(c){return groups[c];}).map(function(c){return {category:c,items:groups[c]};});
 }
+
 function renderCourseGroups(){
   var groups=groupCartByCourse();
   var labels=COURSE_LABELS[lang]||COURSE_LABELS.en;
   document.getElementById('course-groups').innerHTML=groups.map(function(group){
     var total=group.items.reduce(function(s,i){return s+i.price*i.qty;},0);
     var rows=group.items.map(function(item){
-      return '<div class="course-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="course-row-name">'+item.name+'</span><span class="course-row-qty">x'+item.qty+'</span><span class="course-row-price">€'+(item.price*item.qty).toFixed(2)+'</span></div>';
+      return '<div class="course-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="course-row-name">'+item.name+'</span><span class="course-row-qty">x'+item.qty+'</span><span class="course-row-price">&#8364;'+(item.price*item.qty).toFixed(2)+'</span></div>';
     }).join('');
-    return '<div class="course-group"><div class="course-header"><span class="course-name">'+(labels[group.category]||group.category)+'</span><span class="course-badge">€'+total.toFixed(2)+'</span></div><div class="course-items">'+rows+'</div></div>';
+    return '<div class="course-group"><div class="course-header"><span class="course-name">'+(labels[group.category]||group.category)+'</span><span class="course-badge">&#8364;'+total.toFixed(2)+'</span></div><div class="course-items">'+rows+'</div></div>';
   }).join('');
 }
+
 function getUpsellsForItem(item){
   var n=(item.originalName||item.name).toLowerCase();
   var names=[];
@@ -359,6 +378,7 @@ function getUpsellsForItem(item){
   }
   return s.slice(0,3);
 }
+
 function showUpsellFor(itemId){
   var item=allItems.find(function(i){return i.id===itemId;});
   if(!item)return;
@@ -368,9 +388,10 @@ function showUpsellFor(itemId){
   document.getElementById('upsell-item-name').textContent=item.name;
   bar.classList.add('visible');
   document.getElementById('upsell-chips').innerHTML=s.map(function(x){
-    return '<div class="upsell-chip" onclick="addItem(\''+x.id+'\')">'+(x.emoji||'&#127869;&#65039;')+' '+x.name+' +€'+Number(x.price).toFixed(2)+'</div>';
+    return '<div class="upsell-chip" onclick="addItem(\''+x.id+'\')">'+(x.emoji||'&#127869;&#65039;')+' '+x.name+' +&#8364;'+Number(x.price).toFixed(2)+'</div>';
   }).join('');
 }
+
 function addItem(id){
   var item=allItems.find(function(i){return i.id===id;});
   if(!item)return;
@@ -384,6 +405,7 @@ function addItem(id){
     }
   },100);
 }
+
 function removeItem(id){
   if(!cart[id])return;
   cart[id].qty--;
@@ -392,82 +414,89 @@ function removeItem(id){
   if(!Object.keys(cart).length){document.getElementById('upsell-bar').classList.remove('visible');lastAddedId=null;}
   else if(lastAddedId)showUpsellFor(lastAddedId);
 }
+
 function updateCart(){
   var e=Object.values(cart);
   var total=e.reduce(function(s,i){return s+i.price*i.qty;},0);
   var count=e.reduce(function(s,i){return s+i.qty;},0);
   document.getElementById('cart-bar').classList.toggle('visible',count>0);
   document.getElementById('cart-count-label').textContent=count+' item'+(count!==1?'s':'');
-  document.getElementById('cart-total-label').textContent='€'+total.toFixed(2);
+  document.getElementById('cart-total-label').textContent='&#8364;'+total.toFixed(2);
 }
+
 function showOrder(){
   document.getElementById('menu-view').style.display='none';
   document.getElementById('order-view').classList.add('visible');
   var e=Object.values(cart);
   var total=e.reduce(function(s,i){return s+i.price*i.qty;},0);
   document.getElementById('order-items-list').innerHTML=e.map(function(item){
-    return '<div class="order-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="order-row-name">'+item.name+'</span><span class="order-row-qty">x'+item.qty+'</span><span class="order-row-price">€'+(item.price*item.qty).toFixed(2)+'</span></div>';
+    return '<div class="order-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="order-row-name">'+item.name+'</span><span class="order-row-qty">x'+item.qty+'</span><span class="order-row-price">&#8364;'+(item.price*item.qty).toFixed(2)+'</span></div>';
   }).join('');
-  document.getElementById('order-total-val').textContent='€'+total.toFixed(2);
+  document.getElementById('order-total-val').textContent='&#8364;'+total.toFixed(2);
   if(servingMode==='courses')renderCourseGroups();
 }
+
 function showMenu(){
   document.getElementById('menu-view').style.display='block';
   document.getElementById('order-view').classList.remove('visible');
 }
-function postOrder(lines,note){
-  var total=lines.reduce(function(s,l){return s+l.price*l.qty;},0);
-  return fetch('/api/orders',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({tableToken:tableToken,note:note,total:total,lines:lines})
-  }).then(function(r){return r.json();});
-}
+
 function sendOrder(){
   var note=document.getElementById('order-note').value.trim();
-  if(servingMode==='all'){
-    var lines=Object.values(cart).map(function(i){return {itemId:i.id,name:i.name,qty:i.qty,price:i.price,station:i.station};});
-    postOrder(lines,note).then(function(data){
-      if(data.success){showConfirm(false);cart={};}
-    }).catch(function(){alert('Could not send order. Please try again.');});
-  } else {
-    pendingCourses=groupCartByCourse();
-    sendNextCourse(note);
-  }
-}
-function sendNextCourse(note){
-  if(!pendingCourses.length)return;
-  var course=pendingCourses.shift();
-  sentCourses.push(course);
-  var lines=course.items.map(function(i){return {itemId:i.id,name:i.name,qty:i.qty,price:i.price,station:i.station};});
-  postOrder(lines,note||'').then(function(data){
-    if(data.success){
-      var labels=COURSE_LABELS[lang]||COURSE_LABELS.en;
-      document.getElementById('order-view').classList.remove('visible');
-      if(pendingCourses.length>0){
-        showConfirm(true);
-        document.getElementById('confirm-title').textContent=(labels[course.category]||course.category)+' sent! &#10003;';
-        document.getElementById('confirm-sub').textContent=ui('confirmSub');
-        document.getElementById('pending-list').innerHTML=pendingCourses.map(function(g){
-          return '<div class="pending-item">&#8226; '+(labels[g.category]||g.category)+' ('+g.items.reduce(function(s,i){return s+i.qty;},0)+' items)</div>';
-        }).join('');
-      } else {
-        showConfirm(false);
-        document.getElementById('confirm-title').textContent=ui('allDoneTitle');
-        document.getElementById('confirm-sub').textContent=ui('allDoneSub');
-        cart={};pendingCourses=[];
-      }
-    }
+  var total=Object.values(cart).reduce(function(s,i){return s+i.price*i.qty;},0);
+  var flowType=servingMode==='courses'?'sequential':'all_at_once';
+
+  // Byg linjer med course felt
+  var lines=Object.values(cart).map(function(i){
+    var cat=i.originalCategory||i.category;
+    return {
+      item_id:  i.id,
+      name:     i.originalName||i.name,
+      qty:      i.qty,
+      price:    i.price,
+      station:  i.station,
+      course:   CAT_TO_COURSE[cat]||'mains'
+    };
   });
+
+  fetch('/api/orders',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      tableToken: tableToken,
+      note:       note,
+      total:      total,
+      lines:      lines,
+      flowType:   flowType
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.success){
+      document.getElementById('order-view').classList.remove('visible');
+      document.getElementById('confirm-view').classList.add('visible');
+      document.getElementById('confirm-title').textContent=ui('confirmTitle');
+      document.getElementById('confirm-sub').textContent=ui('confirmSub');
+
+      // Vis hvilke kurser der kommer automatisk
+      if(flowType==='sequential'){
+        var labels=COURSE_LABELS[lang]||COURSE_LABELS.en;
+        var groups=groupCartByCourse();
+        var later=groups.slice(1); // første er drikkevarer, resten kommer automatisk
+        if(later.length){
+          document.getElementById('pending-courses-box').style.display='block';
+          document.getElementById('pending-list').innerHTML=later.map(function(g){
+            return '<div class="pending-item">&#8226; '+(labels[g.category]||g.category)+'</div>';
+          }).join('');
+        }
+      }
+      cart={};
+    }
+  })
+  .catch(function(){alert('Could not send order. Please try again.');});
 }
-function showConfirm(showNext){
-  document.getElementById('confirm-view').classList.add('visible');
-  document.getElementById('next-course-section').style.display=showNext?'block':'none';
-  document.getElementById('confirm-title').textContent=ui('confirmTitle');
-  document.getElementById('confirm-sub').textContent=ui('confirmSub');
-}
+
 init();
 </script>
 </body>
 </html>
-
