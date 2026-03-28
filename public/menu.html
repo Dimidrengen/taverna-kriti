@@ -377,6 +377,12 @@ function addItem(id){
   if(!cart[id])cart[id]=Object.assign({},item,{qty:0});
   cart[id].qty++;lastAddedId=id;
   renderMenu();updateCart();showUpsellFor(id);
+  setTimeout(function(){
+    var bar=document.getElementById('upsell-bar');
+    if(bar&&bar.classList.contains('visible')){
+      bar.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  },100);
 }
 function removeItem(id){
   if(!cart[id])return;
@@ -464,3 +470,4 @@ init();
 </script>
 </body>
 </html>
+
