@@ -12,41 +12,60 @@ const LANGS = {
   da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', flowAll:'Alt på én gang', flowSeq:'Kursvis' },
 }
 
-const BAR_COURSES = ['drinks']
-
-function groupOrders(rows) {
+function groupOrders(rows, translations) {
   const map = {}
   for (const row of rows) {
-    if (!BAR_COURSES.includes(row.course)) continue
+    if (row.course !== 'drinks') continue
     if (!map[row.order_id]) {
       map[row.order_id] = { order_id:row.order_id, table_label:row.table_label, flow_type:row.flow_type, created_at:row.created_at, lines:[] }
     }
-    map[row.order_id].lines.push(row)
+    const translatedName = translations[row.item_id] || row.name
+    map[row.order_id].lines.push({ ...row, name: translatedName })
   }
   return Object.values(map).filter(o => o.lines.length > 0).sort((a,b) => new Date(a.created_at)-new Date(b.created_at))
 }
 
 export default function BarPage() {
-  const [orders, setOrders]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [pending, setPending] = useState({})
-  const [lang, setLang]       = useState('el')
+  const [orders, setOrders]      = useState([])
+  const [loading, setLoading]    = useState(true)
+  const [pending, setPending]    = useState({})
+  const [lang, setLang]          = useState('el')
+  const [translations, setTrans] = useState({})
   const t = LANGS[lang]
+
+  const fetchTranslations = useCallback(async (l) => {
+    const { data } = await supabase
+      .from('menu_item_translations')
+      .select('item_id, name')
+      .eq('lang', l)
+    if (data) {
+      const map = {}
+      data.forEach(r => { map[r.item_id] = r.name })
+      setTrans(map)
+    }
+  }, [])
 
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase.from('kitchen_active_orders').select('*')
-    if (!error && data) setOrders(groupOrders(data))
+    if (!error && data) setOrders(groupOrders(data, translations))
     setLoading(false)
-  }, [])
+  }, [translations])
+
+  useEffect(() => { fetchTranslations(lang) }, [lang])
+  useEffect(() => { fetchOrders() }, [translations])
 
   useEffect(() => {
-    fetchOrders()
     const channel = supabase.channel('bar-realtime')
       .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, fetchOrders)
       .on('postgres_changes', { event:'*', schema:'public', table:'order_lines' }, fetchOrders)
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [fetchOrders])
+
+  const changeLang = (l) => {
+    setLang(l)
+    fetchTranslations(l).then(() => fetchOrders())
+  }
 
   const markDone = async (orderId) => {
     setPending(p => ({ ...p, [orderId]: true }))
@@ -67,7 +86,7 @@ export default function BarPage() {
         <span style={styles.headerTitle}>🍹 {t.title}</span>
         <div style={{display:'flex',gap:8}}>
           {Object.keys(LANGS).map(l => (
-            <button key={l} onClick={() => setLang(l)} style={{
+            <button key={l} onClick={() => changeLang(l)} style={{
               padding:'4px 12px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer',
               background: lang===l ? '#0ea5e9' : 'transparent',
               color: lang===l ? '#000' : '#888',

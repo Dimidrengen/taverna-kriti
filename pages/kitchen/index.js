@@ -15,7 +15,7 @@ const LANGS = {
 const COURSE_COLOR = { starters:'#f59e0b', mains:'#ef4444', sides:'#8b5cf6', salads:'#22c55e', dessert:'#ec4899' }
 const KITCHEN_COURSES = ['starters','mains','sides','salads','dessert']
 
-function groupOrders(rows) {
+function groupOrders(rows, translations) {
   const map = {}
   for (const row of rows) {
     if (!KITCHEN_COURSES.includes(row.course)) continue
@@ -23,32 +23,54 @@ function groupOrders(rows) {
       map[row.order_id] = { order_id:row.order_id, table_label:row.table_label, flow_type:row.flow_type, created_at:row.created_at, courses:{} }
     }
     if (!map[row.order_id].courses[row.course]) map[row.order_id].courses[row.course] = []
-    map[row.order_id].courses[row.course].push(row)
+    // Brug oversat navn hvis det findes
+    const translatedName = translations[row.item_id] || row.name
+    map[row.order_id].courses[row.course].push({ ...row, name: translatedName })
   }
   return Object.values(map).filter(o => Object.keys(o.courses).length > 0).sort((a,b) => new Date(a.created_at)-new Date(b.created_at))
 }
 
 export default function KitchenPage() {
-  const [orders, setOrders]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [pending, setPending] = useState({})
-  const [lang, setLang]       = useState('el')
+  const [orders, setOrders]     = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [pending, setPending]   = useState({})
+  const [lang, setLang]         = useState('el')
+  const [translations, setTrans] = useState({})
   const t = LANGS[lang]
+
+  const fetchTranslations = useCallback(async (l) => {
+    const { data } = await supabase
+      .from('menu_item_translations')
+      .select('item_id, name')
+      .eq('lang', l)
+    if (data) {
+      const map = {}
+      data.forEach(r => { map[r.item_id] = r.name })
+      setTrans(map)
+    }
+  }, [])
 
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase.from('kitchen_active_orders').select('*')
-    if (!error && data) setOrders(groupOrders(data))
+    if (!error && data) setOrders(prev => groupOrders(data, translations))
     setLoading(false)
-  }, [])
+  }, [translations])
+
+  useEffect(() => { fetchTranslations(lang) }, [lang])
+  useEffect(() => { fetchOrders() }, [translations])
 
   useEffect(() => {
-    fetchOrders()
     const channel = supabase.channel('kitchen-realtime')
       .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, fetchOrders)
       .on('postgres_changes', { event:'*', schema:'public', table:'order_lines' }, fetchOrders)
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [fetchOrders])
+
+  const changeLang = (l) => {
+    setLang(l)
+    fetchTranslations(l).then(() => fetchOrders())
+  }
 
   const markDone = async (orderId, course) => {
     const key = `${orderId}-${course}`
@@ -70,7 +92,7 @@ export default function KitchenPage() {
         <span style={styles.headerTitle}>🍳 {t.title}</span>
         <div style={{display:'flex',gap:8}}>
           {Object.keys(LANGS).map(l => (
-            <button key={l} onClick={() => setLang(l)} style={{
+            <button key={l} onClick={() => changeLang(l)} style={{
               padding:'4px 12px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer',
               background: lang===l ? '#f59e0b' : 'transparent',
               color: lang===l ? '#000' : '#888',
@@ -82,7 +104,7 @@ export default function KitchenPage() {
       </header>
 
       {orders.length === 0
-        ? <div style={styles.center}><div style={{fontSize:64}}>🍳</div><p style={{color:'#aaa',fontSize:20,marginTop:16}}>{t.noOrders}</p></div>
+        ? <div style={styles.emptyWrap}><div style={{fontSize:64}}>🍳</div><p style={{color:'#aaa',fontSize:20,marginTop:16}}>{t.noOrders}</p></div>
         : <div style={styles.grid}>
             {orders.map(order => (
               <OrderCard key={order.order_id} order={order} pending={pending} onMarkDone={markDone} t={t} />
@@ -150,5 +172,6 @@ const styles = {
   tableLabel:  {fontSize:18,fontWeight:700,flex:1},
   courseBlock: {padding:'14px 16px',borderBottom:'1px solid #222'},
   courseHeader:{display:'flex',alignItems:'center',marginBottom:10},
+  emptyWrap:   {display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'calc(100dvh - 73px)'},
   center:      {display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'100dvh',background:'#0d0d0d',color:'#f1f1f1'},
 }
