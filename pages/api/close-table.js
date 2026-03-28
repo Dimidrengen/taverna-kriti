@@ -1,4 +1,4 @@
-mport { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -19,7 +19,6 @@ export default async function handler(req, res) {
 
   if (!table) return res.status(404).json({ error: 'Table not found' })
 
-  // Luk alle åbne ordrer på bordet
   const { error } = await supabase
     .from('orders')
     .update({ status: 'done' })
