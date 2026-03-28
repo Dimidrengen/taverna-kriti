@@ -253,33 +253,35 @@
   };
 
   const UPSELL_RULES = [
-    { match: ['tzatziki'], suggest: ['Dolmades','Feta saganaki','Pita bread','House white wine','Mythos beer'] },
-    { match: ['taramosalata'], suggest: ['Tzatziki','Pita bread','House white wine','Ouzo'] },
+    const UPSELL_RULES = [
+    { match: ['tzatziki'],        suggest: ['Pita bread','Dolmades','Feta saganaki','House white wine','Mythos beer'] },
+    { match: ['taramosalata'],    suggest: ['Pita bread','Tzatziki','House white wine','Ouzo'] },
     { match: ['melitzanosalata'], suggest: ['Pita bread','Tzatziki','House white wine','Ouzo'] },
-    { match: ['hummus'], suggest: ['Pita bread','Tzatziki','Spanakopita','House white wine'] },
-    { match: ['tirokafteri'], suggest: ['Pita bread','Mythos beer','Ouzo','Fix beer'] },
-    { match: ['dolmades'], suggest: ['Tzatziki','House white wine','Pita bread','Ouzo'] },
-    { match: ['saganaki'], suggest: ['House white wine','Ouzo','Raki / Tsikoudia','Pita bread'] },
-    { match: ['spanakopita'], suggest: ['Tzatziki','House white wine','Horiatiki','Sparkling water'] },
-    { match: ['oktapodi'], suggest: ['House white wine','Ouzo','Horiatiki','Sparkling water'] },
-    { match: ['gavros'], suggest: ['House white wine','Ouzo','Pita bread','Sparkling water'] },
-    { match: ['dakos'], suggest: ['House white wine','House rosé wine','Tzatziki','Sparkling water'] },
-    { match: ['horiatiki','salad'], suggest: ['Pita bread','House white wine','House rosé wine','Sparkling water'] },
-    { match: ['moussaka'], suggest: ['Horiatiki','Greek fries','House red wine','Sparkling water'] },
-    { match: ['pastitsio'], suggest: ['Horiatiki','House red wine','Greek fries','Sparkling water'] },
-    { match: ['stifado'], suggest: ['House red wine','Bottle red wine','Roasted potatoes','Horiatiki'] },
-    { match: ['kleftiko'], suggest: ['Bottle red wine','House red wine','Roasted potatoes','Horiatiki'] },
-    { match: ['souvlaki'], suggest: ['Greek fries','Tzatziki','Mythos beer','Draft beer'] },
-    { match: ['gemista'], suggest: ['Horiatiki','House white wine','Pita bread','Sparkling water'] },
-    { match: ['bream','bass'], suggest: ['House white wine','Bottle white wine','Horiatiki','Sparkling water'] },
-    { match: ['prawn'], suggest: ['House white wine','Ouzo','Horiatiki','Sparkling water'] },
-    { match: ['fries'], suggest: ['Mythos beer','Draft beer','Cola','Tzatziki'] },
-    { match: ['baklava'], suggest: ['Greek coffee','Freddo espresso','Metaxa 5 star','Raki / Tsikoudia'] },
-    { match: ['galaktoboureko'], suggest: ['Greek coffee','Mountain tea','Metaxa 5 star'] },
-    { match: ['loukoumades'], suggest: ['Greek coffee','Freddo espresso','Raki / Tsikoudia'] },
-    { match: ['bougatsa'], suggest: ['Greek coffee','Cappuccino','Mountain tea'] },
-    { match: ['yogurt'], suggest: ['Greek coffee','Mountain tea','Cappuccino'] },
+    { match: ['hummus'],          suggest: ['Pita bread','Tzatziki','Spanakopita','House white wine'] },
+    { match: ['tirokafteri'],     suggest: ['Pita bread','Mythos beer','Ouzo','Fix beer'] },
+    { match: ['dolmades'],        suggest: ['Pita bread','Tzatziki','House white wine','Ouzo'] },
+    { match: ['saganaki'],        suggest: ['Pita bread','House white wine','Ouzo','Raki / Tsikoudia'] },
+    { match: ['spanakopita'],     suggest: ['Pita bread','Tzatziki','House white wine','Horiatiki'] },
+    { match: ['oktapodi'],        suggest: ['House white wine','Ouzo','Horiatiki','Sparkling water'] },
+    { match: ['gavros'],          suggest: ['Pita bread','House white wine','Ouzo','Sparkling water'] },
+    { match: ['dakos'],           suggest: ['House white wine','House rosé wine','Tzatziki','Sparkling water'] },
+    { match: ['horiatiki','salad'],suggest: ['Pita bread','House white wine','House rosé wine','Sparkling water'] },
+    { match: ['moussaka'],        suggest: ['Horiatiki','Greek fries','House red wine','Sparkling water'] },
+    { match: ['pastitsio'],       suggest: ['Horiatiki','House red wine','Greek fries','Sparkling water'] },
+    { match: ['stifado'],         suggest: ['House red wine','Bottle red wine','Roasted potatoes','Horiatiki'] },
+    { match: ['kleftiko'],        suggest: ['Bottle red wine','House red wine','Roasted potatoes','Horiatiki'] },
+    { match: ['souvlaki'],        suggest: ['Greek fries','Tzatziki','Mythos beer','Draft beer'] },
+    { match: ['gemista'],         suggest: ['Pita bread','House white wine','Horiatiki','Sparkling water'] },
+    { match: ['bream','bass'],    suggest: ['House white wine','Bottle white wine','Horiatiki','Sparkling water'] },
+    { match: ['prawn'],           suggest: ['House white wine','Ouzo','Horiatiki','Sparkling water'] },
+    { match: ['fries'],           suggest: ['Mythos beer','Draft beer','Cola','Tzatziki'] },
+    { match: ['baklava'],         suggest: ['Greek coffee','Freddo espresso','Metaxa 5 star','Raki / Tsikoudia'] },
+    { match: ['galaktoboureko'],  suggest: ['Greek coffee','Mountain tea','Metaxa 5 star'] },
+    { match: ['loukoumades'],     suggest: ['Greek coffee','Freddo espresso','Raki / Tsikoudia'] },
+    { match: ['bougatsa'],        suggest: ['Greek coffee','Cappuccino','Mountain tea'] },
+    { match: ['yogurt'],          suggest: ['Greek coffee','Mountain tea','Cappuccino'] },
   ];
+
 
   let allItems      = [];
   let categories    = [];
@@ -600,3 +602,4 @@
 </script>
 </body>
 </html>
+
