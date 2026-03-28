@@ -17,21 +17,15 @@ export default async function handler(req, res) {
 
   const { tableToken, note, lines, total, flowType = 'all_at_once' } = req.body
 
-  if (!['all_at_once', 'sequential'].includes(flowType)) {
-    return res.status(400).json({ error: 'Ugyldig flowType' })
-  }
-
-  const { data: table, error: tableError } = await supabase
+  const { data: table } = await supabase
     .from('tables')
     .select('*')
     .eq('token', tableToken)
     .single()
 
-  if (tableError || !table) {
-    return res.status(404).json({ error: 'Table not found' })
-  }
+  if (!table) return res.status(404).json({ error: 'Table not found' })
 
-  const { data: order, error: orderError } = await supabase
+  const { data: order } = await supabase
     .from('orders')
     .insert({
       table_id:       table.id,
@@ -44,21 +38,19 @@ export default async function handler(req, res) {
     .select()
     .single()
 
-  if (orderError || !order) {
-    return res.status(500).json({ error: 'Kunne ikke oprette ordre' })
-  }
+  if (!order) return res.status(500).json({ error: 'Kunne ikke oprette ordre' })
 
-  const initialCourses = INITIAL_COURSES[flowType]
+  const initialCourses = INITIAL_COURSES[flowType] || INITIAL_COURSES.all_at_once
   const now = new Date().toISOString()
 
   const orderLines = lines.map(line => ({
     order_id: order.id,
-    item_id:  line.item_id ?? null,
+    item_id:  line.item_id || null,
     name:     line.name,
     qty:      line.qty,
     price:    line.price,
     station:  line.station,
-    course:   line.course,
+    course:   line.course || 'mains',
     sent_at:  initialCourses.includes(line.course) ? now : null,
   }))
 
