@@ -6,22 +6,13 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
-const COURSE_LABEL = {
-  starters: 'Forretter',
-  mains:    'Hovedretter',
-  sides:    'Tilbehør',
-  salads:   'Salater',
-  dessert:  'Dessert',
+const LANGS = {
+  el: { title:'Κουζίνα', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', courses:{ starters:'Ορεκτικά', mains:'Κυρίως', sides:'Συνοδευτικά', salads:'Σαλάτες', dessert:'Επιδόρπια' }, flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά' },
+  en: { title:'Kitchen', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', courses:{ starters:'Starters', mains:'Mains', sides:'Sides', salads:'Salads', dessert:'Dessert' }, flowAll:'All at once', flowSeq:'By course' },
+  da: { title:'Køkken', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', courses:{ starters:'Forretter', mains:'Hovedretter', sides:'Tilbehør', salads:'Salater', dessert:'Dessert' }, flowAll:'Alt på én gang', flowSeq:'Kursvis' },
 }
 
-const COURSE_COLOR = {
-  starters: '#f59e0b',
-  mains:    '#ef4444',
-  sides:    '#8b5cf6',
-  salads:   '#22c55e',
-  dessert:  '#ec4899',
-}
-
+const COURSE_COLOR = { starters:'#f59e0b', mains:'#ef4444', sides:'#8b5cf6', salads:'#22c55e', dessert:'#ec4899' }
 const KITCHEN_COURSES = ['starters','mains','sides','salads','dessert']
 
 function groupOrders(rows) {
@@ -29,41 +20,32 @@ function groupOrders(rows) {
   for (const row of rows) {
     if (!KITCHEN_COURSES.includes(row.course)) continue
     if (!map[row.order_id]) {
-      map[row.order_id] = {
-        order_id:    row.order_id,
-        table_label: row.table_label,
-        flow_type:   row.flow_type,
-        created_at:  row.created_at,
-        courses:     {},
-      }
+      map[row.order_id] = { order_id:row.order_id, table_label:row.table_label, flow_type:row.flow_type, created_at:row.created_at, courses:{} }
     }
     if (!map[row.order_id].courses[row.course]) map[row.order_id].courses[row.course] = []
     map[row.order_id].courses[row.course].push(row)
   }
-  return Object.values(map)
-    .filter(o => Object.keys(o.courses).length > 0)
-    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+  return Object.values(map).filter(o => Object.keys(o.courses).length > 0).sort((a,b) => new Date(a.created_at)-new Date(b.created_at))
 }
 
 export default function KitchenPage() {
   const [orders, setOrders]   = useState([])
   const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState({})
+  const [lang, setLang]       = useState('el')
+  const t = LANGS[lang]
 
   const fetchOrders = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('kitchen_active_orders')
-      .select('*')
+    const { data, error } = await supabase.from('kitchen_active_orders').select('*')
     if (!error && data) setOrders(groupOrders(data))
     setLoading(false)
   }, [])
 
   useEffect(() => {
     fetchOrders()
-    const channel = supabase
-      .channel('kitchen-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchOrders)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_lines' }, fetchOrders)
+    const channel = supabase.channel('kitchen-realtime')
+      .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, fetchOrders)
+      .on('postgres_changes', { event:'*', schema:'public', table:'order_lines' }, fetchOrders)
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [fetchOrders])
@@ -73,38 +55,45 @@ export default function KitchenPage() {
     setPending(p => ({ ...p, [key]: true }))
     try {
       await fetch('/api/course-done', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ orderId, course }),
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ orderId, course }),
       })
-    } catch (e) { console.error(e) }
-    finally { setPending(p => { const n = { ...p }; delete n[key]; return n }) }
+    } catch(e) { console.error(e) }
+    finally { setPending(p => { const n={...p}; delete n[key]; return n }) }
   }
 
-  if (loading) return <div style={styles.center}><p style={{color:'#aaa',fontSize:18}}>Henter ordrer…</p></div>
-  if (orders.length === 0) return (
-    <div style={styles.center}>
-      <div style={{fontSize:64}}>🍳</div>
-      <p style={{color:'#aaa',fontSize:20,marginTop:16}}>Ingen aktive madordrer</p>
-    </div>
-  )
+  if (loading) return <div style={styles.center}><p style={{color:'#aaa',fontSize:18}}>{t.noOrders}</p></div>
 
   return (
     <div style={styles.page}>
       <header style={styles.header}>
-        <span style={styles.headerTitle}>🍳 Køkken</span>
-        <span style={{fontSize:14,color:'#6b7280'}}>{orders.length} aktive</span>
+        <span style={styles.headerTitle}>🍳 {t.title}</span>
+        <div style={{display:'flex',gap:8}}>
+          {Object.keys(LANGS).map(l => (
+            <button key={l} onClick={() => setLang(l)} style={{
+              padding:'4px 12px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer',
+              background: lang===l ? '#f59e0b' : 'transparent',
+              color: lang===l ? '#000' : '#888',
+              border: lang===l ? 'none' : '1px solid #333',
+            }}>{l.toUpperCase()}</button>
+          ))}
+        </div>
+        <span style={{fontSize:14,color:'#6b7280'}}>{orders.length}</span>
       </header>
-      <div style={styles.grid}>
-        {orders.map(order => (
-          <OrderCard key={order.order_id} order={order} pending={pending} onMarkDone={markDone} />
-        ))}
-      </div>
+
+      {orders.length === 0
+        ? <div style={styles.center}><div style={{fontSize:64}}>🍳</div><p style={{color:'#aaa',fontSize:20,marginTop:16}}>{t.noOrders}</p></div>
+        : <div style={styles.grid}>
+            {orders.map(order => (
+              <OrderCard key={order.order_id} order={order} pending={pending} onMarkDone={markDone} t={t} />
+            ))}
+          </div>
+      }
     </div>
   )
 }
 
-function OrderCard({ order, pending, onMarkDone }) {
+function OrderCard({ order, pending, onMarkDone, t }) {
   const age = Math.floor((Date.now() - new Date(order.created_at)) / 60000)
   return (
     <div style={styles.card}>
@@ -114,7 +103,7 @@ function OrderCard({ order, pending, onMarkDone }) {
         <span style={{fontSize:11,fontWeight:600,padding:'3px 8px',borderRadius:6,
           background:order.flow_type==='sequential'?'#1e3a5f':'#1a3a2a',
           color:order.flow_type==='sequential'?'#7dd3fc':'#86efac'}}>
-          {order.flow_type==='sequential'?'Kursvis':'Alt på én gang'}
+          {order.flow_type==='sequential' ? t.flowSeq : t.flowAll}
         </span>
       </div>
       {Object.entries(order.courses).map(([course, lines]) => {
@@ -125,7 +114,7 @@ function OrderCard({ order, pending, onMarkDone }) {
             <div style={styles.courseHeader}>
               <span style={{width:8,height:8,borderRadius:'50%',background:color,display:'inline-block',marginRight:8}}/>
               <span style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color}}>
-                {COURSE_LABEL[course]}
+                {t.courses[course] || course}
               </span>
             </div>
             <ul style={{listStyle:'none',margin:0,padding:0}}>
@@ -142,7 +131,7 @@ function OrderCard({ order, pending, onMarkDone }) {
                 color,opacity:pending[key]?0.5:1,cursor:pending[key]?'wait':'pointer'}}
               disabled={pending[key]}
               onClick={() => onMarkDone(order.order_id, course)}>
-              {pending[key]?'Sender…':'✓ Færdig'}
+              {pending[key] ? t.sending : t.done}
             </button>
           </div>
         )
