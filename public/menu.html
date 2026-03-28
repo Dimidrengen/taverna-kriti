@@ -19,7 +19,7 @@
     .restaurant-name { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; }
     .table-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 10px; font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 6px; }
     .lang-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
-    .lang-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 10px; font-size: 16px; cursor: pointer; transition: all 0.15s; }
+    .lang-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 10px; font-size: 16px; cursor: pointer; transition: all 0.15s; color: white; }
     .lang-btn.active { background: var(--accent); border-color: var(--accent); }
     .cat-scroll { display: flex; gap: 8px; padding: 16px 20px 12px; overflow-x: auto; scrollbar-width: none; background: var(--cream); border-bottom: 1px solid var(--border); }
     .cat-scroll::-webkit-scrollbar { display: none; }
@@ -191,7 +191,7 @@ var UI_TEXT = {
   no: { viewOrder:'Se bestilling', sendBtn:'Send bestilling', notePlaceholder:'Merknader?', total:'Totalt', orderTitle:'Din bestilling', confirmTitle:'Bestilling sendt!', confirmSub:'Din bestilling er pa vei.', upsellLabel:'passer godt til', servingModeTitle:'Hvordan vil du ha maten?', modeAllLabel:'Alt pa en gang', modeAllDesc:'Alt sammen', modeCoursesLabel:'Kursvis', modeCoursesDesc:'Forrett forst, deretter hovedrett', pendingTitle:'Kommer neste', nextCourseBtn:'Send neste kurs', allDoneTitle:'Alle kurs sendt!', allDoneSub:'Vaer sa god!' },
   fi: { viewOrder:'Nayta tilaus', sendBtn:'Laheta tilaus keittioon', notePlaceholder:'Huomioita?', total:'Yhteensa', orderTitle:'Tilauksesi', confirmTitle:'Tilaus lahetetty!', confirmSub:'Tilauksesi on matkalla keittioon.', upsellLabel:'sopii hyvin kanssa', servingModeTitle:'Miten haluatte ruokanne?', modeAllLabel:'Kaikki kerralla', modeAllDesc:'Kaikki yhta aikaa', modeCoursesLabel:'Annoksittain', modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat', pendingTitle:'Seuraavaksi', nextCourseBtn:'Laheta seuraava annos', allDoneTitle:'Kaikki annokset lahetetty!', allDoneSub:'Hyvaa ruokahalua!' }
 };
-var COURSE_ORDER = ['Starters','Salads','Mains','Sides','Desserts','Drinks'];
+var COURSE_ORDER = ['Starters','Mains','Sides','Salads','Desserts','Drinks'];
 var COURSE_LABELS = {
   en: { Starters:'Starters', Salads:'Salads', Mains:'Mains', Sides:'Sides', Desserts:'Desserts', Drinks:'Drinks' },
   da: { Starters:'Forretter', Salads:'Salater', Mains:'Hovedretter', Sides:'Tilbehor', Desserts:'Desserter', Drinks:'Drikkevarer' },
@@ -464,4 +464,3 @@ init();
 </script>
 </body>
 </html>
-
