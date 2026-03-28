@@ -142,7 +142,7 @@
     <div class="serving-mode">
       <div class="serving-mode-title" id="serving-mode-title">How would you like your food?</div>
       <div class="serving-options">
-        <div class="serving-option active" id="mode-all" onclick="setServingMode('all')">
+        <div class="serving-option" id="mode-all" onclick="setServingMode('all')">
           <div class="serving-option-icon">&#127869;&#65039;</div>
           <div class="serving-option-label" id="mode-all-label">All at once</div>
           <div class="serving-option-desc" id="mode-all-desc">Everything together</div>
@@ -163,7 +163,7 @@
       <span class="order-total-label" id="total-label">Total</span>
       <span class="order-total-val" id="order-total-val">€0.00</span>
     </div>
-    <button class="send-btn" id="send-btn" onclick="sendOrder()">Send order to kitchen</button>
+    <button class="send-btn" id="send-btn" onclick="sendOrder()" style="opacity:0.4;pointer-events:none">Send order to kitchen</button>
   </div>
   <div class="confirm-screen" id="confirm-view">
     <div class="confirm-icon">&#10003;</div>
@@ -228,7 +228,7 @@ var UPSELL_RULES=[
   {match:['yogurt'],suggest:['Greek coffee','Mountain tea','Cappuccino']}
 ];
 var allItems=[],categories=[],currentCat=0,cart={};
-var tableToken='',lang='en',restaurantSlug='',lastAddedId=null,servingMode='all';
+var tableToken='',lang='en',restaurantSlug='',lastAddedId=null,servingMode=null;
 function ui(k){return(UI_TEXT[lang]&&UI_TEXT[lang][k])||UI_TEXT.en[k]||'';}
 function updateUITexts(){
   document.getElementById('cart-cta').textContent=ui('viewOrder');
@@ -245,10 +245,13 @@ function updateUITexts(){
 }
 function setServingMode(mode){
   servingMode=mode;
+  document.getElementById('send-btn').style.opacity='1';
+  document.getElementById('send-btn').style.pointerEvents='auto';
   document.getElementById('mode-all').classList.toggle('active',mode==='all');
   document.getElementById('mode-courses').classList.toggle('active',mode==='courses');
   document.getElementById('all-items-view').style.display=mode==='all'?'block':'none';
   document.getElementById('course-items-view').style.display=mode==='courses'?'block':'none';
+  document.getElementById('send-btn').textContent=ui('sendBtn');
   if(mode==='courses')renderCourseGroups();
 }
 function loadMenu(){
