@@ -94,6 +94,8 @@
     .coming-next-box { background: #EBF5EF; border: 1px solid rgba(45,122,79,0.2); border-radius: 12px; padding: 14px 16px; width: 100%; text-align: left; }
     .coming-next-title { font-size: 11px; font-weight: 600; color: var(--green); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
     .coming-next-item { font-size: 13px; color: var(--ink); padding: 3px 0; }
+    .reorder-btn { width: 100%; padding: 14px; background: transparent; border: 1.5px solid var(--accent); border-radius: 14px; font-size: 15px; font-weight: 500; color: var(--accent); cursor: pointer; font-family: 'DM Sans', sans-serif; margin-top: 4px; }
+    .reorder-btn:hover { background: var(--accent-light); }
   </style>
 </head>
 <body>
@@ -174,18 +176,19 @@
       <div class="coming-next-title" id="coming-next-title">Coming up next</div>
       <div id="coming-next-list"></div>
     </div>
+    <button class="reorder-btn" id="reorder-btn" onclick="reorder()">+ Order more</button>
   </div>
 </div>
 <script>
 var UI_TEXT={
-  en:{viewOrder:'View order',sendBtn:'Send order to kitchen',notePlaceholder:'Any notes? (e.g. no onions, allergy info...)',total:'Total',orderTitle:'Your order',confirmTitle:'Order sent!',confirmSub:'Your order is on its way. The kitchen will serve each course when ready.',upsellLabel:'goes well with',servingModeTitle:'How would you like your food?',modeAllLabel:'All at once',modeAllDesc:'Everything together',modeCoursesLabel:'By course',modeCoursesDesc:'Starters first, then mains',comingNext:'Coming up next'},
-  da:{viewOrder:'Se bestilling',sendBtn:'Send bestilling til kokken',notePlaceholder:'Bemaerkninger?',total:'I alt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vej. Kokken serverer hvert kursus nar det er klar.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du have maden?',modeAllLabel:'Alt pa en gang',modeAllDesc:'Alt serveres sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forretter forst, derefter hovedretter',comingNext:'Kommer naeste'},
-  de:{viewOrder:'Bestellung',sendBtn:'Bestellung senden',notePlaceholder:'Anmerkungen?',total:'Gesamt',orderTitle:'Ihre Bestellung',confirmTitle:'Bestellung gesendet!',confirmSub:'Ihre Bestellung ist auf dem Weg.',upsellLabel:'passt gut dazu',servingModeTitle:'Wie mochten Sie Ihr Essen?',modeAllLabel:'Alles auf einmal',modeAllDesc:'Alles zusammen',modeCoursesLabel:'Nach Gang',modeCoursesDesc:'Erst Vorspeise, dann Hauptgang',comingNext:'Als nachstes'},
-  fr:{viewOrder:'Voir la commande',sendBtn:'Envoyer la commande',notePlaceholder:'Remarques?',total:'Total',orderTitle:'Votre commande',confirmTitle:'Commande envoyee!',confirmSub:'Votre commande est en route.',upsellLabel:'va bien avec',servingModeTitle:'Comment souhaitez-vous votre repas?',modeAllLabel:'Tout ensemble',modeAllDesc:'Tout en meme temps',modeCoursesLabel:'Par plat',modeCoursesDesc:'Entree puis plat',comingNext:'A venir'},
-  el:{viewOrder:'\u0394\u03b5\u03af\u03c4\u03b5 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1',sendBtn:'\u0391\u03c0\u03bf\u03c3\u03c4\u03bf\u03bb\u03ae \u03c3\u03c4\u03b7\u03bd \u03ba\u03bf\u03c5\u03b6\u03af\u03bd\u03b1',notePlaceholder:'\u03a3\u03b7\u03bc\u03b5\u03b9\u03ce\u03c3\u03b5\u03b9\u03c2;',total:'\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf',orderTitle:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2',confirmTitle:'\u0395\u03c3\u03c4\u03ac\u03bb\u03b7!',confirmSub:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2 \u03b5\u03af\u03bd\u03b1\u03b9 \u03ba\u03b1\u03c4\u03ac \u03c4\u03b7\u03bd \u03bf\u03b4\u03cc.',upsellLabel:'\u03c4\u03b1\u03b9\u03c1\u03b9\u03ac\u03b6\u03b5\u03b9 \u03bc\u03b5',servingModeTitle:'\u03a0\u03ce\u03c2 \u03b8\u03ad\u03bb\u03b5\u03c4\u03b5 \u03c4\u03bf \u03c6\u03b1\u03b3\u03b7\u03c4\u03cc \u03c3\u03b1\u03c2;',modeAllLabel:'\u038c\u03bb\u03b1 \u03bc\u03b1\u03b6\u03af',modeAllDesc:'\u038c\u03bb\u03b1 \u03c4\u03b1\u03c5\u03c4\u03cc\u03c7\u03c1\u03bf\u03bd\u03b1',modeCoursesLabel:'\u0391\u03bd\u03ac \u03c3\u03b5\u03b9\u03c1\u03ac',modeCoursesDesc:'\u03a0\u03c1\u03ce\u03c4\u03b1 \u03bf\u03c1\u03b5\u03ba\u03c4\u03b9\u03ba\u03ac, \u03bc\u03b5\u03c4\u03ac \u03ba\u03c5\u03c1\u03af\u03c9\u03c2',comingNext:'\u0395\u03c0\u03cc\u03bc\u03b5\u03bd\u03bf'},
-  sv:{viewOrder:'Visa bestallning',sendBtn:'Skicka bestallning',notePlaceholder:'Anteckningar?',total:'Totalt',orderTitle:'Din bestallning',confirmTitle:'Bestallning skickad!',confirmSub:'Din bestallning ar pa vag.',upsellLabel:'passar bra till',servingModeTitle:'Hur vill du ha din mat?',modeAllLabel:'Allt pa en gang',modeAllDesc:'Allt tillsammans',modeCoursesLabel:'Per kurs',modeCoursesDesc:'Forratt forst, sedan huvudratt',comingNext:'Kommer harnaest'},
-  no:{viewOrder:'Se bestilling',sendBtn:'Send bestilling',notePlaceholder:'Merknader?',total:'Totalt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vei.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du ha maten?',modeAllLabel:'Alt pa en gang',modeAllDesc:'Alt sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forrett forst, deretter hovedrett',comingNext:'Kommer neste'},
-  fi:{viewOrder:'Nayta tilaus',sendBtn:'Laheta tilaus keittioon',notePlaceholder:'Huomioita?',total:'Yhteensa',orderTitle:'Tilauksesi',confirmTitle:'Tilaus lahetetty!',confirmSub:'Tilauksesi on matkalla keittioon.',upsellLabel:'sopii hyvin kanssa',servingModeTitle:'Miten haluatte ruokanne?',modeAllLabel:'Kaikki kerralla',modeAllDesc:'Kaikki yhta aikaa',modeCoursesLabel:'Annoksittain',modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat',comingNext:'Seuraavaksi'}
+  en:{viewOrder:'View order',sendBtn:'Send order to kitchen',notePlaceholder:'Any notes? (e.g. no onions, allergy info...)',total:'Total',orderTitle:'Your order',confirmTitle:'Order sent!',confirmSub:'Your order is on its way. The kitchen will serve each course when ready.',upsellLabel:'goes well with',servingModeTitle:'How would you like your food?',modeAllLabel:'All at once',modeAllDesc:'Everything together',modeCoursesLabel:'By course',modeCoursesDesc:'Starters first, then mains',comingNext:'Coming up next',reorderBtn:'+ Order more'},
+  da:{viewOrder:'Se bestilling',sendBtn:'Send bestilling til kokken',notePlaceholder:'Bemaerkninger?',total:'I alt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vej. Kokken serverer hvert kursus nar det er klar.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du have maden?',modeAllLabel:'Alt pa en gang',modeAllDesc:'Alt serveres sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forretter forst, derefter hovedretter',comingNext:'Kommer naeste',reorderBtn:'+ Bestil mere'},
+  de:{viewOrder:'Bestellung',sendBtn:'Bestellung senden',notePlaceholder:'Anmerkungen?',total:'Gesamt',orderTitle:'Ihre Bestellung',confirmTitle:'Bestellung gesendet!',confirmSub:'Ihre Bestellung ist auf dem Weg.',upsellLabel:'passt gut dazu',servingModeTitle:'Wie mochten Sie Ihr Essen?',modeAllLabel:'Alles auf einmal',modeAllDesc:'Alles zusammen',modeCoursesLabel:'Nach Gang',modeCoursesDesc:'Erst Vorspeise, dann Hauptgang',comingNext:'Als nachstes',reorderBtn:'+ Mehr bestellen'},
+  fr:{viewOrder:'Voir la commande',sendBtn:'Envoyer la commande',notePlaceholder:'Remarques?',total:'Total',orderTitle:'Votre commande',confirmTitle:'Commande envoyee!',confirmSub:'Votre commande est en route.',upsellLabel:'va bien avec',servingModeTitle:'Comment souhaitez-vous votre repas?',modeAllLabel:'Tout ensemble',modeAllDesc:'Tout en meme temps',modeCoursesLabel:'Par plat',modeCoursesDesc:'Entree puis plat',comingNext:'A venir',reorderBtn:'+ Commander encore'},
+  el:{viewOrder:'\u0394\u03b5\u03af\u03c4\u03b5 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1',sendBtn:'\u0391\u03c0\u03bf\u03c3\u03c4\u03bf\u03bb\u03ae \u03c3\u03c4\u03b7\u03bd \u03ba\u03bf\u03c5\u03b6\u03af\u03bd\u03b1',notePlaceholder:'\u03a3\u03b7\u03bc\u03b5\u03b9\u03ce\u03c3\u03b5\u03b9\u03c2;',total:'\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf',orderTitle:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2',confirmTitle:'\u0395\u03c3\u03c4\u03ac\u03bb\u03b7!',confirmSub:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2 \u03b5\u03af\u03bd\u03b1\u03b9 \u03ba\u03b1\u03c4\u03ac \u03c4\u03b7\u03bd \u03bf\u03b4\u03cc.',upsellLabel:'\u03c4\u03b1\u03b9\u03c1\u03b9\u03ac\u03b6\u03b5\u03b9 \u03bc\u03b5',servingModeTitle:'\u03a0\u03ce\u03c2 \u03b8\u03ad\u03bb\u03b5\u03c4\u03b5 \u03c4\u03bf \u03c6\u03b1\u03b3\u03b7\u03c4\u03cc \u03c3\u03b1\u03c2;',modeAllLabel:'\u038c\u03bb\u03b1 \u03bc\u03b1\u03b6\u03af',modeAllDesc:'\u038c\u03bb\u03b1 \u03c4\u03b1\u03c5\u03c4\u03cc\u03c7\u03c1\u03bf\u03bd\u03b1',modeCoursesLabel:'\u0391\u03bd\u03ac \u03c3\u03b5\u03b9\u03c1\u03ac',modeCoursesDesc:'\u03a0\u03c1\u03ce\u03c4\u03b1 \u03bf\u03c1\u03b5\u03ba\u03c4\u03b9\u03ba\u03ac, \u03bc\u03b5\u03c4\u03ac \u03ba\u03c5\u03c1\u03af\u03c9\u03c2',comingNext:'\u0395\u03c0\u03cc\u03bc\u03b5\u03bd\u03bf',reorderBtn:'+ \u03a0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03af\u03bb\u03b5\u03c4\u03b5 \u03be\u03b1\u03bd\u03ac'},
+  sv:{viewOrder:'Visa bestallning',sendBtn:'Skicka bestallning',notePlaceholder:'Anteckningar?',total:'Totalt',orderTitle:'Din bestallning',confirmTitle:'Bestallning skickad!',confirmSub:'Din bestallning ar pa vag.',upsellLabel:'passar bra till',servingModeTitle:'Hur vill du ha din mat?',modeAllLabel:'Allt pa en gang',modeAllDesc:'Allt tillsammans',modeCoursesLabel:'Per kurs',modeCoursesDesc:'Forratt forst, sedan huvudratt',comingNext:'Kommer harnaest',reorderBtn:'+ Bestall mer'},
+  no:{viewOrder:'Se bestilling',sendBtn:'Send bestilling',notePlaceholder:'Merknader?',total:'Totalt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vei.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du ha maten?',modeAllLabel:'Alt pa en gang',modeAllDesc:'Alt sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forrett forst, deretter hovedrett',comingNext:'Kommer neste',reorderBtn:'+ Bestill mer'},
+  fi:{viewOrder:'Nayta tilaus',sendBtn:'Laheta tilaus keittioon',notePlaceholder:'Huomioita?',total:'Yhteensa',orderTitle:'Tilauksesi',confirmTitle:'Tilaus lahetetty!',confirmSub:'Tilauksesi on matkalla keittioon.',upsellLabel:'sopii hyvin kanssa',servingModeTitle:'Miten haluatte ruokanne?',modeAllLabel:'Kaikki kerralla',modeAllDesc:'Kaikki yhta aikaa',modeCoursesLabel:'Annoksittain',modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat',comingNext:'Seuraavaksi',reorderBtn:'+ Tilaa lisaa'}
 };
 var CAT_TO_COURSE={'Starters':'starters','Salads':'salads','Mains':'mains','Sides':'sides','Desserts':'dessert','Drinks':'drinks'};
 var COURSE_ORDER=['Drinks','Starters','Mains','Sides','Salads','Desserts'];
@@ -242,6 +245,7 @@ function updateUITexts(){
   document.getElementById('mode-all-desc').textContent=ui('modeAllDesc');
   document.getElementById('mode-courses-label').textContent=ui('modeCoursesLabel');
   document.getElementById('mode-courses-desc').textContent=ui('modeCoursesDesc');
+  document.getElementById('reorder-btn').textContent=ui('reorderBtn');
 }
 function setServingMode(mode){
   servingMode=mode;
@@ -390,6 +394,24 @@ function showMenu(){
   document.getElementById('menu-view').style.display='block';
   document.getElementById('order-view').classList.remove('visible');
 }
+function reorder(){
+  document.getElementById('confirm-view').classList.remove('visible');
+  document.getElementById('coming-next-box').style.display='none';
+  document.getElementById('app-header').style.display='block';
+  document.getElementById('menu-view').style.display='block';
+  servingMode=null;
+  cart={};
+  lastAddedId=null;
+  document.getElementById('upsell-bar').classList.remove('visible');
+  document.getElementById('send-btn').style.opacity='0.4';
+  document.getElementById('send-btn').style.pointerEvents='none';
+  document.getElementById('mode-all').classList.remove('active');
+  document.getElementById('mode-courses').classList.remove('active');
+  document.getElementById('all-items-view').style.display='block';
+  document.getElementById('course-items-view').style.display='none';
+  document.getElementById('order-note').value='';
+  renderMenu();updateCart();
+}
 function sendOrder(){
   var note=document.getElementById('order-note').value.trim();
   var total=Object.values(cart).reduce(function(s,i){return s+i.price*i.qty;},0);
@@ -405,9 +427,11 @@ function sendOrder(){
     if(data.success){
       document.getElementById('order-view').classList.remove('visible');
       document.getElementById('menu-view').style.display='none';
+      document.getElementById('app-header').style.display='none';
       document.getElementById('confirm-view').classList.add('visible');
       document.getElementById('confirm-title').textContent=ui('confirmTitle');
       document.getElementById('confirm-sub').textContent=ui('confirmSub');
+      document.getElementById('reorder-btn').textContent=ui('reorderBtn');
       if(flowType==='sequential'){
         var labels=COURSE_LABELS[lang]||COURSE_LABELS.en;
         var later=groupCartByCourse().slice(1);
