@@ -57,18 +57,17 @@ export default function BarPage() {
   }, [translations])
 
   const fetchAllTables = useCallback(async () => {
-    // Hent alle borde med åbne ordrer
     const { data: orders } = await supabase
       .from('orders')
-      .select('table_id, status')
+      .select('table_id')
       .eq('status', 'open')
-    if (!orders) return
+    if (!orders || orders.length === 0) { setAllTables([]); return }
     const tableIds = [...new Set(orders.map(o => o.table_id))]
-    if (tableIds.length === 0) { setAllTables([]); return }
     const { data: tables } = await supabase
       .from('tables')
       .select('id, name, token')
       .in('id', tableIds)
+      .order('name')
     if (tables) setAllTables(tables)
   }, [])
 
@@ -78,7 +77,7 @@ export default function BarPage() {
   useEffect(() => {
     const channel = supabase.channel('bar-realtime')
       .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, () => { fetchOrders(); fetchAllTables() })
-      .on('postgres_changes', { event:'*', schema:'public', table:'order_lines' }, fetchOrders)
+      .on('postgres_changes', { event:'*', schema:'public', table:'order_lines' }, () => { fetchOrders(); fetchAllTables() })
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [fetchOrders, fetchAllTables])
@@ -115,7 +114,7 @@ export default function BarPage() {
         body: JSON.stringify({ tableToken }),
       })
       setBills(p => { const n={...p}; delete n[tableToken]; return n })
-      fetchAllTables()
+      await fetchAllTables()
     } catch(e) { console.error(e) }
     finally { setClosing(p => { const n={...p}; delete n[tableToken]; return n }) }
   }
@@ -138,7 +137,6 @@ export default function BarPage() {
         </div>
       </header>
 
-      {/* Tab-knapper */}
       <div style={{display:'flex',gap:0,borderBottom:'1px solid #222',padding:'0 24px'}}>
         <button onClick={() => setTab('drinks')} style={{
           padding:'12px 20px', fontSize:14, fontWeight:600, cursor:'pointer', background:'transparent', border:'none',
@@ -152,7 +150,6 @@ export default function BarPage() {
         }}>🪑 {t.allTables} {allTables.length > 0 && <span style={{background:'#444',color:'#fff',borderRadius:10,padding:'1px 7px',fontSize:11,marginLeft:6}}>{allTables.length}</span>}</button>
       </div>
 
-      {/* Aktive drikkevarer */}
       {tab === 'drinks' && (
         drinkOrders.length === 0
           ? <div style={styles.emptyWrap}><div style={{fontSize:48}}>🍹</div><p style={{color:'#aaa',fontSize:18,marginTop:12}}>{t.noOrders}</p></div>
@@ -191,7 +188,6 @@ export default function BarPage() {
             </div>
       )}
 
-      {/* Alle borde — regning og luk */}
       {tab === 'tables' && (
         allTables.length === 0
           ? <div style={styles.emptyWrap}><div style={{fontSize:48}}>🪑</div><p style={{color:'#aaa',fontSize:18,marginTop:12}}>{t.noOrders}</p></div>
@@ -204,7 +200,6 @@ export default function BarPage() {
                     <div style={styles.cardHeader}>
                       <span style={styles.tableLabel}>{table.name}</span>
                     </div>
-
                     {bill && (
                       <div style={{padding:'12px 16px'}}>
                         <div style={{fontSize:12,color:'#6b7280',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>{t.bill}</div>
@@ -220,7 +215,6 @@ export default function BarPage() {
                         </div>
                       </div>
                     )}
-
                     <div style={{padding:'12px 16px',display:'flex',gap:8}}>
                       <button onClick={() => fetchBill(table.token)} style={{flex:1,padding:'10px 0',background:'transparent',border:'1px solid #444',borderRadius:8,fontSize:14,fontWeight:600,color:'#aaa',cursor:'pointer'}}>
                         {bill ? '▲ Skjul' : `📋 ${t.bill}`}

@@ -55,6 +55,11 @@
     .order-header { padding: 16px 20px 8px; display: flex; align-items: center; gap: 10px; }
     .back-btn { width: 32px; height: 32px; background: var(--card); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; }
     .order-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--ink); }
+    .guest-count { margin: 0 20px 16px; }
+    .guest-count-title { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .guest-count-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .guest-btn { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid var(--border); background: transparent; font-size: 16px; font-weight: 600; cursor: pointer; color: var(--ink); font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+    .guest-btn.active { background: var(--ink); border-color: var(--ink); color: white; }
     .serving-mode { margin: 0 20px 16px; }
     .serving-mode-title { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
     .serving-options { display: flex; gap: 8px; }
@@ -147,6 +152,10 @@
       <div class="back-btn" onclick="showMenu()">&#8592;</div>
       <div class="order-title" id="order-title">Your order</div>
     </div>
+    <div class="guest-count">
+      <div class="guest-count-title" id="guest-count-title">How many guests?</div>
+      <div class="guest-count-btns" id="guest-count-btns"></div>
+    </div>
     <div class="serving-mode">
       <div class="serving-mode-title" id="serving-mode-title">How would you like your food?</div>
       <div class="serving-options">
@@ -196,14 +205,14 @@
 </div>
 <script>
 var UI_TEXT={
-  en:{viewOrder:'View order',sendBtn:'Send order to kitchen',notePlaceholder:'Any notes? (e.g. no onions, allergy info...)',total:'Total',orderTitle:'Your order',confirmTitle:'Order sent!',confirmSub:'Your order is on its way. The kitchen will serve each course when ready.',upsellLabel:'goes well with',servingModeTitle:'How would you like your food?',modeAllLabel:'All at once',modeAllDesc:'Everything together',modeCoursesLabel:'By course',modeCoursesDesc:'Starters first, then mains',comingNext:'Coming up next',reorderBtn:'+ Order more',billBtn:'View bill',hideBillBtn:'Hide bill',billTitle:'Your bill'},
-  da:{viewOrder:'Se bestilling',sendBtn:'Send bestilling til køkkenet',notePlaceholder:'Bemærkninger?',total:'I alt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er på vej. Køkkenet serverer hvert kursus når det er klart.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du have maden?',modeAllLabel:'Alt på én gang',modeAllDesc:'Alt serveres sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forretter først, derefter hovedretter',comingNext:'Kommer næste',reorderBtn:'+ Bestil mere',billBtn:'Se regning',hideBillBtn:'Skjul regning',billTitle:'Din regning'},
-  de:{viewOrder:'Bestellung',sendBtn:'Bestellung senden',notePlaceholder:'Anmerkungen?',total:'Gesamt',orderTitle:'Ihre Bestellung',confirmTitle:'Bestellung gesendet!',confirmSub:'Ihre Bestellung ist auf dem Weg.',upsellLabel:'passt gut dazu',servingModeTitle:'Wie mochten Sie Ihr Essen?',modeAllLabel:'Alles auf einmal',modeAllDesc:'Alles zusammen',modeCoursesLabel:'Nach Gang',modeCoursesDesc:'Erst Vorspeise, dann Hauptgang',comingNext:'Als nachstes',reorderBtn:'+ Mehr bestellen',billBtn:'Rechnung',hideBillBtn:'Ausblenden',billTitle:'Ihre Rechnung'},
-  fr:{viewOrder:'Voir la commande',sendBtn:'Envoyer la commande',notePlaceholder:'Remarques?',total:'Total',orderTitle:'Votre commande',confirmTitle:'Commande envoyee!',confirmSub:'Votre commande est en route.',upsellLabel:'va bien avec',servingModeTitle:'Comment souhaitez-vous votre repas?',modeAllLabel:'Tout ensemble',modeAllDesc:'Tout en meme temps',modeCoursesLabel:'Par plat',modeCoursesDesc:'Entree puis plat',comingNext:'A venir',reorderBtn:'+ Commander encore',billBtn:'Voir addition',hideBillBtn:'Masquer',billTitle:'Votre addition'},
-  el:{viewOrder:'\u0394\u03b5\u03af\u03c4\u03b5 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1',sendBtn:'\u0391\u03c0\u03bf\u03c3\u03c4\u03bf\u03bb\u03ae \u03c3\u03c4\u03b7\u03bd \u03ba\u03bf\u03c5\u03b6\u03af\u03bd\u03b1',notePlaceholder:'\u03a3\u03b7\u03bc\u03b5\u03b9\u03ce\u03c3\u03b5\u03b9\u03c2;',total:'\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf',orderTitle:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2',confirmTitle:'\u0395\u03c3\u03c4\u03ac\u03bb\u03b7!',confirmSub:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2 \u03b5\u03af\u03bd\u03b1\u03b9 \u03ba\u03b1\u03c4\u03ac \u03c4\u03b7\u03bd \u03bf\u03b4\u03cc.',upsellLabel:'\u03c4\u03b1\u03b9\u03c1\u03b9\u03ac\u03b6\u03b5\u03b9 \u03bc\u03b5',servingModeTitle:'\u03a0\u03ce\u03c2 \u03b8\u03ad\u03bb\u03b5\u03c4\u03b5 \u03c4\u03bf \u03c6\u03b1\u03b3\u03b7\u03c4\u03cc \u03c3\u03b1\u03c2;',modeAllLabel:'\u038c\u03bb\u03b1 \u03bc\u03b1\u03b6\u03af',modeAllDesc:'\u038c\u03bb\u03b1 \u03c4\u03b1\u03c5\u03c4\u03cc\u03c7\u03c1\u03bf\u03bd\u03b1',modeCoursesLabel:'\u0391\u03bd\u03ac \u03c3\u03b5\u03b9\u03c1\u03ac',modeCoursesDesc:'\u03a0\u03c1\u03ce\u03c4\u03b1 \u03bf\u03c1\u03b5\u03ba\u03c4\u03b9\u03ba\u03ac, \u03bc\u03b5\u03c4\u03ac \u03ba\u03c5\u03c1\u03af\u03c9\u03c2',comingNext:'\u0395\u03c0\u03cc\u03bc\u03b5\u03bd\u03bf',reorderBtn:'+ \u03a0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03af\u03bb\u03b5\u03c4\u03b5 \u03be\u03b1\u03bd\u03ac',billBtn:'\u0394\u03b5\u03af\u03c4\u03b5 \u03bb\u03bf\u03b3\u03b1\u03c1\u03b9\u03b1\u03c3\u03bc\u03cc',hideBillBtn:'\u0391\u03c0\u03cc\u03ba\u03c1\u03c5\u03c8\u03b7',billTitle:'\u039b\u03bf\u03b3\u03b1\u03c1\u03b9\u03b1\u03c3\u03bc\u03cc\u03c2'},
-  sv:{viewOrder:'Visa bestallning',sendBtn:'Skicka bestallning',notePlaceholder:'Anteckningar?',total:'Totalt',orderTitle:'Din bestallning',confirmTitle:'Bestallning skickad!',confirmSub:'Din bestallning ar pa vag.',upsellLabel:'passar bra till',servingModeTitle:'Hur vill du ha din mat?',modeAllLabel:'Allt pa en gang',modeAllDesc:'Allt tillsammans',modeCoursesLabel:'Per kurs',modeCoursesDesc:'Forratt forst, sedan huvudratt',comingNext:'Kommer harnaest',reorderBtn:'+ Bestall mer',billBtn:'Visa nota',hideBillBtn:'Dold',billTitle:'Din nota'},
-  no:{viewOrder:'Se bestilling',sendBtn:'Send bestilling',notePlaceholder:'Merknader?',total:'Totalt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vei.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du ha maten?',modeAllLabel:'Alt på én gang',modeAllDesc:'Alt sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forrett forst, deretter hovedrett',comingNext:'Kommer neste',reorderBtn:'+ Bestill mer',billBtn:'Se regning',hideBillBtn:'Skjul',billTitle:'Din regning'},
-  fi:{viewOrder:'Nayta tilaus',sendBtn:'Laheta tilaus keittioon',notePlaceholder:'Huomioita?',total:'Yhteensa',orderTitle:'Tilauksesi',confirmTitle:'Tilaus lahetetty!',confirmSub:'Tilauksesi on matkalla keittioon.',upsellLabel:'sopii hyvin kanssa',servingModeTitle:'Miten haluatte ruokanne?',modeAllLabel:'Kaikki kerralla',modeAllDesc:'Kaikki yhta aikaa',modeCoursesLabel:'Annoksittain',modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat',comingNext:'Seuraavaksi',reorderBtn:'+ Tilaa lisaa',billBtn:'Nayta lasku',hideBillBtn:'Piilota',billTitle:'Laskusi'}
+  en:{viewOrder:'View order',sendBtn:'Send order to kitchen',notePlaceholder:'Any notes? (e.g. no onions, allergy info...)',total:'Total',orderTitle:'Your order',confirmTitle:'Order sent!',confirmSub:'Your order is on its way. The kitchen will serve each course when ready.',upsellLabel:'goes well with',servingModeTitle:'How would you like your food?',modeAllLabel:'All at once',modeAllDesc:'Everything together',modeCoursesLabel:'By course',modeCoursesDesc:'Starters first, then mains',comingNext:'Coming up next',reorderBtn:'+ Order more',billBtn:'View bill',hideBillBtn:'Hide bill',billTitle:'Your bill',guestCountTitle:'How many guests are you?'},
+  da:{viewOrder:'Se bestilling',sendBtn:'Send bestilling til køkkenet',notePlaceholder:'Bemærkninger?',total:'I alt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er på vej. Køkkenet serverer hvert kursus når det er klart.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du have maden?',modeAllLabel:'Alt på én gang',modeAllDesc:'Alt serveres sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forretter først, derefter hovedretter',comingNext:'Kommer næste',reorderBtn:'+ Bestil mere',billBtn:'Se regning',hideBillBtn:'Skjul regning',billTitle:'Din regning',guestCountTitle:'Hvor mange gæster er I?'},
+  de:{viewOrder:'Bestellung',sendBtn:'Bestellung senden',notePlaceholder:'Anmerkungen?',total:'Gesamt',orderTitle:'Ihre Bestellung',confirmTitle:'Bestellung gesendet!',confirmSub:'Ihre Bestellung ist auf dem Weg.',upsellLabel:'passt gut dazu',servingModeTitle:'Wie mochten Sie Ihr Essen?',modeAllLabel:'Alles auf einmal',modeAllDesc:'Alles zusammen',modeCoursesLabel:'Nach Gang',modeCoursesDesc:'Erst Vorspeise, dann Hauptgang',comingNext:'Als nachstes',reorderBtn:'+ Mehr bestellen',billBtn:'Rechnung',hideBillBtn:'Ausblenden',billTitle:'Ihre Rechnung',guestCountTitle:'Wie viele Gäste sind Sie?'},
+  fr:{viewOrder:'Voir la commande',sendBtn:'Envoyer la commande',notePlaceholder:'Remarques?',total:'Total',orderTitle:'Votre commande',confirmTitle:'Commande envoyee!',confirmSub:'Votre commande est en route.',upsellLabel:'va bien avec',servingModeTitle:'Comment souhaitez-vous votre repas?',modeAllLabel:'Tout ensemble',modeAllDesc:'Tout en meme temps',modeCoursesLabel:'Par plat',modeCoursesDesc:'Entree puis plat',comingNext:'A venir',reorderBtn:'+ Commander encore',billBtn:'Voir addition',hideBillBtn:'Masquer',billTitle:'Votre addition',guestCountTitle:'Combien êtes-vous?'},
+  el:{viewOrder:'\u0394\u03b5\u03af\u03c4\u03b5 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1',sendBtn:'\u0391\u03c0\u03bf\u03c3\u03c4\u03bf\u03bb\u03ae \u03c3\u03c4\u03b7\u03bd \u03ba\u03bf\u03c5\u03b6\u03af\u03bd\u03b1',notePlaceholder:'\u03a3\u03b7\u03bc\u03b5\u03b9\u03ce\u03c3\u03b5\u03b9\u03c2;',total:'\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf',orderTitle:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2',confirmTitle:'\u0395\u03c3\u03c4\u03ac\u03bb\u03b7!',confirmSub:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2 \u03b5\u03af\u03bd\u03b1\u03b9 \u03ba\u03b1\u03c4\u03ac \u03c4\u03b7\u03bd \u03bf\u03b4\u03cc.',upsellLabel:'\u03c4\u03b1\u03b9\u03c1\u03b9\u03ac\u03b6\u03b5\u03b9 \u03bc\u03b5',servingModeTitle:'\u03a0\u03ce\u03c2 \u03b8\u03ad\u03bb\u03b5\u03c4\u03b5 \u03c4\u03bf \u03c6\u03b1\u03b3\u03b7\u03c4\u03cc \u03c3\u03b1\u03c2;',modeAllLabel:'\u038c\u03bb\u03b1 \u03bc\u03b1\u03b6\u03af',modeAllDesc:'\u038c\u03bb\u03b1 \u03c4\u03b1\u03c5\u03c4\u03cc\u03c7\u03c1\u03bf\u03bd\u03b1',modeCoursesLabel:'\u0391\u03bd\u03ac \u03c3\u03b5\u03b9\u03c1\u03ac',modeCoursesDesc:'\u03a0\u03c1\u03ce\u03c4\u03b1 \u03bf\u03c1\u03b5\u03ba\u03c4\u03b9\u03ba\u03ac, \u03bc\u03b5\u03c4\u03ac \u03ba\u03c5\u03c1\u03af\u03c9\u03c2',comingNext:'\u0395\u03c0\u03cc\u03bc\u03b5\u03bd\u03bf',reorderBtn:'+ \u03a0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03af\u03bb\u03b5\u03c4\u03b5 \u03be\u03b1\u03bd\u03ac',billBtn:'\u0394\u03b5\u03af\u03c4\u03b5 \u03bb\u03bf\u03b3\u03b1\u03c1\u03b9\u03b1\u03c3\u03bc\u03cc',hideBillBtn:'\u0391\u03c0\u03cc\u03ba\u03c1\u03c5\u03c8\u03b7',billTitle:'\u039b\u03bf\u03b3\u03b1\u03c1\u03b9\u03b1\u03c3\u03bc\u03cc\u03c2',guestCountTitle:'\u03a0\u03cc\u03c3\u03b1 \u03ac\u03c4\u03bf\u03bc\u03b1 \u03b5\u03af\u03c3\u03c4\u03b5;'},
+  sv:{viewOrder:'Visa bestallning',sendBtn:'Skicka bestallning',notePlaceholder:'Anteckningar?',total:'Totalt',orderTitle:'Din bestallning',confirmTitle:'Bestallning skickad!',confirmSub:'Din bestallning ar pa vag.',upsellLabel:'passar bra till',servingModeTitle:'Hur vill du ha din mat?',modeAllLabel:'Allt pa en gang',modeAllDesc:'Allt tillsammans',modeCoursesLabel:'Per kurs',modeCoursesDesc:'Forratt forst, sedan huvudratt',comingNext:'Kommer harnaest',reorderBtn:'+ Bestall mer',billBtn:'Visa nota',hideBillBtn:'Dold',billTitle:'Din nota',guestCountTitle:'Hur manga är ni?'},
+  no:{viewOrder:'Se bestilling',sendBtn:'Send bestilling',notePlaceholder:'Merknader?',total:'Totalt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vei.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du ha maten?',modeAllLabel:'Alt på én gang',modeAllDesc:'Alt sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forrett forst, deretter hovedrett',comingNext:'Kommer neste',reorderBtn:'+ Bestill mer',billBtn:'Se regning',hideBillBtn:'Skjul',billTitle:'Din regning',guestCountTitle:'Hvor mange er dere?'},
+  fi:{viewOrder:'Nayta tilaus',sendBtn:'Laheta tilaus keittioon',notePlaceholder:'Huomioita?',total:'Yhteensa',orderTitle:'Tilauksesi',confirmTitle:'Tilaus lahetetty!',confirmSub:'Tilauksesi on matkalla keittioon.',upsellLabel:'sopii hyvin kanssa',servingModeTitle:'Miten haluatte ruokanne?',modeAllLabel:'Kaikki kerralla',modeAllDesc:'Kaikki yhta aikaa',modeCoursesLabel:'Annoksittain',modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat',comingNext:'Seuraavaksi',reorderBtn:'+ Tilaa lisaa',billBtn:'Nayta lasku',hideBillBtn:'Piilota',billTitle:'Laskusi',guestCountTitle:'Kuinka monta teitä on?'}
 };
 var CAT_TO_COURSE={'Starters':'starters','Salads':'salads','Mains':'mains','Sides':'sides','Desserts':'dessert','Drinks':'drinks'};
 var COURSE_ORDER=['Drinks','Starters','Mains','Sides','Salads','Desserts'];
@@ -246,7 +255,7 @@ var UPSELL_RULES=[
   {match:['yogurt'],suggest:['Greek coffee','Mountain tea','Cappuccino']}
 ];
 var allItems=[],categories=[],currentCat=0,cart={};
-var tableToken='',lang='en',restaurantSlug='',lastAddedId=null,servingMode=null;
+var tableToken='',lang='en',restaurantSlug='',lastAddedId=null,servingMode=null,guestCount=0;
 var billVisible=false;
 
 function ui(k){return(UI_TEXT[lang]&&UI_TEXT[lang][k])||UI_TEXT.en[k]||'';}
@@ -259,6 +268,27 @@ function clearState(){
 }
 function wasConfirmed(){
   try{return sessionStorage.getItem('tk_confirmed')==='1'&&sessionStorage.getItem('tk_token')===tableToken;}catch(e){return false;}
+}
+
+function renderGuestButtons(){
+  document.getElementById('guest-count-title').textContent=ui('guestCountTitle');
+  var html='';
+  for(var i=1;i<=10;i++){
+    html+='<button class="guest-btn'+(guestCount===i?' active':'')+'" onclick="setGuests('+i+')">'+i+'</button>';
+  }
+  document.getElementById('guest-count-btns').innerHTML=html;
+}
+
+function setGuests(n){
+  guestCount=n;
+  renderGuestButtons();
+  checkSendBtn();
+}
+
+function checkSendBtn(){
+  var ok = guestCount > 0 && servingMode !== null;
+  document.getElementById('send-btn').style.opacity = ok ? '1' : '0.4';
+  document.getElementById('send-btn').style.pointerEvents = ok ? 'auto' : 'none';
 }
 
 function updateUITexts(){
@@ -275,18 +305,18 @@ function updateUITexts(){
   document.getElementById('mode-courses-desc').textContent=ui('modeCoursesDesc');
   document.getElementById('reorder-btn').textContent=ui('reorderBtn');
   document.getElementById('bill-btn').textContent=billVisible?ui('hideBillBtn'):'&#128203; '+ui('billBtn');
+  renderGuestButtons();
 }
 
 function setServingMode(mode){
   servingMode=mode;
-  document.getElementById('send-btn').style.opacity='1';
-  document.getElementById('send-btn').style.pointerEvents='auto';
   document.getElementById('mode-all').classList.toggle('active',mode==='all');
   document.getElementById('mode-courses').classList.toggle('active',mode==='courses');
   document.getElementById('all-items-view').style.display=mode==='all'?'block':'none';
   document.getElementById('course-items-view').style.display=mode==='courses'?'block':'none';
   document.getElementById('send-btn').textContent=ui('sendBtn');
   if(mode==='courses')renderCourseGroups();
+  checkSendBtn();
 }
 
 function loadMenu(){
@@ -335,28 +365,11 @@ function init(){
   tableToken=p.get('table')||'tbl-005';
   lang=p.get('lang')||navigator.language.split('-')[0]||'en';
   if(!UI_TEXT[lang])lang='en';
-
-  // Tjek mod databasen om bordet har åbne ordrer
-  fetch('/api/table-bill?tableToken='+tableToken)
-    .then(function(r){return r.json();})
-    .then(function(data){
-      if(data.orders && data.orders.length > 0){
-        // Bordet har åbne ordrer — vis bekræftelsesskærmen
-        saveState();
-        loadMenu().then(function(){
-          updateUITexts();
-          showConfirmScreen();
-        });
-      } else {
-        // Ingen åbne ordrer — ryd state og vis menuen
-        clearState();
-        loadMenuAndShow();
-      }
-    })
-    .catch(function(){
-      clearState();
-      loadMenuAndShow();
-    });
+  if(wasConfirmed()){
+    loadMenu().then(function(){updateUITexts();showConfirmScreen();});
+  } else {
+    loadMenuAndShow();
+  }
 }
 
 function setLang(l){
@@ -470,6 +483,8 @@ function showOrder(){
     return '<div class="order-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="order-row-name">'+item.name+'</span><span class="order-row-qty">x'+item.qty+'</span><span class="order-row-price">€'+(item.price*item.qty).toFixed(2)+'</span></div>';
   }).join('');
   document.getElementById('order-total-val').textContent='€'+total.toFixed(2);
+  renderGuestButtons();
+  checkSendBtn();
   if(servingMode==='courses')renderCourseGroups();
 }
 
@@ -519,6 +534,7 @@ function reorder(){
   var codes=['en','da','de','el','fr','sv','no','fi'];
   document.querySelectorAll('.lang-btn').forEach(function(b,i){b.classList.toggle('active',codes[i]===lang);});
   servingMode=null;
+  guestCount=0;
   cart={};
   lastAddedId=null;
   document.getElementById('upsell-bar').classList.remove('visible');
@@ -533,6 +549,7 @@ function reorder(){
 }
 
 function sendOrder(){
+  if(guestCount===0||servingMode===null)return;
   var note=document.getElementById('order-note').value.trim();
   var total=Object.values(cart).reduce(function(s,i){return s+i.price*i.qty;},0);
   var flowType=servingMode==='courses'?'sequential':'all_at_once';
@@ -542,7 +559,7 @@ function sendOrder(){
   });
   fetch('/api/orders',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({tableToken:tableToken,note:note,total:total,lines:lines,flowType:flowType})
+    body:JSON.stringify({tableToken:tableToken,note:note,total:total,lines:lines,flowType:flowType,guestCount:guestCount})
   }).then(function(r){return r.json();}).then(function(data){
     if(data.success){
       saveState();
