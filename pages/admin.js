@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -10,6 +10,68 @@ const LANGS = {
   da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker på du vil nulstille dagens omsætning? Dette kan ikke fortrydes.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', period:'Periode', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data i denne periode' },
   en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:"Are you sure you want to reset today's revenue? This cannot be undone.", resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', period:'Period', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data in this period' },
   el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'Αποθήκευση...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️ Επεξεργασία', todayRevenue:'Έσοδα σήμερα', totalToday:'Σύνολο σήμερα', closedTables:'κλειστά τραπέζια', noClosedTables:'Δεν υπάρχουν κλειστά τραπέζια σήμερα', openTables:'Ανοιχτά τραπέζια', noOpenTables:'Δεν υπάρχουν ανοιχτά τραπέζια', loading:'Φόρτωση...', resetRevenue:'Επαναφορά εσόδων', resetConfirm:'Είστε σίγουροι ότι θέλετε να επαναφέρετε τα έσοδα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'Επαναφορά...', stats:'📈 Στατιστικά', period:'Περίοδος', today:'Σήμερα', thisWeek:'Αυτή την εβδομάδα', thisMonth:'Αυτό τον μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Συνολικά έσοδα', avgPerSeating:'Μέσος όρος ανά seating', noStats:'Δεν υπάρχουν δεδομένα' },
+}
+
+const EMOJI_OPTIONS = {
+  Starters: ['🫒','🧆','🥙','🫔','🥗','🐟','🦑','🍋','🧅','🫕','🥚','🧀','🥬','🌿'],
+  Salads:   ['🥗','🍅','🥒','🫑','🧅','🫒','🌿','🥬','🍋'],
+  Mains:    ['🍖','🥩','🐑','🫕','🍲','🐟','🦐','🦑','🍗','🥘','🫔','🌊'],
+  Sides:    ['🍟','🥔','🫘','🥖','🫓','🧄','🧅','🌽','🥦'],
+  Desserts: ['🍯','🥐','🍮','🍰','🧁','🍩','🍪','🍫','🫐','🍓'],
+  Drinks:   ['🍺','🍻','🍷','🥂','🍸','🍹','☕','🫖','🥤','💧','🧃','🍵','🥛'],
+}
+const ALL_EMOJIS = [...new Set(Object.values(EMOJI_OPTIONS).flat())]
+
+function EmojiPicker({ value, onChange, category }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const emojis = EMOJI_OPTIONS[category] || ALL_EMOJIS
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  return (
+    <div ref={ref} style={{position:'relative'}}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width:'100%', padding:'8px 12px', border:'1px solid #e5e5e5', borderRadius:8,
+          fontSize:22, cursor:'pointer', background:'white', textAlign:'left',
+          display:'flex', alignItems:'center', gap:8,
+        }}
+      >
+        <span>{value || '➕'}</span>
+        <span style={{fontSize:12, color:'#78716C', marginLeft:'auto'}}>▾</span>
+      </button>
+      {open && (
+        <div style={{
+          position:'absolute', top:'calc(100% + 4px)', left:0, zIndex:100,
+          background:'white', border:'1px solid #e5e5e5', borderRadius:12,
+          padding:10, display:'flex', flexWrap:'wrap', gap:4,
+          width:220, boxShadow:'0 4px 16px rgba(0,0,0,0.10)',
+        }}>
+          {emojis.map(e => (
+            <button
+              key={e}
+              type="button"
+              onClick={() => { onChange(e); setOpen(false) }}
+              style={{
+                width:36, height:36, fontSize:20, border:'none', borderRadius:8,
+                cursor:'pointer', background: value===e ? '#F4E3D7' : 'transparent',
+                outline: value===e ? '2px solid #C2692A' : 'none',
+              }}
+            >{e}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function AdminPage() {
@@ -66,13 +128,8 @@ export default function AdminPage() {
   const saveItem = async (item) => {
     setSaving(true)
     await supabase.from('menu_items').update({
-      name: item.name,
-      description: item.description,
-      price: parseFloat(item.price),
-      category: item.category,
-      emoji: item.emoji,
-      available: item.available,
-      station: item.station,
+      name: item.name, description: item.description, price: parseFloat(item.price),
+      category: item.category, emoji: item.emoji, available: item.available, station: item.station,
     }).eq('id', item.id)
     setSaving(false)
     setEditing(null)
@@ -83,14 +140,9 @@ export default function AdminPage() {
     setSaving(true)
     const { data: restaurant } = await supabase.from('restaurants').select('id').eq('slug','taverna-kriti').single()
     await supabase.from('menu_items').insert({
-      restaurant_id: restaurant.id,
-      name: newItem.name,
-      description: newItem.description,
-      price: parseFloat(newItem.price),
-      category: newItem.category,
-      emoji: newItem.emoji,
-      station: newItem.station,
-      available: true,
+      restaurant_id: restaurant.id, name: newItem.name, description: newItem.description,
+      price: parseFloat(newItem.price), category: newItem.category, emoji: newItem.emoji,
+      station: newItem.station, available: true,
     })
     setSaving(false)
     setShowAdd(false)
@@ -111,16 +163,10 @@ export default function AdminPage() {
     else if (period === 'thisWeek') { from.setDate(now.getDate() - now.getDay()); from.setHours(0,0,0,0) }
     else if (period === 'thisMonth') { from = new Date(now.getFullYear(), now.getMonth(), 1) }
     else { from = new Date('2020-01-01') }
-
-    const query = supabase
-      .from('orders')
-      .select('id, created_at, tables(name), order_lines(qty, price)')
-      .in('status', ['done', 'archived'])
+    const query = supabase.from('orders').select('id, created_at, tables(name), order_lines(qty, price)').in('status', ['done', 'archived'])
     if (period !== 'allTime') query.gte('created_at', from.toISOString())
     const { data } = await query
-
     if (!data) { setStatsData([]); setStatsLoading(false); return }
-
     const map = {}
     data.forEach(order => {
       const name = order.tables?.name || 'Ukendt'
@@ -128,8 +174,7 @@ export default function AdminPage() {
       map[name].seatings++
       map[name].total += (order.order_lines||[]).reduce((s,l) => s + l.price * l.qty, 0)
     })
-    const sorted = Object.values(map).sort((a,b) => b.total - a.total)
-    setStatsData(sorted)
+    setStatsData(Object.values(map).sort((a,b) => b.total - a.total))
     setStatsLoading(false)
   }
 
@@ -137,11 +182,7 @@ export default function AdminPage() {
     setResetting(true)
     const today = new Date()
     today.setHours(0,0,0,0)
-    await supabase
-      .from('orders')
-      .update({ status: 'archived' })
-      .eq('status', 'done')
-      .gte('created_at', today.toISOString())
+    await supabase.from('orders').update({ status: 'archived' }).eq('status', 'done').gte('created_at', today.toISOString())
     setRevenue([])
     setResetting(false)
     setShowResetConfirm(false)
@@ -186,12 +227,13 @@ export default function AdminPage() {
             <h2 style={s.sectionTitle}>{t.menuItems}</h2>
             <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{t.addItem}</button>
           </div>
+
           {showAdd && (
             <div style={{...s.card, marginBottom:20}}>
               <h3 style={{fontSize:16,fontWeight:600,marginBottom:16,color:'#1C1917'}}>{t.newItem}</h3>
               <div style={s.grid2}>
                 <input style={s.input} placeholder={t.name} value={newItem.name} onChange={e => setNewItem({...newItem, name:e.target.value})} />
-                <input style={s.input} placeholder="Emoji" value={newItem.emoji} onChange={e => setNewItem({...newItem, emoji:e.target.value})} />
+                <EmojiPicker value={newItem.emoji} onChange={v => setNewItem({...newItem, emoji:v})} category={newItem.category} />
                 <input style={s.input} placeholder={t.price} type="number" value={newItem.price} onChange={e => setNewItem({...newItem, price:e.target.value})} />
                 <select style={s.input} value={newItem.category} onChange={e => setNewItem({...newItem, category:e.target.value})}>
                   {categories.map(c => <option key={c}>{c}</option>)}
@@ -208,6 +250,7 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+
           {categories.map(cat => {
             const catItems = items.filter(i => i.category === cat)
             if (!catItems.length) return null
@@ -220,7 +263,7 @@ export default function AdminPage() {
                       <div>
                         <div style={s.grid2}>
                           <input style={s.input} value={editing.name} onChange={e => setEditing({...editing, name:e.target.value})} placeholder={t.name} />
-                          <input style={s.input} value={editing.emoji||''} onChange={e => setEditing({...editing, emoji:e.target.value})} placeholder="Emoji" />
+                          <EmojiPicker value={editing.emoji||''} onChange={v => setEditing({...editing, emoji:v})} category={editing.category} />
                           <input style={s.input} type="number" value={editing.price} onChange={e => setEditing({...editing, price:e.target.value})} placeholder={t.price} />
                           <select style={s.input} value={editing.category} onChange={e => setEditing({...editing, category:e.target.value})}>
                             {categories.map(c => <option key={c}>{c}</option>)}
