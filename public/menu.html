@@ -365,11 +365,18 @@ function init(){
   tableToken=p.get('table')||'tbl-005';
   lang=p.get('lang')||navigator.language.split('-')[0]||'en';
   if(!UI_TEXT[lang])lang='en';
-  if(wasConfirmed()){
-    loadMenu().then(function(){updateUITexts();showConfirmScreen();});
-  } else {
-    loadMenuAndShow();
-  }
+  fetch('/api/table-bill?tableToken='+tableToken)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.orders && data.orders.length>0){
+        saveState();
+        loadMenu().then(function(){updateUITexts();showConfirmScreen();});
+      } else {
+        clearState();
+        loadMenuAndShow();
+      }
+    })
+    .catch(function(){clearState();loadMenuAndShow();});
 }
 
 function setLang(l){
@@ -527,16 +534,11 @@ function reorder(){
   document.getElementById('coming-next-box').style.display='none';
   document.getElementById('bill-box').style.display='none';
   billVisible=false;
-  document.getElementById('app-header').style.display='block';
-  document.getElementById('menu-view').style.display='block';
-  var tName=tableToken.replace('tbl-0','Table ').replace('tbl-','Table ');
-  document.getElementById('table-badge').textContent='🪑 '+tName;
-  var codes=['en','da','de','el','fr','sv','no','fi'];
-  document.querySelectorAll('.lang-btn').forEach(function(b,i){b.classList.toggle('active',codes[i]===lang);});
   servingMode=null;
   guestCount=0;
   cart={};
   lastAddedId=null;
+  currentCat=0;
   document.getElementById('upsell-bar').classList.remove('visible');
   document.getElementById('send-btn').style.opacity='0.4';
   document.getElementById('send-btn').style.pointerEvents='none';
@@ -545,7 +547,15 @@ function reorder(){
   document.getElementById('all-items-view').style.display='block';
   document.getElementById('course-items-view').style.display='none';
   document.getElementById('order-note').value='';
-  renderMenu();updateCart();
+  loadMenu().then(function(){
+    var tName=tableToken.replace('tbl-0','Table ').replace('tbl-','Table ');
+    document.getElementById('table-badge').textContent='🪑 '+tName;
+    document.getElementById('app-header').style.display='block';
+    document.getElementById('menu-view').style.display='block';
+    var codes=['en','da','de','el','fr','sv','no','fi'];
+    document.querySelectorAll('.lang-btn').forEach(function(b,i){b.classList.toggle('active',codes[i]===lang);});
+    updateUITexts();renderCats();renderMenu();updateCart();
+  });
 }
 
 function sendOrder(){
