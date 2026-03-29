@@ -7,13 +7,18 @@ const supabase = createClient(
 )
 
 const LANGS = {
-  el: { title:'Κουζίνα', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', courses:{ starters:'Ορεκτικά', mains:'Κυρίως', sides:'Συνοδευτικά', salads:'Σαλάτες', dessert:'Επιδόρπια' }, flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά' },
-  en: { title:'Kitchen', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', courses:{ starters:'Starters', mains:'Mains', sides:'Sides', salads:'Salads', dessert:'Dessert' }, flowAll:'All at once', flowSeq:'By course' },
-  da: { title:'Køkken', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', courses:{ starters:'Forretter', mains:'Hovedretter', sides:'Tilbehør', salads:'Salater', dessert:'Dessert' }, flowAll:'Alt på én gang', flowSeq:'Kursvis' },
+  el: { title:'Κουζίνα', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', courses:{ starters:'Ορεκτικά', mains:'Κυρίως', sides:'Συνοδευτικά', salads:'Σαλάτες', dessert:'Επιδόρπια' }, flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά', tableWord:'Τραπέζι' },
+  en: { title:'Kitchen', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', courses:{ starters:'Starters', mains:'Mains', sides:'Sides', salads:'Salads', dessert:'Dessert' }, flowAll:'All at once', flowSeq:'By course', tableWord:'Table' },
+  da: { title:'Køkken', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', courses:{ starters:'Forretter', mains:'Hovedretter', sides:'Tilbehør', salads:'Salater', dessert:'Dessert' }, flowAll:'Alt på én gang', flowSeq:'Kursvis', tableWord:'Bord' },
 }
 
 const COURSE_COLOR = { starters:'#f59e0b', mains:'#ef4444', sides:'#8b5cf6', salads:'#22c55e', dessert:'#ec4899' }
 const KITCHEN_COURSES = ['starters','mains','sides','salads','dessert']
+
+function getTableLabel(name, tableWord) {
+  if (!name) return name
+  return name.replace(/^Table /i, tableWord + ' ').replace(/^Bord /i, tableWord + ' ').replace(/^Τραπέζι /i, tableWord + ' ')
+}
 
 function groupOrders(rows, translations) {
   const map = {}
@@ -33,6 +38,7 @@ export default function KitchenPage() {
   const [orders, setOrders]      = useState([])
   const [loading, setLoading]    = useState(true)
   const [pending, setPending]    = useState({})
+  const [served, setServed]      = useState({})
   const [lang, setLang]          = useState('el')
   const [translations, setTrans] = useState({})
   const t = LANGS[lang]
@@ -80,6 +86,14 @@ export default function KitchenPage() {
     finally { setPending(p => { const n={...p}; delete n[key]; return n }) }
   }
 
+  const toggleServed = async (lineId) => {
+    const isServed = !!served[lineId]
+    setServed(p => ({ ...p, [lineId]: !isServed }))
+    await supabase.from('order_lines')
+      .update({ served_at: isServed ? null : new Date().toISOString() })
+      .eq('id', lineId)
+  }
+
   if (loading) return <div style={styles.center}><p style={{color:'#aaa',fontSize:18}}>{t.noOrders}</p></div>
 
   return (
@@ -103,7 +117,15 @@ export default function KitchenPage() {
         ? <div style={styles.emptyWrap}><div style={{fontSize:64}}>🍳</div><p style={{color:'#aaa',fontSize:20,marginTop:16}}>{t.noOrders}</p></div>
         : <div style={styles.grid}>
             {orders.map(order => (
-              <OrderCard key={order.order_id} order={order} pending={pending} onMarkDone={markDone} t={t} />
+              <OrderCard
+                key={order.order_id}
+                order={order}
+                pending={pending}
+                served={served}
+                onMarkDone={markDone}
+                onToggleServed={toggleServed}
+                t={t}
+              />
             ))}
           </div>
       }
@@ -111,12 +133,12 @@ export default function KitchenPage() {
   )
 }
 
-function OrderCard({ order, pending, onMarkDone, t }) {
+function OrderCard({ order, pending, served, onMarkDone, onToggleServed, t }) {
   const age = Math.floor((Date.now() - new Date(order.created_at)) / 60000)
   return (
     <div style={styles.card}>
       <div style={styles.cardHeader}>
-        <span style={styles.tableLabel}>{order.table_label}</span>
+        <span style={styles.tableLabel}>{getTableLabel(order.table_label, t.tableWord)}</span>
         <span style={{fontSize:13,color:age>20?'#ef4444':'#9ca3af'}}>{age} min</span>
         <span style={{fontSize:11,fontWeight:600,padding:'3px 8px',borderRadius:6,
           background:order.flow_type==='sequential'?'#1e3a5f':'#1a3a2a',
@@ -135,13 +157,25 @@ function OrderCard({ order, pending, onMarkDone, t }) {
                 {t.courses[course] || course}
               </span>
             </div>
-            <ul style={{listStyle:'none',margin:0,padding:0}}>
-              {lines.map(line => (
-                <li key={line.line_id} style={{display:'flex',gap:8,padding:'4px 0',fontSize:16}}>
-                  <span style={{fontSize:14,color:'#6b7280',minWidth:24}}>{line.qty}×</span>
-                  <span>{line.name}</span>
-                </li>
-              ))}
+            <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:6}}>
+              {lines.map(line => {
+                const isServed = !!served[line.line_id]
+                return (
+                  <li key={line.line_id} style={{display:'flex',gap:8,padding:'4px 0',fontSize:16,alignItems:'center',opacity:isServed?0.4:1,transition:'opacity 0.2s'}}>
+                    <span style={{fontSize:14,color:'#6b7280',minWidth:24}}>{line.qty}×</span>
+                    <span style={{flex:1,textDecoration:isServed?'line-through':'none'}}>{line.name}</span>
+                    <button
+                      onClick={() => onToggleServed(line.line_id)}
+                      style={{
+                        width:32,height:32,borderRadius:'50%',border:'none',cursor:'pointer',fontSize:16,flexShrink:0,
+                        background: isServed ? '#22c55e' : '#2a2a2a',
+                        color: isServed ? 'white' : '#555',
+                      }}>
+                      ✓
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
             <button
               style={{marginTop:12,width:'100%',padding:'10px 0',background:'transparent',

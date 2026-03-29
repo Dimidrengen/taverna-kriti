@@ -7,9 +7,14 @@ const supabase = createClient(
 )
 
 const LANGS = {
-  el: { title:'Μπαρ', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', drinks:'Ποτά', flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά', closeTable:'Κλείσιμο & Πληρωμή', closing:'Κλείνει…', bill:'Λογαριασμός', total:'Σύνολο', allTables:'Όλα τα τραπέζια', activeDrinks:'Ενεργά ποτά' },
-  en: { title:'Bar', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', drinks:'Drinks', flowAll:'All at once', flowSeq:'By course', closeTable:'Close & Payment', closing:'Closing…', bill:'Bill', total:'Total', allTables:'All tables', activeDrinks:'Active drinks' },
-  da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', flowAll:'Alt på én gang', flowSeq:'Kursvis', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total', allTables:'Alle borde', activeDrinks:'Aktive drikkevarer' },
+  el: { title:'Μπαρ', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', drinks:'Ποτά', closeTable:'Κλείσιμο & Πληρωμή', closing:'Κλείνει…', bill:'Λογαριασμός', total:'Σύνολο', allTables:'Όλα τα τραπέζια', activeDrinks:'Ενεργά ποτά', served:'✓ Σερβιρίστηκε', tableWord:'Τραπέζι' },
+  en: { title:'Bar', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', drinks:'Drinks', closeTable:'Close & Payment', closing:'Closing…', bill:'Bill', total:'Total', allTables:'All tables', activeDrinks:'Active drinks', served:'✓ Served', tableWord:'Table' },
+  da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total', allTables:'Alle borde', activeDrinks:'Aktive drikkevarer', served:'✓ Serveret', tableWord:'Bord' },
+}
+
+function getTableLabel(name, tableWord) {
+  if (!name) return name
+  return name.replace(/^Table /i, tableWord + ' ').replace(/^Bord /i, tableWord + ' ').replace(/^Τραπέζι /i, tableWord + ' ')
 }
 
 function groupDrinkOrders(rows, translations) {
@@ -18,7 +23,7 @@ function groupDrinkOrders(rows, translations) {
     if (row.course !== 'drinks') continue
     const key = row.table_token
     if (!map[key]) {
-      map[key] = { table_label:row.table_label, table_token:row.table_token, orders:{} }
+      map[key] = { table_label:row.table_label, table_token:row.table_token, table_name:row.table_label, orders:{} }
     }
     if (!map[key].orders[row.order_id]) {
       map[key].orders[row.order_id] = { order_id:row.order_id, flow_type:row.flow_type, created_at:row.created_at, drinks:[] }
@@ -36,6 +41,7 @@ export default function BarPage() {
   const [pending, setPending]         = useState({})
   const [closing, setClosing]         = useState({})
   const [bills, setBills]             = useState({})
+  const [served, setServed]           = useState({})
   const [tab, setTab]                 = useState('drinks')
   const [lang, setLang]               = useState('el')
   const [translations, setTrans]      = useState({})
@@ -98,6 +104,14 @@ export default function BarPage() {
     finally { setPending(p => { const n={...p}; delete n[orderId]; return n }) }
   }
 
+  const toggleServed = async (lineId) => {
+    const isServed = !!served[lineId]
+    setServed(p => ({ ...p, [lineId]: !isServed }))
+    await supabase.from('order_lines')
+      .update({ served_at: isServed ? null : new Date().toISOString() })
+      .eq('id', lineId)
+  }
+
   const fetchBill = async (tableToken) => {
     if (bills[tableToken]) { setBills(p => { const n={...p}; delete n[tableToken]; return n }); return }
     const res = await fetch(`/api/table-bill?tableToken=${tableToken}`)
@@ -157,7 +171,7 @@ export default function BarPage() {
               {drinkOrders.map(table => (
                 <div key={table.table_token} style={styles.card}>
                   <div style={styles.cardHeader}>
-                    <span style={styles.tableLabel}>{table.table_label}</span>
+                    <span style={styles.tableLabel}>{getTableLabel(table.table_label, t.tableWord)}</span>
                   </div>
                   {Object.values(table.orders).filter(o => o.drinks.length > 0).map(order => (
                     <div key={order.order_id}>
@@ -166,12 +180,25 @@ export default function BarPage() {
                         <span style={{fontSize:13,fontWeight:700,textTransform:'uppercase',color:'#0ea5e9'}}>{t.drinks}</span>
                       </div>
                       <div style={styles.lineList}>
-                        {order.drinks.map(line => (
-                          <div key={line.line_id} style={styles.lineItem}>
-                            <span style={{fontSize:14,color:'#6b7280',minWidth:24}}>{line.qty}×</span>
-                            <span style={{fontSize:16}}>{line.name}</span>
-                          </div>
-                        ))}
+                        {order.drinks.map(line => {
+                          const isServed = !!served[line.line_id]
+                          return (
+                            <div key={line.line_id} style={{...styles.lineItem, opacity: isServed ? 0.4 : 1}}>
+                              <span style={{fontSize:14,color:'#6b7280',minWidth:24}}>{line.qty}×</span>
+                              <span style={{fontSize:16,flex:1,textDecoration:isServed?'line-through':'none'}}>{line.name}</span>
+                              <button
+                                onClick={() => toggleServed(line.line_id)}
+                                style={{
+                                  width:32,height:32,borderRadius:'50%',border:'none',cursor:'pointer',fontSize:16,
+                                  background: isServed ? '#22c55e' : '#2a2a2a',
+                                  color: isServed ? 'white' : '#666',
+                                  flexShrink:0,
+                                }}>
+                                ✓
+                              </button>
+                            </div>
+                          )
+                        })}
                       </div>
                       <div style={{padding:'8px 16px 16px'}}>
                         <button
@@ -198,7 +225,7 @@ export default function BarPage() {
                 return (
                   <div key={table.token} style={styles.card}>
                     <div style={styles.cardHeader}>
-                      <span style={styles.tableLabel}>{table.name}</span>
+                      <span style={styles.tableLabel}>{getTableLabel(table.name, t.tableWord)}</span>
                     </div>
                     {bill && (
                       <div style={{padding:'12px 16px'}}>
@@ -244,8 +271,8 @@ const styles = {
   cardHeader: {display:'flex',alignItems:'center',gap:10,padding:'14px 16px',borderBottom:'1px solid #222'},
   tableLabel: {fontSize:18,fontWeight:700,flex:1},
   drinksLabel:{display:'flex',alignItems:'center',padding:'12px 16px 4px'},
-  lineList:   {padding:'4px 16px 8px',display:'flex',flexDirection:'column',gap:6},
-  lineItem:   {display:'flex',gap:8,alignItems:'center'},
+  lineList:   {padding:'4px 16px 8px',display:'flex',flexDirection:'column',gap:8},
+  lineItem:   {display:'flex',gap:8,alignItems:'center',transition:'opacity 0.2s'},
   emptyWrap:  {display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'calc(100dvh - 120px)'},
   center:     {display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'100dvh',background:'#0d0d0d',color:'#f1f1f1'},
 }
