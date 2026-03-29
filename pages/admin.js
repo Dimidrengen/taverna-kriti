@@ -8,7 +8,7 @@ const supabase = createClient(
 
 const LANGS = {
   da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker på du vil nulstille dagens omsætning? Dette kan ikke fortrydes.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', period:'Periode', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data i denne periode' },
-  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:'Are you sure you want to reset today\'s revenue? This cannot be undone.', resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', period:'Period', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data in this period' },
+  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:"Are you sure you want to reset today's revenue? This cannot be undone.", resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', period:'Period', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data in this period' },
   el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'Αποθήκευση...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️ Επεξεργασία', todayRevenue:'Έσοδα σήμερα', totalToday:'Σύνολο σήμερα', closedTables:'κλειστά τραπέζια', noClosedTables:'Δεν υπάρχουν κλειστά τραπέζια σήμερα', openTables:'Ανοιχτά τραπέζια', noOpenTables:'Δεν υπάρχουν ανοιχτά τραπέζια', loading:'Φόρτωση...', resetRevenue:'Επαναφορά εσόδων', resetConfirm:'Είστε σίγουροι ότι θέλετε να επαναφέρετε τα έσοδα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'Επαναφορά...', stats:'📈 Στατιστικά', period:'Περίοδος', today:'Σήμερα', thisWeek:'Αυτή την εβδομάδα', thisMonth:'Αυτό τον μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Συνολικά έσοδα', avgPerSeating:'Μέσος όρος ανά seating', noStats:'Δεν υπάρχουν δεδομένα' },
 }
 
@@ -48,7 +48,7 @@ export default function AdminPage() {
     today.setHours(0,0,0,0)
     const { data } = await supabase
       .from('orders')
-      .select('*, order_lines(name, qty, price)')
+      .select('id, created_at, tables(name), order_lines(name, qty, price)')
       .eq('status','done')
       .gte('created_at', today.toISOString())
     return data || []
@@ -166,7 +166,7 @@ export default function AdminPage() {
             }}>{l.toUpperCase()}</button>
           ))}
         </div>
-        <div style={{display:'flex',gap:8}}>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {['menu','omsaetning','borde','statistik'].map(tb => (
             <button key={tb} onClick={() => setTab(tb)} style={{
               padding:'6px 16px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer',
@@ -260,7 +260,7 @@ export default function AdminPage() {
 
       {tab === 'omsaetning' && (
         <div style={s.content}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap',gap:12}}>
             <h2 style={{...s.sectionTitle,marginBottom:0}}>{t.todayRevenue}</h2>
             <button onClick={() => setShowResetConfirm(true)} style={{padding:'8px 16px',background:'transparent',border:'1px solid #dc2626',borderRadius:8,fontSize:14,fontWeight:600,color:'#dc2626',cursor:'pointer'}}>
               🔄 {t.resetRevenue}
@@ -291,7 +291,7 @@ export default function AdminPage() {
                 return (
                   <div key={order.id} style={{...s.card, marginBottom:8}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                      <span style={{fontWeight:600}}>{order.tables?.name || order.tables?.token || 'Bord'}</span>
+                      <span style={{fontWeight:600}}>{order.tables?.name || 'Ukendt bord'}</span>
                       <span style={{fontWeight:700,color:'#C2692A'}}>€{orderTotal.toFixed(2)}</span>
                     </div>
                     <div style={{fontSize:12,color:'#78716C',marginTop:4}}>
@@ -306,9 +306,9 @@ export default function AdminPage() {
 
       {tab === 'statistik' && (
         <div style={s.content}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:8}}>
             <h2 style={{...s.sectionTitle,marginBottom:0}}>{t.stats}</h2>
-            <div style={{display:'flex',gap:6}}>
+            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
               {['today','thisWeek','thisMonth','allTime'].map(p => (
                 <button key={p} onClick={() => setStatsPeriod(p)} style={{
                   padding:'6px 12px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer',
@@ -344,7 +344,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                   </div>
-                  <div style={{...s.card}}>
+                  <div style={s.card}>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 120px',gap:8,padding:'8px 0',borderBottom:'1px solid #e5e5e5',marginBottom:8}}>
                       <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase'}}>{t.table}</div>
                       <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase',textAlign:'center'}}>{t.seatings}</div>
@@ -373,7 +373,7 @@ export default function AdminPage() {
             : orders.map(order => (
                 <div key={order.id} style={{...s.card, marginBottom:8}}>
                   <div style={{display:'flex',justifyContent:'space-between'}}>
-                    <span style={{fontWeight:600}}>{order.tables?.name}</span>
+                    <span style={{fontWeight:600}}>{order.tables?.name || 'Ukendt bord'}</span>
                     <span style={{fontSize:12,color:'#78716C'}}>{new Date(order.created_at).toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'})}</span>
                   </div>
                 </div>
@@ -387,7 +387,7 @@ export default function AdminPage() {
 
 const s = {
   page:        {minHeight:'100vh',background:'#F5F5F0',fontFamily:'system-ui,sans-serif'},
-  header:      {background:'white',borderBottom:'1px solid #e5e5e5',padding:'16px 24px',display:'flex',alignItems:'center',gap:16,position:'sticky',top:0,zIndex:10},
+  header:      {background:'white',borderBottom:'1px solid #e5e5e5',padding:'16px 24px',display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'},
   title:       {fontSize:20,fontWeight:700,flex:1,color:'#1C1917'},
   content:     {maxWidth:800,margin:'0 auto',padding:24},
   sectionTitle:{fontSize:20,fontWeight:700,color:'#1C1917',marginBottom:16},
@@ -401,10 +401,3 @@ const s = {
   iconBtn:     {padding:'5px 10px',background:'#f5f5f0',border:'1px solid #e5e5e5',borderRadius:6,fontSize:12,cursor:'pointer',whiteSpace:'nowrap'},
   center:      {display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh'},
 }
-```
-
-Gå til VS Code → `pages/admin.js` → **Ctrl+A** → **Delete** → kopier ind → **Ctrl+S** → terminalen:
-```
-git add .
-git commit -m "admin statistik og nulstil omsaetning"
-git push
