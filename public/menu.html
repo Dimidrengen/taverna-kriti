@@ -85,7 +85,7 @@
     .order-total-val { font-size: 22px; font-family: 'Playfair Display', serif; color: var(--ink); }
     .send-btn { margin: 12px 20px 24px; background: var(--accent); color: white; border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 500; width: calc(100% - 40px); cursor: pointer; font-family: 'DM Sans', sans-serif; }
     .send-btn:hover { background: #A8572A; }
-    .confirm-screen { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 60px 30px; text-align: center; min-height: 100vh; gap: 16px; }
+    .confirm-screen { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 30px; text-align: center; min-height: 100vh; gap: 14px; }
     .confirm-screen.visible { display: flex; }
     .confirm-icon { width: 72px; height: 72px; background: #EBF5EF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; color: var(--green); }
     .confirm-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--ink); }
@@ -94,8 +94,14 @@
     .coming-next-box { background: #EBF5EF; border: 1px solid rgba(45,122,79,0.2); border-radius: 12px; padding: 14px 16px; width: 100%; text-align: left; }
     .coming-next-title { font-size: 11px; font-weight: 600; color: var(--green); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
     .coming-next-item { font-size: 13px; color: var(--ink); padding: 3px 0; }
-    .reorder-btn { width: 100%; padding: 14px; background: transparent; border: 1.5px solid var(--accent); border-radius: 14px; font-size: 15px; font-weight: 500; color: var(--accent); cursor: pointer; font-family: 'DM Sans', sans-serif; margin-top: 4px; }
-    .reorder-btn:hover { background: var(--accent-light); }
+    .reorder-btn { width: 100%; padding: 14px; background: var(--accent); border: none; border-radius: 14px; font-size: 15px; font-weight: 500; color: white; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .reorder-btn:hover { background: #A8572A; }
+    .bill-btn { width: 100%; padding: 14px; background: transparent; border: 1.5px solid var(--border); border-radius: 14px; font-size: 15px; font-weight: 500; color: var(--ink); cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .bill-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+    .bill-box { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; text-align: left; }
+    .bill-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .bill-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--ink); padding: 3px 0; }
+    .bill-total-row { display: flex; justify-content: space-between; font-size: 18px; font-family: 'Playfair Display', serif; color: var(--ink); padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--border); }
   </style>
 </head>
 <body>
@@ -176,19 +182,28 @@
       <div class="coming-next-title" id="coming-next-title">Coming up next</div>
       <div id="coming-next-list"></div>
     </div>
+    <div id="bill-box" class="bill-box" style="display:none">
+      <div class="bill-title" id="bill-title">Bill</div>
+      <div id="bill-lines"></div>
+      <div class="bill-total-row">
+        <span id="bill-total-label">Total</span>
+        <span id="bill-total-val">€0.00</span>
+      </div>
+    </div>
+    <button class="bill-btn" id="bill-btn" onclick="toggleBill()">&#128203; View bill</button>
     <button class="reorder-btn" id="reorder-btn" onclick="reorder()">+ Order more</button>
   </div>
 </div>
 <script>
 var UI_TEXT={
-  en:{viewOrder:'View order',sendBtn:'Send order to kitchen',notePlaceholder:'Any notes? (e.g. no onions, allergy info...)',total:'Total',orderTitle:'Your order',confirmTitle:'Order sent!',confirmSub:'Your order is on its way. The kitchen will serve each course when ready.',upsellLabel:'goes well with',servingModeTitle:'How would you like your food?',modeAllLabel:'All at once',modeAllDesc:'Everything together',modeCoursesLabel:'By course',modeCoursesDesc:'Starters first, then mains',comingNext:'Coming up next',reorderBtn:'+ Order more'},
-  da:{viewOrder:'Se bestilling',sendBtn:'Send bestilling til kokken',notePlaceholder:'Bemaerkninger?',total:'I alt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vej. Kokken serverer hvert kursus nar det er klar.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du have maden?',modeAllLabel:'Alt pa en gang',modeAllDesc:'Alt serveres sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forretter forst, derefter hovedretter',comingNext:'Kommer naeste',reorderBtn:'+ Bestil mere'},
-  de:{viewOrder:'Bestellung',sendBtn:'Bestellung senden',notePlaceholder:'Anmerkungen?',total:'Gesamt',orderTitle:'Ihre Bestellung',confirmTitle:'Bestellung gesendet!',confirmSub:'Ihre Bestellung ist auf dem Weg.',upsellLabel:'passt gut dazu',servingModeTitle:'Wie mochten Sie Ihr Essen?',modeAllLabel:'Alles auf einmal',modeAllDesc:'Alles zusammen',modeCoursesLabel:'Nach Gang',modeCoursesDesc:'Erst Vorspeise, dann Hauptgang',comingNext:'Als nachstes',reorderBtn:'+ Mehr bestellen'},
-  fr:{viewOrder:'Voir la commande',sendBtn:'Envoyer la commande',notePlaceholder:'Remarques?',total:'Total',orderTitle:'Votre commande',confirmTitle:'Commande envoyee!',confirmSub:'Votre commande est en route.',upsellLabel:'va bien avec',servingModeTitle:'Comment souhaitez-vous votre repas?',modeAllLabel:'Tout ensemble',modeAllDesc:'Tout en meme temps',modeCoursesLabel:'Par plat',modeCoursesDesc:'Entree puis plat',comingNext:'A venir',reorderBtn:'+ Commander encore'},
-  el:{viewOrder:'\u0394\u03b5\u03af\u03c4\u03b5 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1',sendBtn:'\u0391\u03c0\u03bf\u03c3\u03c4\u03bf\u03bb\u03ae \u03c3\u03c4\u03b7\u03bd \u03ba\u03bf\u03c5\u03b6\u03af\u03bd\u03b1',notePlaceholder:'\u03a3\u03b7\u03bc\u03b5\u03b9\u03ce\u03c3\u03b5\u03b9\u03c2;',total:'\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf',orderTitle:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2',confirmTitle:'\u0395\u03c3\u03c4\u03ac\u03bb\u03b7!',confirmSub:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2 \u03b5\u03af\u03bd\u03b1\u03b9 \u03ba\u03b1\u03c4\u03ac \u03c4\u03b7\u03bd \u03bf\u03b4\u03cc.',upsellLabel:'\u03c4\u03b1\u03b9\u03c1\u03b9\u03ac\u03b6\u03b5\u03b9 \u03bc\u03b5',servingModeTitle:'\u03a0\u03ce\u03c2 \u03b8\u03ad\u03bb\u03b5\u03c4\u03b5 \u03c4\u03bf \u03c6\u03b1\u03b3\u03b7\u03c4\u03cc \u03c3\u03b1\u03c2;',modeAllLabel:'\u038c\u03bb\u03b1 \u03bc\u03b1\u03b6\u03af',modeAllDesc:'\u038c\u03bb\u03b1 \u03c4\u03b1\u03c5\u03c4\u03cc\u03c7\u03c1\u03bf\u03bd\u03b1',modeCoursesLabel:'\u0391\u03bd\u03ac \u03c3\u03b5\u03b9\u03c1\u03ac',modeCoursesDesc:'\u03a0\u03c1\u03ce\u03c4\u03b1 \u03bf\u03c1\u03b5\u03ba\u03c4\u03b9\u03ba\u03ac, \u03bc\u03b5\u03c4\u03ac \u03ba\u03c5\u03c1\u03af\u03c9\u03c2',comingNext:'\u0395\u03c0\u03cc\u03bc\u03b5\u03bd\u03bf',reorderBtn:'+ \u03a0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03af\u03bb\u03b5\u03c4\u03b5 \u03be\u03b1\u03bd\u03ac'},
-  sv:{viewOrder:'Visa bestallning',sendBtn:'Skicka bestallning',notePlaceholder:'Anteckningar?',total:'Totalt',orderTitle:'Din bestallning',confirmTitle:'Bestallning skickad!',confirmSub:'Din bestallning ar pa vag.',upsellLabel:'passar bra till',servingModeTitle:'Hur vill du ha din mat?',modeAllLabel:'Allt pa en gang',modeAllDesc:'Allt tillsammans',modeCoursesLabel:'Per kurs',modeCoursesDesc:'Forratt forst, sedan huvudratt',comingNext:'Kommer harnaest',reorderBtn:'+ Bestall mer'},
-  no:{viewOrder:'Se bestilling',sendBtn:'Send bestilling',notePlaceholder:'Merknader?',total:'Totalt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vei.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du ha maten?',modeAllLabel:'Alt pa en gang',modeAllDesc:'Alt sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forrett forst, deretter hovedrett',comingNext:'Kommer neste',reorderBtn:'+ Bestill mer'},
-  fi:{viewOrder:'Nayta tilaus',sendBtn:'Laheta tilaus keittioon',notePlaceholder:'Huomioita?',total:'Yhteensa',orderTitle:'Tilauksesi',confirmTitle:'Tilaus lahetetty!',confirmSub:'Tilauksesi on matkalla keittioon.',upsellLabel:'sopii hyvin kanssa',servingModeTitle:'Miten haluatte ruokanne?',modeAllLabel:'Kaikki kerralla',modeAllDesc:'Kaikki yhta aikaa',modeCoursesLabel:'Annoksittain',modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat',comingNext:'Seuraavaksi',reorderBtn:'+ Tilaa lisaa'}
+  en:{viewOrder:'View order',sendBtn:'Send order to kitchen',notePlaceholder:'Any notes? (e.g. no onions, allergy info...)',total:'Total',orderTitle:'Your order',confirmTitle:'Order sent!',confirmSub:'Your order is on its way. The kitchen will serve each course when ready.',upsellLabel:'goes well with',servingModeTitle:'How would you like your food?',modeAllLabel:'All at once',modeAllDesc:'Everything together',modeCoursesLabel:'By course',modeCoursesDesc:'Starters first, then mains',comingNext:'Coming up next',reorderBtn:'+ Order more',billBtn:'View bill',hideBillBtn:'Hide bill',billTitle:'Your bill'},
+  da:{viewOrder:'Se bestilling',sendBtn:'Send bestilling til kokken',notePlaceholder:'Bemaerkninger?',total:'I alt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vej. Kokken serverer hvert kursus nar det er klar.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du have maden?',modeAllLabel:'Alt pa en gang',modeAllDesc:'Alt serveres sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forretter forst, derefter hovedretter',comingNext:'Kommer naeste',reorderBtn:'+ Bestil mere',billBtn:'Se regning',hideBillBtn:'Skjul regning',billTitle:'Din regning'},
+  de:{viewOrder:'Bestellung',sendBtn:'Bestellung senden',notePlaceholder:'Anmerkungen?',total:'Gesamt',orderTitle:'Ihre Bestellung',confirmTitle:'Bestellung gesendet!',confirmSub:'Ihre Bestellung ist auf dem Weg.',upsellLabel:'passt gut dazu',servingModeTitle:'Wie mochten Sie Ihr Essen?',modeAllLabel:'Alles auf einmal',modeAllDesc:'Alles zusammen',modeCoursesLabel:'Nach Gang',modeCoursesDesc:'Erst Vorspeise, dann Hauptgang',comingNext:'Als nachstes',reorderBtn:'+ Mehr bestellen',billBtn:'Rechnung',hideBillBtn:'Ausblenden',billTitle:'Ihre Rechnung'},
+  fr:{viewOrder:'Voir la commande',sendBtn:'Envoyer la commande',notePlaceholder:'Remarques?',total:'Total',orderTitle:'Votre commande',confirmTitle:'Commande envoyee!',confirmSub:'Votre commande est en route.',upsellLabel:'va bien avec',servingModeTitle:'Comment souhaitez-vous votre repas?',modeAllLabel:'Tout ensemble',modeAllDesc:'Tout en meme temps',modeCoursesLabel:'Par plat',modeCoursesDesc:'Entree puis plat',comingNext:'A venir',reorderBtn:'+ Commander encore',billBtn:'Voir addition',hideBillBtn:'Masquer',billTitle:'Votre addition'},
+  el:{viewOrder:'\u0394\u03b5\u03af\u03c4\u03b5 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1',sendBtn:'\u0391\u03c0\u03bf\u03c3\u03c4\u03bf\u03bb\u03ae \u03c3\u03c4\u03b7\u03bd \u03ba\u03bf\u03c5\u03b6\u03af\u03bd\u03b1',notePlaceholder:'\u03a3\u03b7\u03bc\u03b5\u03b9\u03ce\u03c3\u03b5\u03b9\u03c2;',total:'\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf',orderTitle:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2',confirmTitle:'\u0395\u03c3\u03c4\u03ac\u03bb\u03b7!',confirmSub:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2 \u03b5\u03af\u03bd\u03b1\u03b9 \u03ba\u03b1\u03c4\u03ac \u03c4\u03b7\u03bd \u03bf\u03b4\u03cc.',upsellLabel:'\u03c4\u03b1\u03b9\u03c1\u03b9\u03ac\u03b6\u03b5\u03b9 \u03bc\u03b5',servingModeTitle:'\u03a0\u03ce\u03c2 \u03b8\u03ad\u03bb\u03b5\u03c4\u03b5 \u03c4\u03bf \u03c6\u03b1\u03b3\u03b7\u03c4\u03cc \u03c3\u03b1\u03c2;',modeAllLabel:'\u038c\u03bb\u03b1 \u03bc\u03b1\u03b6\u03af',modeAllDesc:'\u038c\u03bb\u03b1 \u03c4\u03b1\u03c5\u03c4\u03cc\u03c7\u03c1\u03bf\u03bd\u03b1',modeCoursesLabel:'\u0391\u03bd\u03ac \u03c3\u03b5\u03b9\u03c1\u03ac',modeCoursesDesc:'\u03a0\u03c1\u03ce\u03c4\u03b1 \u03bf\u03c1\u03b5\u03ba\u03c4\u03b9\u03ba\u03ac, \u03bc\u03b5\u03c4\u03ac \u03ba\u03c5\u03c1\u03af\u03c9\u03c2',comingNext:'\u0395\u03c0\u03cc\u03bc\u03b5\u03bd\u03bf',reorderBtn:'+ \u03a0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03af\u03bb\u03b5\u03c4\u03b5 \u03be\u03b1\u03bd\u03ac',billBtn:'\u0394\u03b5\u03af\u03c4\u03b5 \u03bb\u03bf\u03b3\u03b1\u03c1\u03b9\u03b1\u03c3\u03bc\u03cc',hideBillBtn:'\u0391\u03c0\u03cc\u03ba\u03c1\u03c5\u03c8\u03b7',billTitle:'\u039b\u03bf\u03b3\u03b1\u03c1\u03b9\u03b1\u03c3\u03bc\u03cc\u03c2'},
+  sv:{viewOrder:'Visa bestallning',sendBtn:'Skicka bestallning',notePlaceholder:'Anteckningar?',total:'Totalt',orderTitle:'Din bestallning',confirmTitle:'Bestallning skickad!',confirmSub:'Din bestallning ar pa vag.',upsellLabel:'passar bra till',servingModeTitle:'Hur vill du ha din mat?',modeAllLabel:'Allt pa en gang',modeAllDesc:'Allt tillsammans',modeCoursesLabel:'Per kurs',modeCoursesDesc:'Forratt forst, sedan huvudratt',comingNext:'Kommer harnaest',reorderBtn:'+ Bestall mer',billBtn:'Visa nota',hideBillBtn:'Dold',billTitle:'Din nota'},
+  no:{viewOrder:'Se bestilling',sendBtn:'Send bestilling',notePlaceholder:'Merknader?',total:'Totalt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vei.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du ha maten?',modeAllLabel:'Alt pa en gang',modeAllDesc:'Alt sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forrett forst, deretter hovedrett',comingNext:'Kommer neste',reorderBtn:'+ Bestill mer',billBtn:'Se regning',hideBillBtn:'Skjul',billTitle:'Din regning'},
+  fi:{viewOrder:'Nayta tilaus',sendBtn:'Laheta tilaus keittioon',notePlaceholder:'Huomioita?',total:'Yhteensa',orderTitle:'Tilauksesi',confirmTitle:'Tilaus lahetetty!',confirmSub:'Tilauksesi on matkalla keittioon.',upsellLabel:'sopii hyvin kanssa',servingModeTitle:'Miten haluatte ruokanne?',modeAllLabel:'Kaikki kerralla',modeAllDesc:'Kaikki yhta aikaa',modeCoursesLabel:'Annoksittain',modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat',comingNext:'Seuraavaksi',reorderBtn:'+ Tilaa lisaa',billBtn:'Nayta lasku',hideBillBtn:'Piilota',billTitle:'Laskusi'}
 };
 var CAT_TO_COURSE={'Starters':'starters','Salads':'salads','Mains':'mains','Sides':'sides','Desserts':'dessert','Drinks':'drinks'};
 var COURSE_ORDER=['Drinks','Starters','Mains','Sides','Salads','Desserts'];
@@ -232,7 +247,20 @@ var UPSELL_RULES=[
 ];
 var allItems=[],categories=[],currentCat=0,cart={};
 var tableToken='',lang='en',restaurantSlug='',lastAddedId=null,servingMode=null;
+var billVisible=false;
+
 function ui(k){return(UI_TEXT[lang]&&UI_TEXT[lang][k])||UI_TEXT.en[k]||'';}
+
+function saveState(){
+  try{sessionStorage.setItem('tk_confirmed','1');sessionStorage.setItem('tk_token',tableToken);}catch(e){}
+}
+function clearState(){
+  try{sessionStorage.removeItem('tk_confirmed');sessionStorage.removeItem('tk_token');}catch(e){}
+}
+function wasConfirmed(){
+  try{return sessionStorage.getItem('tk_confirmed')==='1'&&sessionStorage.getItem('tk_token')===tableToken;}catch(e){return false;}
+}
+
 function updateUITexts(){
   document.getElementById('cart-cta').textContent=ui('viewOrder');
   document.getElementById('send-btn').textContent=ui('sendBtn');
@@ -246,7 +274,9 @@ function updateUITexts(){
   document.getElementById('mode-courses-label').textContent=ui('modeCoursesLabel');
   document.getElementById('mode-courses-desc').textContent=ui('modeCoursesDesc');
   document.getElementById('reorder-btn').textContent=ui('reorderBtn');
+  document.getElementById('bill-btn').textContent=billVisible?ui('hideBillBtn'):'&#128203; '+ui('billBtn');
 }
+
 function setServingMode(mode){
   servingMode=mode;
   document.getElementById('send-btn').style.opacity='1';
@@ -258,6 +288,7 @@ function setServingMode(mode){
   document.getElementById('send-btn').textContent=ui('sendBtn');
   if(mode==='courses')renderCourseGroups();
 }
+
 function loadMenu(){
   return fetch('/api/menu?restaurant='+restaurantSlug+'&lang='+lang)
     .then(function(r){return r.json();})
@@ -269,12 +300,37 @@ function loadMenu(){
       return data;
     });
 }
+
+function showConfirmScreen(){
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('app-header').style.display='none';
+  document.getElementById('menu-view').style.display='none';
+  document.getElementById('order-view').classList.remove('visible');
+  document.getElementById('confirm-view').classList.add('visible');
+  document.getElementById('confirm-title').textContent=ui('confirmTitle');
+  document.getElementById('confirm-sub').textContent=ui('confirmSub');
+  document.getElementById('reorder-btn').textContent=ui('reorderBtn');
+  document.getElementById('bill-btn').innerHTML='&#128203; '+ui('billBtn');
+  var tName=tableToken.replace('tbl-0','Table ').replace('tbl-','Table ');
+  document.getElementById('confirm-table').textContent=tName;
+}
+
 function init(){
   var p=new URLSearchParams(window.location.search);
   restaurantSlug=p.get('restaurant')||'taverna-kriti';
   tableToken=p.get('table')||'tbl-005';
   lang=p.get('lang')||navigator.language.split('-')[0]||'en';
   if(!UI_TEXT[lang])lang='en';
+
+  // Tjek om bordet allerede har bestilt — vis bekræftelsesskærmen
+  if(wasConfirmed()){
+    loadMenu().then(function(){
+      updateUITexts();
+      showConfirmScreen();
+    });
+    return;
+  }
+
   loadMenu().then(function(){
     var tName=tableToken.replace('tbl-0','Table ').replace('tbl-','Table ');
     document.getElementById('table-badge').textContent='🪑 '+tName;
@@ -287,18 +343,21 @@ function init(){
     updateUITexts();renderCats();renderMenu();
   }).catch(function(){document.querySelector('.loading-text').textContent='Could not load menu.';});
 }
+
 function setLang(l){
   lang=l;
   var codes=['en','da','de','el','fr','sv','no','fi'];
   document.querySelectorAll('.lang-btn').forEach(function(b,i){b.classList.toggle('active',codes[i]===l);});
   loadMenu().then(function(){currentCat=0;updateUITexts();renderCats();renderMenu();updateCart();if(lastAddedId)showUpsellFor(lastAddedId);});
 }
+
 function renderCats(){
   document.getElementById('cat-row').innerHTML=categories.map(function(c,i){
     return '<button class="cat-tab'+(i===currentCat?' active':'')+'" onclick="selectCat('+i+')">'+c+'</button>';
   }).join('');
 }
 function selectCat(i){currentCat=i;renderCats();renderMenu();if(lastAddedId)showUpsellFor(lastAddedId);}
+
 function renderMenu(){
   var items=allItems.filter(function(it){return it.category===categories[currentCat];});
   document.getElementById('menu-list').innerHTML=items.map(function(item){
@@ -309,6 +368,7 @@ function renderMenu(){
     return '<div class="menu-item"><div class="item-emoji">'+(item.emoji||'&#127869;&#65039;')+'</div><div class="item-body"><div class="item-name">'+item.name+'</div><div class="item-desc">'+(item.description||'')+'</div><div class="item-foot"><div class="item-price">€'+Number(item.price).toFixed(2)+'</div>'+ctrl+'</div></div></div>';
   }).join('');
 }
+
 function groupCartByCourse(){
   var groups={};
   Object.values(cart).forEach(function(item){
@@ -318,6 +378,7 @@ function groupCartByCourse(){
   });
   return COURSE_ORDER.filter(function(c){return groups[c];}).map(function(c){return{category:c,items:groups[c]};});
 }
+
 function renderCourseGroups(){
   var groups=groupCartByCourse();
   var labels=COURSE_LABELS[lang]||COURSE_LABELS.en;
@@ -329,6 +390,7 @@ function renderCourseGroups(){
     return '<div class="course-group"><div class="course-header-row"><span class="course-name">'+(labels[group.category]||group.category)+'</span><span class="course-badge">€'+total.toFixed(2)+'</span></div><div class="course-items">'+rows+'</div></div>';
   }).join('');
 }
+
 function getUpsellsForItem(item){
   var n=(item.originalName||item.name).toLowerCase();
   var names=[];
@@ -343,6 +405,7 @@ function getUpsellsForItem(item){
   }
   return s.slice(0,3);
 }
+
 function showUpsellFor(itemId){
   var item=allItems.find(function(i){return i.id===itemId;});
   if(!item)return;
@@ -355,6 +418,7 @@ function showUpsellFor(itemId){
     return '<div class="upsell-chip" onclick="addItem(\''+x.id+'\')">'+(x.emoji||'&#127869;&#65039;')+' '+x.name+' +€'+Number(x.price).toFixed(2)+'</div>';
   }).join('');
 }
+
 function addItem(id){
   var item=allItems.find(function(i){return i.id===id;});
   if(!item)return;
@@ -363,6 +427,7 @@ function addItem(id){
   renderMenu();updateCart();showUpsellFor(id);
   setTimeout(function(){var bar=document.getElementById('upsell-bar');if(bar&&bar.classList.contains('visible')){bar.scrollIntoView({behavior:'smooth',block:'start'});}},100);
 }
+
 function removeItem(id){
   if(!cart[id])return;
   cart[id].qty--;
@@ -371,6 +436,7 @@ function removeItem(id){
   if(!Object.keys(cart).length){document.getElementById('upsell-bar').classList.remove('visible');lastAddedId=null;}
   else if(lastAddedId)showUpsellFor(lastAddedId);
 }
+
 function updateCart(){
   var e=Object.values(cart);
   var total=e.reduce(function(s,i){return s+i.price*i.qty;},0);
@@ -379,6 +445,7 @@ function updateCart(){
   document.getElementById('cart-count-label').textContent=count+' item'+(count!==1?'s':'');
   document.getElementById('cart-total-label').textContent='€'+total.toFixed(2);
 }
+
 function showOrder(){
   document.getElementById('menu-view').style.display='none';
   document.getElementById('order-view').classList.add('visible');
@@ -390,15 +457,52 @@ function showOrder(){
   document.getElementById('order-total-val').textContent='€'+total.toFixed(2);
   if(servingMode==='courses')renderCourseGroups();
 }
+
 function showMenu(){
   document.getElementById('menu-view').style.display='block';
   document.getElementById('order-view').classList.remove('visible');
 }
+
+function toggleBill(){
+  billVisible=!billVisible;
+  var box=document.getElementById('bill-box');
+  var btn=document.getElementById('bill-btn');
+  if(billVisible){
+    btn.textContent=ui('hideBillBtn');
+    box.style.display='block';
+    fetch('/api/table-bill?tableToken='+tableToken)
+      .then(function(r){return r.json();})
+      .then(function(data){
+        document.getElementById('bill-title').textContent=ui('billTitle');
+        document.getElementById('bill-total-label').textContent=ui('total');
+        var lines='';
+        if(data.orders){
+          data.orders.forEach(function(o){
+            o.lines.forEach(function(l){
+              lines+='<div class="bill-row"><span>'+l.qty+'x '+l.name+'</span><span>€'+(l.price*l.qty).toFixed(2)+'</span></div>';
+            });
+          });
+        }
+        document.getElementById('bill-lines').innerHTML=lines;
+        document.getElementById('bill-total-val').textContent='€'+(data.grandTotal||0).toFixed(2);
+      });
+  } else {
+    btn.innerHTML='&#128203; '+ui('billBtn');
+    box.style.display='none';
+  }
+}
+
 function reorder(){
   document.getElementById('confirm-view').classList.remove('visible');
   document.getElementById('coming-next-box').style.display='none';
+  document.getElementById('bill-box').style.display='none';
+  billVisible=false;
   document.getElementById('app-header').style.display='block';
   document.getElementById('menu-view').style.display='block';
+  var tName=tableToken.replace('tbl-0','Table ').replace('tbl-','Table ');
+  document.getElementById('table-badge').textContent='🪑 '+tName;
+  var codes=['en','da','de','el','fr','sv','no','fi'];
+  document.querySelectorAll('.lang-btn').forEach(function(b,i){b.classList.toggle('active',codes[i]===lang);});
   servingMode=null;
   cart={};
   lastAddedId=null;
@@ -412,6 +516,7 @@ function reorder(){
   document.getElementById('order-note').value='';
   renderMenu();updateCart();
 }
+
 function sendOrder(){
   var note=document.getElementById('order-note').value.trim();
   var total=Object.values(cart).reduce(function(s,i){return s+i.price*i.qty;},0);
@@ -425,6 +530,7 @@ function sendOrder(){
     body:JSON.stringify({tableToken:tableToken,note:note,total:total,lines:lines,flowType:flowType})
   }).then(function(r){return r.json();}).then(function(data){
     if(data.success){
+      saveState();
       document.getElementById('order-view').classList.remove('visible');
       document.getElementById('menu-view').style.display='none';
       document.getElementById('app-header').style.display='none';
@@ -432,6 +538,7 @@ function sendOrder(){
       document.getElementById('confirm-title').textContent=ui('confirmTitle');
       document.getElementById('confirm-sub').textContent=ui('confirmSub');
       document.getElementById('reorder-btn').textContent=ui('reorderBtn');
+      document.getElementById('bill-btn').innerHTML='&#128203; '+ui('billBtn');
       if(flowType==='sequential'){
         var labels=COURSE_LABELS[lang]||COURSE_LABELS.en;
         var later=groupCartByCourse().slice(1);
