@@ -6,8 +6,15 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+const LANGS = {
+  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...' },
+  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...' },
+  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'Αποθήκευση...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️ Επεξεργασία', todayRevenue:'Έσοδα σήμερα', totalToday:'Σύνολο σήμερα', closedTables:'κλειστά τραπέζια', noClosedTables:'Δεν υπάρχουν κλειστά τραπέζια σήμερα', openTables:'Ανοιχτά τραπέζια', noOpenTables:'Δεν υπάρχουν ανοιχτά τραπέζια', loading:'Φόρτωση...' },
+}
+
 export default function AdminPage() {
   const [tab, setTab] = useState('menu')
+  const [lang, setLang] = useState('da')
   const [items, setItems] = useState([])
   const [orders, setOrders] = useState([])
   const [tables, setTables] = useState([])
@@ -16,6 +23,8 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [newItem, setNewItem] = useState({ name:'', description:'', price:'', category:'Starters', emoji:'', station:'kitchen' })
+  const [revenue, setRevenue] = useState([])
+  const t = LANGS[lang]
 
   const fetchData = useCallback(async () => {
     const [{ data: menuItems }, { data: openOrders }, { data: allTables }] = await Promise.all([
@@ -40,7 +49,6 @@ export default function AdminPage() {
     return data || []
   }, [])
 
-  const [revenue, setRevenue] = useState([])
   useEffect(() => {
     fetchData()
     fetchRevenue().then(setRevenue)
@@ -89,53 +97,62 @@ export default function AdminPage() {
   const grandTotal = revenue.reduce((s, o) => s + (o.order_lines||[]).reduce((ls, l) => ls + l.price * l.qty, 0), 0)
   const categories = ['Starters','Salads','Mains','Sides','Desserts','Drinks']
 
-  if (loading) return <div style={s.center}><p style={{color:'#aaa'}}>Indlæser...</p></div>
+  if (loading) return <div style={s.center}><p style={{color:'#aaa'}}>{t.loading}</p></div>
 
   return (
     <div style={s.page}>
       <header style={s.header}>
         <span style={s.title}>⚙️ Taverna Kriti — Admin</span>
+        <div style={{display:'flex',gap:6,marginRight:12}}>
+          {['da','en','el'].map(l => (
+            <button key={l} onClick={() => setLang(l)} style={{
+              padding:'4px 12px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer',
+              background: lang===l ? '#C2692A' : 'transparent',
+              color: lang===l ? 'white' : '#888',
+              border: lang===l ? 'none' : '1px solid #ddd',
+            }}>{l.toUpperCase()}</button>
+          ))}
+        </div>
         <div style={{display:'flex',gap:8}}>
-          {['menu','omsaetning','borde'].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
+          {['menu','omsaetning','borde'].map(tb => (
+            <button key={tb} onClick={() => setTab(tb)} style={{
               padding:'6px 16px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer',
-              background: tab===t ? '#C2692A' : 'transparent',
-              color: tab===t ? 'white' : '#888',
-              border: tab===t ? 'none' : '1px solid #333',
+              background: tab===tb ? '#C2692A' : 'transparent',
+              color: tab===tb ? 'white' : '#888',
+              border: tab===tb ? 'none' : '1px solid #333',
             }}>
-              {t==='menu' ? '🍽 Menu' : t==='omsaetning' ? '📊 Omsætning' : '🪑 Borde'}
+              {tb==='menu' ? t.menu : tb==='omsaetning' ? t.revenue : t.tables}
             </button>
           ))}
         </div>
       </header>
 
-      {/* MENU TAB */}
       {tab === 'menu' && (
         <div style={s.content}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
-            <h2 style={s.sectionTitle}>Menupunkter</h2>
-            <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>+ Tilføj ret</button>
+            <h2 style={s.sectionTitle}>{t.menuItems}</h2>
+            <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{t.addItem}</button>
           </div>
 
           {showAdd && (
-            <div style={s.card}>
-              <h3 style={{fontSize:16,fontWeight:600,marginBottom:16,color:'#1C1917'}}>Ny ret</h3>
+            <div style={{...s.card, marginBottom:20}}>
+              <h3 style={{fontSize:16,fontWeight:600,marginBottom:16,color:'#1C1917'}}>{t.newItem}</h3>
               <div style={s.grid2}>
-                <input style={s.input} placeholder="Navn" value={newItem.name} onChange={e => setNewItem({...newItem, name:e.target.value})} />
+                <input style={s.input} placeholder={t.name} value={newItem.name} onChange={e => setNewItem({...newItem, name:e.target.value})} />
                 <input style={s.input} placeholder="Emoji" value={newItem.emoji} onChange={e => setNewItem({...newItem, emoji:e.target.value})} />
-                <input style={s.input} placeholder="Pris (€)" type="number" value={newItem.price} onChange={e => setNewItem({...newItem, price:e.target.value})} />
+                <input style={s.input} placeholder={t.price} type="number" value={newItem.price} onChange={e => setNewItem({...newItem, price:e.target.value})} />
                 <select style={s.input} value={newItem.category} onChange={e => setNewItem({...newItem, category:e.target.value})}>
                   {categories.map(c => <option key={c}>{c}</option>)}
                 </select>
                 <select style={s.input} value={newItem.station} onChange={e => setNewItem({...newItem, station:e.target.value})}>
-                  <option value="kitchen">Køkken</option>
-                  <option value="bar">Bar</option>
+                  <option value="kitchen">{t.kitchen}</option>
+                  <option value="bar">{t.bar}</option>
                 </select>
               </div>
-              <textarea style={{...s.input, width:'100%', marginTop:8, resize:'none'}} rows={2} placeholder="Beskrivelse" value={newItem.description} onChange={e => setNewItem({...newItem, description:e.target.value})} />
+              <textarea style={{...s.input, width:'100%', marginTop:8, resize:'none'}} rows={2} placeholder={t.description} value={newItem.description} onChange={e => setNewItem({...newItem, description:e.target.value})} />
               <div style={{display:'flex',gap:8,marginTop:12}}>
-                <button onClick={addItem} disabled={saving||!newItem.name||!newItem.price} style={s.saveBtn}>{saving ? 'Gemmer...' : 'Gem'}</button>
-                <button onClick={() => setShowAdd(false)} style={s.cancelBtn}>Annuller</button>
+                <button onClick={addItem} disabled={saving||!newItem.name||!newItem.price} style={s.saveBtn}>{saving ? t.saving : t.save}</button>
+                <button onClick={() => setShowAdd(false)} style={s.cancelBtn}>{t.cancel}</button>
               </div>
             </div>
           )}
@@ -151,21 +168,21 @@ export default function AdminPage() {
                     {editing?.id === item.id ? (
                       <div>
                         <div style={s.grid2}>
-                          <input style={s.input} value={editing.name} onChange={e => setEditing({...editing, name:e.target.value})} placeholder="Navn" />
+                          <input style={s.input} value={editing.name} onChange={e => setEditing({...editing, name:e.target.value})} placeholder={t.name} />
                           <input style={s.input} value={editing.emoji||''} onChange={e => setEditing({...editing, emoji:e.target.value})} placeholder="Emoji" />
-                          <input style={s.input} type="number" value={editing.price} onChange={e => setEditing({...editing, price:e.target.value})} placeholder="Pris" />
+                          <input style={s.input} type="number" value={editing.price} onChange={e => setEditing({...editing, price:e.target.value})} placeholder={t.price} />
                           <select style={s.input} value={editing.category} onChange={e => setEditing({...editing, category:e.target.value})}>
                             {categories.map(c => <option key={c}>{c}</option>)}
                           </select>
                           <select style={s.input} value={editing.station||'kitchen'} onChange={e => setEditing({...editing, station:e.target.value})}>
-                            <option value="kitchen">Køkken</option>
-                            <option value="bar">Bar</option>
+                            <option value="kitchen">{t.kitchen}</option>
+                            <option value="bar">{t.bar}</option>
                           </select>
                         </div>
-                        <textarea style={{...s.input,width:'100%',marginTop:8,resize:'none'}} rows={2} value={editing.description||''} onChange={e => setEditing({...editing, description:e.target.value})} placeholder="Beskrivelse" />
+                        <textarea style={{...s.input,width:'100%',marginTop:8,resize:'none'}} rows={2} value={editing.description||''} onChange={e => setEditing({...editing, description:e.target.value})} placeholder={t.description} />
                         <div style={{display:'flex',gap:8,marginTop:12}}>
-                          <button onClick={() => saveItem(editing)} disabled={saving} style={s.saveBtn}>{saving?'Gemmer...':'Gem'}</button>
-                          <button onClick={() => setEditing(null)} style={s.cancelBtn}>Annuller</button>
+                          <button onClick={() => saveItem(editing)} disabled={saving} style={s.saveBtn}>{saving ? t.saving : t.save}</button>
+                          <button onClick={() => setEditing(null)} style={s.cancelBtn}>{t.cancel}</button>
                         </div>
                       </div>
                     ) : (
@@ -177,9 +194,9 @@ export default function AdminPage() {
                         </div>
                         <div style={{fontWeight:700,fontSize:15,minWidth:50}}>€{Number(item.price).toFixed(2)}</div>
                         <button onClick={() => toggleAvailable(item)} style={{...s.iconBtn, background: item.available ? '#EBF5EF' : '#FEE2E2', color: item.available ? '#2D7A4F' : '#dc2626'}}>
-                          {item.available ? '✓ Aktiv' : '✗ Inaktiv'}
+                          {item.available ? t.active : t.inactive}
                         </button>
-                        <button onClick={() => setEditing({...item})} style={s.iconBtn}>✏️ Rediger</button>
+                        <button onClick={() => setEditing({...item})} style={s.iconBtn}>{t.edit}</button>
                       </div>
                     )}
                   </div>
@@ -190,17 +207,16 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* OMSÆTNING TAB */}
       {tab === 'omsaetning' && (
         <div style={s.content}>
-          <h2 style={s.sectionTitle}>Dagens omsætning</h2>
+          <h2 style={s.sectionTitle}>{t.todayRevenue}</h2>
           <div style={{...s.card, textAlign:'center', marginBottom:24}}>
-            <div style={{fontSize:14,color:'#78716C',marginBottom:8}}>Total i dag</div>
+            <div style={{fontSize:14,color:'#78716C',marginBottom:8}}>{t.totalToday}</div>
             <div style={{fontSize:48,fontWeight:700,color:'#C2692A'}}>€{grandTotal.toFixed(2)}</div>
-            <div style={{fontSize:13,color:'#78716C',marginTop:4}}>{revenue.length} lukkede borde</div>
+            <div style={{fontSize:13,color:'#78716C',marginTop:4}}>{revenue.length} {t.closedTables}</div>
           </div>
           {revenue.length === 0
-            ? <p style={{color:'#aaa',textAlign:'center'}}>Ingen lukkede borde i dag endnu</p>
+            ? <p style={{color:'#aaa',textAlign:'center'}}>{t.noClosedTables}</p>
             : revenue.map(order => {
                 const orderTotal = (order.order_lines||[]).reduce((s,l) => s+l.price*l.qty, 0)
                 return (
@@ -219,12 +235,11 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* BORDE TAB */}
       {tab === 'borde' && (
         <div style={s.content}>
-          <h2 style={s.sectionTitle}>Åbne borde</h2>
+          <h2 style={s.sectionTitle}>{t.openTables}</h2>
           {orders.length === 0
-            ? <p style={{color:'#aaa',textAlign:'center'}}>Ingen åbne borde</p>
+            ? <p style={{color:'#aaa',textAlign:'center'}}>{t.noOpenTables}</p>
             : orders.map(order => (
                 <div key={order.id} style={{...s.card, marginBottom:8}}>
                   <div style={{display:'flex',justifyContent:'space-between'}}>
