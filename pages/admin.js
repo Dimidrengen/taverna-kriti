@@ -7,9 +7,9 @@ const supabase = createClient(
 )
 
 const LANGS = {
-  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...' },
-  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...' },
-  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'Αποθήκευση...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️ Επεξεργασία', todayRevenue:'Έσοδα σήμερα', totalToday:'Σύνολο σήμερα', closedTables:'κλειστά τραπέζια', noClosedTables:'Δεν υπάρχουν κλειστά τραπέζια σήμερα', openTables:'Ανοιχτά τραπέζια', noOpenTables:'Δεν υπάρχουν ανοιχτά τραπέζια', loading:'Φόρτωση...' },
+  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker på du vil nulstille dagens omsætning? Dette kan ikke fortrydes.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', period:'Periode', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data i denne periode' },
+  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:'Are you sure you want to reset today\'s revenue? This cannot be undone.', resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', period:'Period', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data in this period' },
+  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'Αποθήκευση...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️ Επεξεργασία', todayRevenue:'Έσοδα σήμερα', totalToday:'Σύνολο σήμερα', closedTables:'κλειστά τραπέζια', noClosedTables:'Δεν υπάρχουν κλειστά τραπέζια σήμερα', openTables:'Ανοιχτά τραπέζια', noOpenTables:'Δεν υπάρχουν ανοιχτά τραπέζια', loading:'Φόρτωση...', resetRevenue:'Επαναφορά εσόδων', resetConfirm:'Είστε σίγουροι ότι θέλετε να επαναφέρετε τα έσοδα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'Επαναφορά...', stats:'📈 Στατιστικά', period:'Περίοδος', today:'Σήμερα', thisWeek:'Αυτή την εβδομάδα', thisMonth:'Αυτό τον μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Συνολικά έσοδα', avgPerSeating:'Μέσος όρος ανά seating', noStats:'Δεν υπάρχουν δεδομένα' },
 }
 
 export default function AdminPage() {
@@ -24,12 +24,17 @@ export default function AdminPage() {
   const [showAdd, setShowAdd] = useState(false)
   const [newItem, setNewItem] = useState({ name:'', description:'', price:'', category:'Starters', emoji:'', station:'kitchen' })
   const [revenue, setRevenue] = useState([])
+  const [resetting, setResetting] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [statsPeriod, setStatsPeriod] = useState('today')
+  const [statsData, setStatsData] = useState([])
+  const [statsLoading, setStatsLoading] = useState(false)
   const t = LANGS[lang]
 
   const fetchData = useCallback(async () => {
     const [{ data: menuItems }, { data: openOrders }, { data: allTables }] = await Promise.all([
       supabase.from('menu_items').select('*').order('category').order('name'),
-      supabase.from('orders').select('*, tables(name)').eq('status','open'),
+      supabase.from('orders').select('id, created_at, status, tables(name, token)').eq('status','open'),
       supabase.from('tables').select('*').order('name'),
     ])
     if (menuItems) setItems(menuItems)
@@ -53,6 +58,10 @@ export default function AdminPage() {
     fetchData()
     fetchRevenue().then(setRevenue)
   }, [])
+
+  useEffect(() => {
+    if (tab === 'statistik') fetchStats(statsPeriod)
+  }, [tab, statsPeriod])
 
   const saveItem = async (item) => {
     setSaving(true)
@@ -94,6 +103,50 @@ export default function AdminPage() {
     fetchData()
   }
 
+  const fetchStats = async (period) => {
+    setStatsLoading(true)
+    const now = new Date()
+    let from = new Date()
+    if (period === 'today') { from.setHours(0,0,0,0) }
+    else if (period === 'thisWeek') { from.setDate(now.getDate() - now.getDay()); from.setHours(0,0,0,0) }
+    else if (period === 'thisMonth') { from = new Date(now.getFullYear(), now.getMonth(), 1) }
+    else { from = new Date('2020-01-01') }
+
+    const query = supabase
+      .from('orders')
+      .select('id, created_at, tables(name), order_lines(qty, price)')
+      .in('status', ['done', 'archived'])
+    if (period !== 'allTime') query.gte('created_at', from.toISOString())
+    const { data } = await query
+
+    if (!data) { setStatsData([]); setStatsLoading(false); return }
+
+    const map = {}
+    data.forEach(order => {
+      const name = order.tables?.name || 'Ukendt'
+      if (!map[name]) map[name] = { name, seatings: 0, total: 0 }
+      map[name].seatings++
+      map[name].total += (order.order_lines||[]).reduce((s,l) => s + l.price * l.qty, 0)
+    })
+    const sorted = Object.values(map).sort((a,b) => b.total - a.total)
+    setStatsData(sorted)
+    setStatsLoading(false)
+  }
+
+  const resetRevenue = async () => {
+    setResetting(true)
+    const today = new Date()
+    today.setHours(0,0,0,0)
+    await supabase
+      .from('orders')
+      .update({ status: 'archived' })
+      .eq('status', 'done')
+      .gte('created_at', today.toISOString())
+    setRevenue([])
+    setResetting(false)
+    setShowResetConfirm(false)
+  }
+
   const grandTotal = revenue.reduce((s, o) => s + (o.order_lines||[]).reduce((ls, l) => ls + l.price * l.qty, 0), 0)
   const categories = ['Starters','Salads','Mains','Sides','Desserts','Drinks']
 
@@ -114,14 +167,14 @@ export default function AdminPage() {
           ))}
         </div>
         <div style={{display:'flex',gap:8}}>
-          {['menu','omsaetning','borde'].map(tb => (
+          {['menu','omsaetning','borde','statistik'].map(tb => (
             <button key={tb} onClick={() => setTab(tb)} style={{
               padding:'6px 16px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer',
               background: tab===tb ? '#C2692A' : 'transparent',
               color: tab===tb ? 'white' : '#888',
               border: tab===tb ? 'none' : '1px solid #333',
             }}>
-              {tb==='menu' ? t.menu : tb==='omsaetning' ? t.revenue : t.tables}
+              {tb==='menu' ? t.menu : tb==='omsaetning' ? t.revenue : tb==='borde' ? t.tables : t.stats}
             </button>
           ))}
         </div>
@@ -133,7 +186,6 @@ export default function AdminPage() {
             <h2 style={s.sectionTitle}>{t.menuItems}</h2>
             <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{t.addItem}</button>
           </div>
-
           {showAdd && (
             <div style={{...s.card, marginBottom:20}}>
               <h3 style={{fontSize:16,fontWeight:600,marginBottom:16,color:'#1C1917'}}>{t.newItem}</h3>
@@ -156,7 +208,6 @@ export default function AdminPage() {
               </div>
             </div>
           )}
-
           {categories.map(cat => {
             const catItems = items.filter(i => i.category === cat)
             if (!catItems.length) return null
@@ -209,7 +260,25 @@ export default function AdminPage() {
 
       {tab === 'omsaetning' && (
         <div style={s.content}>
-          <h2 style={s.sectionTitle}>{t.todayRevenue}</h2>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+            <h2 style={{...s.sectionTitle,marginBottom:0}}>{t.todayRevenue}</h2>
+            <button onClick={() => setShowResetConfirm(true)} style={{padding:'8px 16px',background:'transparent',border:'1px solid #dc2626',borderRadius:8,fontSize:14,fontWeight:600,color:'#dc2626',cursor:'pointer'}}>
+              🔄 {t.resetRevenue}
+            </button>
+          </div>
+          {showResetConfirm && (
+            <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:12,padding:20,marginBottom:20}}>
+              <p style={{fontWeight:600,color:'#dc2626',marginBottom:16}}>{t.resetConfirm}</p>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={resetRevenue} disabled={resetting} style={{padding:'8px 16px',background:'#dc2626',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                  {resetting ? t.resetting : t.resetYes}
+                </button>
+                <button onClick={() => setShowResetConfirm(false)} style={{padding:'8px 16px',background:'transparent',border:'1px solid #ddd',borderRadius:8,fontSize:14,cursor:'pointer'}}>
+                  {t.resetNo}
+                </button>
+              </div>
+            </div>
+          )}
           <div style={{...s.card, textAlign:'center', marginBottom:24}}>
             <div style={{fontSize:14,color:'#78716C',marginBottom:8}}>{t.totalToday}</div>
             <div style={{fontSize:48,fontWeight:700,color:'#C2692A'}}>€{grandTotal.toFixed(2)}</div>
@@ -222,7 +291,7 @@ export default function AdminPage() {
                 return (
                   <div key={order.id} style={{...s.card, marginBottom:8}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                      <span style={{fontWeight:600}}>{order.tables?.name || 'Bord'}</span>
+                      <span style={{fontWeight:600}}>{order.tables?.name || order.tables?.token || 'Bord'}</span>
                       <span style={{fontWeight:700,color:'#C2692A'}}>€{orderTotal.toFixed(2)}</span>
                     </div>
                     <div style={{fontSize:12,color:'#78716C',marginTop:4}}>
@@ -231,6 +300,67 @@ export default function AdminPage() {
                   </div>
                 )
               })
+          }
+        </div>
+      )}
+
+      {tab === 'statistik' && (
+        <div style={s.content}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+            <h2 style={{...s.sectionTitle,marginBottom:0}}>{t.stats}</h2>
+            <div style={{display:'flex',gap:6}}>
+              {['today','thisWeek','thisMonth','allTime'].map(p => (
+                <button key={p} onClick={() => setStatsPeriod(p)} style={{
+                  padding:'6px 12px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer',
+                  background: statsPeriod===p ? '#1C1917' : 'transparent',
+                  color: statsPeriod===p ? 'white' : '#888',
+                  border: statsPeriod===p ? 'none' : '1px solid #ddd',
+                }}>
+                  {p==='today' ? t.today : p==='thisWeek' ? t.thisWeek : p==='thisMonth' ? t.thisMonth : t.allTime}
+                </button>
+              ))}
+            </div>
+          </div>
+          {statsLoading
+            ? <p style={{color:'#aaa',textAlign:'center'}}>{t.loading}</p>
+            : statsData.length === 0
+              ? <p style={{color:'#aaa',textAlign:'center'}}>{t.noStats}</p>
+              : <>
+                  <div style={{...s.card, marginBottom:20, display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16, textAlign:'center'}}>
+                    <div>
+                      <div style={{fontSize:12,color:'#78716C',marginBottom:4}}>{t.totalRevenue}</div>
+                      <div style={{fontSize:28,fontWeight:700,color:'#C2692A'}}>€{statsData.reduce((s,r)=>s+r.total,0).toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,color:'#78716C',marginBottom:4}}>{t.seatings}</div>
+                      <div style={{fontSize:28,fontWeight:700,color:'#1C1917'}}>{statsData.reduce((s,r)=>s+r.seatings,0)}</div>
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,color:'#78716C',marginBottom:4}}>{t.avgPerSeating}</div>
+                      <div style={{fontSize:28,fontWeight:700,color:'#1C1917'}}>
+                        €{statsData.reduce((s,r)=>s+r.seatings,0) > 0
+                          ? (statsData.reduce((s,r)=>s+r.total,0) / statsData.reduce((s,r)=>s+r.seatings,0)).toFixed(2)
+                          : '0.00'}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{...s.card}}>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 120px',gap:8,padding:'8px 0',borderBottom:'1px solid #e5e5e5',marginBottom:8}}>
+                      <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase'}}>{t.table}</div>
+                      <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase',textAlign:'center'}}>{t.seatings}</div>
+                      <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase',textAlign:'right'}}>{t.totalRevenue}</div>
+                      <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase',textAlign:'right'}}>{t.avgPerSeating}</div>
+                    </div>
+                    {statsData.map(row => (
+                      <div key={row.name} style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 120px',gap:8,padding:'10px 0',borderBottom:'1px solid #f5f5f0'}}>
+                        <div style={{fontWeight:600}}>{row.name}</div>
+                        <div style={{textAlign:'center',color:'#78716C'}}>{row.seatings}</div>
+                        <div style={{textAlign:'right',fontWeight:600,color:'#C2692A'}}>€{row.total.toFixed(2)}</div>
+                        <div style={{textAlign:'right',color:'#78716C'}}>€{row.seatings > 0 ? (row.total/row.seatings).toFixed(2) : '0.00'}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
           }
         </div>
       )}
@@ -271,3 +401,10 @@ const s = {
   iconBtn:     {padding:'5px 10px',background:'#f5f5f0',border:'1px solid #e5e5e5',borderRadius:6,fontSize:12,cursor:'pointer',whiteSpace:'nowrap'},
   center:      {display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh'},
 }
+```
+
+Gå til VS Code → `pages/admin.js` → **Ctrl+A** → **Delete** → kopier ind → **Ctrl+S** → terminalen:
+```
+git add .
+git commit -m "admin statistik og nulstil omsaetning"
+git push
