@@ -25,7 +25,7 @@ function groupOrders(rows, translations) {
   for (const row of rows) {
     if (!KITCHEN_COURSES.includes(row.course)) continue
     if (!map[row.order_id]) {
-      map[row.order_id] = { order_id:row.order_id, table_label:row.table_label, flow_type:row.flow_type, created_at:row.created_at, courses:{} }
+      map[row.order_id] = { order_id:row.order_id, table_label:row.table_label, flow_type:row.flow_type, created_at:row.created_at, order_note:row.order_note, courses:{} }
     }
     if (!map[row.order_id].courses[row.course]) map[row.order_id].courses[row.course] = []
     const translatedName = translations[row.item_id] || row.name
@@ -146,6 +146,11 @@ function OrderCard({ order, pending, served, onMarkDone, onToggleServed, t }) {
           {order.flow_type==='sequential' ? t.flowSeq : t.flowAll}
         </span>
       </div>
+      {order.order_note && (
+        <div style={{padding:'10px 16px',background:'#1f1a0e',borderBottom:'1px solid #333',fontSize:13,color:'#f59e0b',fontStyle:'italic',display:'flex',gap:6,alignItems:'flex-start'}}>
+          <span>📝</span><span>{order.order_note}</span>
+        </div>
+      )}
       {Object.entries(order.courses).map(([course, lines]) => {
         const key = `${order.order_id}-${course}`
         const color = COURSE_COLOR[course] || '#888'
@@ -170,9 +175,7 @@ function OrderCard({ order, pending, served, onMarkDone, onToggleServed, t }) {
                         width:32,height:32,borderRadius:'50%',border:'none',cursor:'pointer',fontSize:16,flexShrink:0,
                         background: isServed ? '#22c55e' : '#2a2a2a',
                         color: isServed ? 'white' : '#555',
-                      }}>
-                      ✓
-                    </button>
+                      }}>✓</button>
                   </li>
                 )
               })}
