@@ -18,7 +18,11 @@ function getTableLabel(name, tableWord) {
 }
 
 function formatTime(dateStr) {
-  return new Date(dateStr).toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })
+  return new Date(dateStr).toLocaleTimeString('da-DK', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Copenhagen',
+  })
 }
 
 function formatAge(dateStr) {
