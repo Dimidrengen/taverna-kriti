@@ -21,12 +21,12 @@ function getTableLabel(name, tableWord) {
 }
 
 function formatTime(dateStr) {
-  const d = new Date(dateStr)
-  return d.toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' })
+  return new Date(dateStr).toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })
 }
 
 function formatAge(dateStr) {
-  return Math.floor((Date.now() - new Date(dateStr)) / 60000)
+  const age = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000)
+  return Math.max(0, age)
 }
 
 function groupOrders(rows, translations) {
@@ -133,7 +133,7 @@ export default function KitchenPage() {
         : <div style={styles.grid}>
             {orders.map(order => (
               <OrderCard
-                key={order.order_id + tick}
+                key={order.order_id + '-' + tick}
                 order={order}
                 pending={pending}
                 served={served}
@@ -190,8 +190,7 @@ function OrderCard({ order, pending, served, onMarkDone, onToggleServed, t }) {
                     <span style={{flex:1,textDecoration:isServed?'line-through':'none'}}>{line.name}</span>
                     <button
                       onClick={() => onToggleServed(line.line_id)}
-                      style={{
-                        width:32,height:32,borderRadius:'50%',border:'none',cursor:'pointer',fontSize:16,flexShrink:0,
+                      style={{width:32,height:32,borderRadius:'50%',border:'none',cursor:'pointer',fontSize:16,flexShrink:0,
                         background: isServed ? '#22c55e' : '#2a2a2a',
                         color: isServed ? 'white' : '#555',
                       }}>✓</button>

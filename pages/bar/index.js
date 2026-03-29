@@ -18,12 +18,12 @@ function getTableLabel(name, tableWord) {
 }
 
 function formatTime(dateStr) {
-  const d = new Date(dateStr)
-  return d.toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' })
+  return new Date(dateStr).toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })
 }
 
 function formatAge(dateStr) {
-  return Math.floor((Date.now() - new Date(dateStr)) / 60000)
+  const age = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000)
+  return Math.max(0, age)
 }
 
 function groupDrinkOrders(rows, translations) {
