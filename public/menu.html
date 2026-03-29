@@ -316,6 +316,17 @@ function showConfirmScreen(){
 }
 
 function loadMenuAndShow(){
+  loadMenu().then(function(){
+    var tName=tableToken.replace('tbl-0','Table ').replace('tbl-','Table ');
+    document.getElementById('table-badge').textContent='🪑 '+tName;
+    document.getElementById('confirm-table').textContent=tName;
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('app-header').style.display='block';
+    document.getElementById('menu-view').style.display='block';
+    var codes=['en','da','de','el','fr','sv','no','fi'];
+    document.querySelectorAll('.lang-btn').forEach(function(b,i){b.classList.toggle('active',codes[i]===lang);});
+    updateUITexts();renderCats();renderMenu();
+  }).catch(function(){document.querySelector('.loading-text').textContent='Could not load menu.';});
 }
 
 function init(){
