@@ -20,6 +20,15 @@ function getTableLabel(name, tableWord) {
   return name.replace(/^Table /i, tableWord + ' ').replace(/^Bord /i, tableWord + ' ').replace(/^Τραπέζι /i, tableWord + ' ')
 }
 
+function formatTime(dateStr) {
+  const d = new Date(dateStr)
+  return d.toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' })
+}
+
+function formatAge(dateStr) {
+  return Math.floor((Date.now() - new Date(dateStr)) / 60000)
+}
+
 function groupOrders(rows, translations) {
   const map = {}
   for (const row of rows) {
@@ -41,7 +50,13 @@ export default function KitchenPage() {
   const [served, setServed]      = useState({})
   const [lang, setLang]          = useState('el')
   const [translations, setTrans] = useState({})
+  const [tick, setTick]          = useState(0)
   const t = LANGS[lang]
+
+  useEffect(() => {
+    const interval = setInterval(() => setTick(n => n + 1), 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   const fetchTranslations = useCallback(async (l) => {
     const { data } = await supabase.from('menu_item_translations').select('item_id, name').eq('lang', l)
@@ -118,7 +133,7 @@ export default function KitchenPage() {
         : <div style={styles.grid}>
             {orders.map(order => (
               <OrderCard
-                key={order.order_id}
+                key={order.order_id + tick}
                 order={order}
                 pending={pending}
                 served={served}
@@ -134,12 +149,16 @@ export default function KitchenPage() {
 }
 
 function OrderCard({ order, pending, served, onMarkDone, onToggleServed, t }) {
-  const age = Math.floor((Date.now() - new Date(order.created_at)) / 60000)
+  const age = formatAge(order.created_at)
+  const time = formatTime(order.created_at)
   return (
     <div style={styles.card}>
       <div style={styles.cardHeader}>
         <span style={styles.tableLabel}>{getTableLabel(order.table_label, t.tableWord)}</span>
-        <span style={{fontSize:13,color:age>20?'#ef4444':'#9ca3af'}}>{age} min</span>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2}}>
+          <span style={{fontSize:14,fontWeight:600,color:'#f1f1f1'}}>{time}</span>
+          <span style={{fontSize:12,color:age>20?'#ef4444':'#9ca3af'}}>{age} min</span>
+        </div>
         <span style={{fontSize:11,fontWeight:600,padding:'3px 8px',borderRadius:6,
           background:order.flow_type==='sequential'?'#1e3a5f':'#1a3a2a',
           color:order.flow_type==='sequential'?'#7dd3fc':'#86efac'}}>

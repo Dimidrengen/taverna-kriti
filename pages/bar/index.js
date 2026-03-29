@@ -17,6 +17,15 @@ function getTableLabel(name, tableWord) {
   return name.replace(/^Table\s*/i, tableWord + ' ').replace(/^Bord\s*/i, tableWord + ' ').replace(/^Τραπέζι\s*/i, tableWord + ' ')
 }
 
+function formatTime(dateStr) {
+  const d = new Date(dateStr)
+  return d.toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' })
+}
+
+function formatAge(dateStr) {
+  return Math.floor((Date.now() - new Date(dateStr)) / 60000)
+}
+
 function groupDrinkOrders(rows, translations) {
   const map = {}
   for (const row of rows) {
@@ -44,7 +53,13 @@ export default function BarPage() {
   const [tab, setTab]                 = useState('drinks')
   const [lang, setLang]               = useState('el')
   const [translations, setTrans]      = useState({})
+  const [tick, setTick]               = useState(0)
   const t = LANGS[lang]
+
+  useEffect(() => {
+    const interval = setInterval(() => setTick(n => n + 1), 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   const fetchTranslations = useCallback(async (l) => {
     const { data } = await supabase.from('menu_item_translations').select('item_id, name').eq('lang', l)
@@ -172,46 +187,54 @@ export default function BarPage() {
                   <div style={styles.cardHeader}>
                     <span style={styles.tableLabel}>{getTableLabel(table.table_label, t.tableWord)}</span>
                   </div>
-                  {Object.values(table.orders).filter(o => o.drinks.length > 0).map(order => (
-                    <div key={order.order_id}>
-                      {order.order_note && (
-                        <div style={{padding:'10px 16px 4px',fontSize:13,color:'#f59e0b',fontStyle:'italic',display:'flex',gap:6,alignItems:'flex-start',background:'#1f1a0e',borderBottom:'1px solid #333'}}>
-                          <span>📝</span><span>{order.order_note}</span>
+                  {Object.values(table.orders).filter(o => o.drinks.length > 0).map(order => {
+                    const age = formatAge(order.created_at)
+                    const time = formatTime(order.created_at)
+                    return (
+                      <div key={order.order_id}>
+                        <div style={{padding:'6px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:'1px solid #1f1f1f'}}>
+                          <span style={{fontSize:14,fontWeight:600,color:'#f1f1f1'}}>{time}</span>
+                          <span style={{fontSize:12,color:age>20?'#ef4444':'#9ca3af'}}>{age} min</span>
                         </div>
-                      )}
-                      <div style={styles.drinksLabel}>
-                        <span style={{width:8,height:8,borderRadius:'50%',background:'#0ea5e9',display:'inline-block',marginRight:8}}/>
-                        <span style={{fontSize:13,fontWeight:700,textTransform:'uppercase',color:'#0ea5e9'}}>{t.drinks}</span>
+                        {order.order_note && (
+                          <div style={{padding:'8px 16px',fontSize:13,color:'#f59e0b',fontStyle:'italic',display:'flex',gap:6,background:'#1f1a0e',borderBottom:'1px solid #333'}}>
+                            <span>📝</span><span>{order.order_note}</span>
+                          </div>
+                        )}
+                        <div style={styles.drinksLabel}>
+                          <span style={{width:8,height:8,borderRadius:'50%',background:'#0ea5e9',display:'inline-block',marginRight:8}}/>
+                          <span style={{fontSize:13,fontWeight:700,textTransform:'uppercase',color:'#0ea5e9'}}>{t.drinks}</span>
+                        </div>
+                        <div style={styles.lineList}>
+                          {order.drinks.map(line => {
+                            const isServed = !!served[line.line_id]
+                            return (
+                              <div key={line.line_id} style={{...styles.lineItem, opacity: isServed ? 0.4 : 1}}>
+                                <span style={{fontSize:14,color:'#6b7280',minWidth:24}}>{line.qty}×</span>
+                                <span style={{fontSize:16,flex:1,textDecoration:isServed?'line-through':'none'}}>{line.name}</span>
+                                <button
+                                  onClick={() => toggleServed(line.line_id)}
+                                  style={{
+                                    width:32,height:32,borderRadius:'50%',border:'none',cursor:'pointer',fontSize:16,
+                                    background: isServed ? '#22c55e' : '#2a2a2a',
+                                    color: isServed ? 'white' : '#666',
+                                    flexShrink:0,
+                                  }}>✓</button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                        <div style={{padding:'8px 16px 16px'}}>
+                          <button
+                            disabled={pending[order.order_id]}
+                            onClick={() => markDone(order.order_id)}
+                            style={{width:'100%',padding:'10px 0',background:'transparent',border:'1px solid #0ea5e9',borderRadius:8,fontSize:14,fontWeight:600,color:'#0ea5e9',opacity:pending[order.order_id]?0.5:1,cursor:'pointer'}}>
+                            {pending[order.order_id] ? t.sending : t.done}
+                          </button>
+                        </div>
                       </div>
-                      <div style={styles.lineList}>
-                        {order.drinks.map(line => {
-                          const isServed = !!served[line.line_id]
-                          return (
-                            <div key={line.line_id} style={{...styles.lineItem, opacity: isServed ? 0.4 : 1}}>
-                              <span style={{fontSize:14,color:'#6b7280',minWidth:24}}>{line.qty}×</span>
-                              <span style={{fontSize:16,flex:1,textDecoration:isServed?'line-through':'none'}}>{line.name}</span>
-                              <button
-                                onClick={() => toggleServed(line.line_id)}
-                                style={{
-                                  width:32,height:32,borderRadius:'50%',border:'none',cursor:'pointer',fontSize:16,
-                                  background: isServed ? '#22c55e' : '#2a2a2a',
-                                  color: isServed ? 'white' : '#666',
-                                  flexShrink:0,
-                                }}>✓</button>
-                            </div>
-                          )
-                        })}
-                      </div>
-                      <div style={{padding:'8px 16px 16px'}}>
-                        <button
-                          disabled={pending[order.order_id]}
-                          onClick={() => markDone(order.order_id)}
-                          style={{width:'100%',padding:'10px 0',background:'transparent',border:'1px solid #0ea5e9',borderRadius:8,fontSize:14,fontWeight:600,color:'#0ea5e9',opacity:pending[order.order_id]?0.5:1,cursor:'pointer'}}>
-                          {pending[order.order_id] ? t.sending : t.done}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ))}
             </div>
