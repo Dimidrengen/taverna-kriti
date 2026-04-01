@@ -484,6 +484,14 @@ function updateCart(){
 function showOrder(){
   document.getElementById('menu-view').style.display='none';
   document.getElementById('order-view').classList.add('visible');
+  document.body.scrollTop=0;
+  document.documentElement.scrollTop=0;
+  document.getElementById('order-view').scrollTop=0;
+  setTimeout(function(){
+    document.getElementById('order-header') && document.getElementById('order-header').scrollIntoView({block:'start'});
+    document.body.scrollTop=0;
+    document.documentElement.scrollTop=0;
+  },50);
   var e=Object.values(cart);
   var total=e.reduce(function(s,i){return s+i.price*i.qty;},0);
   document.getElementById('order-items-list').innerHTML=e.map(function(item){
@@ -498,6 +506,8 @@ function showOrder(){
 function showMenu(){
   document.getElementById('menu-view').style.display='block';
   document.getElementById('order-view').classList.remove('visible');
+  document.body.scrollTop=0;
+  document.documentElement.scrollTop=0;
 }
 
 function toggleBill(){
