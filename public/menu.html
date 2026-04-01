@@ -27,7 +27,8 @@
     .cat-tab.active { background: var(--ink); border-color: var(--ink); color: white; }
     .menu-scroll { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
     .menu-item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; gap: 12px; align-items: flex-start; }
-    .item-emoji { font-size: 32px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--cream); border-radius: 10px; flex-shrink: 0; }
+    .item-thumb { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; object-fit: cover; cursor: pointer; }
+    .item-thumb-emoji { font-size: 32px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--cream); border-radius: 10px; flex-shrink: 0; }
     .item-body { flex: 1; min-width: 0; }
     .item-name { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 500; color: var(--ink); line-height: 1.3; }
     .item-desc { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
@@ -107,6 +108,11 @@
     .bill-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
     .bill-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--ink); padding: 3px 0; }
     .bill-total-row { display: flex; justify-content: space-between; font-size: 18px; font-family: 'Playfair Display', serif; color: var(--ink); padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--border); }
+    /* Image lightbox */
+    .img-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; }
+    .img-overlay.visible { display: flex; }
+    .img-overlay img { max-width: 90vw; max-height: 80vh; border-radius: 14px; object-fit: contain; }
+    .img-overlay-close { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: white; border-radius: 50%; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   </style>
 </head>
 <body>
@@ -203,6 +209,13 @@
     <button class="reorder-btn" id="reorder-btn" onclick="reorder()">+ Order more</button>
   </div>
 </div>
+
+<!-- Image lightbox -->
+<div class="img-overlay" id="img-overlay" onclick="closeImage()">
+  <button class="img-overlay-close" onclick="closeImage()">✕</button>
+  <img id="img-overlay-img" src="" alt="" onclick="event.stopPropagation()" />
+</div>
+
 <script>
 var UI_TEXT={
   en:{viewOrder:'View order',sendBtn:'Send order to kitchen',notePlaceholder:'Any notes? (e.g. no onions, allergy info...)',total:'Total',orderTitle:'Your order',confirmTitle:'Order sent!',confirmSub:'Your order is on its way. The kitchen will serve each course when ready.',upsellLabel:'goes well with',servingModeTitle:'How would you like your food?',modeAllLabel:'All at once',modeAllDesc:'Everything together',modeCoursesLabel:'By course',modeCoursesDesc:'Starters first, then mains',comingNext:'Coming up next',reorderBtn:'+ Order more',billBtn:'View bill',hideBillBtn:'Hide bill',billTitle:'Your bill',guestCountTitle:'How many guests are you?'},
@@ -260,14 +273,16 @@ var billVisible=false;
 
 function ui(k){return(UI_TEXT[lang]&&UI_TEXT[lang][k])||UI_TEXT.en[k]||'';}
 
-function saveState(){
-  try{sessionStorage.setItem('tk_confirmed','1');sessionStorage.setItem('tk_token',tableToken);}catch(e){}
+function saveState(){try{sessionStorage.setItem('tk_confirmed','1');sessionStorage.setItem('tk_token',tableToken);}catch(e){}}
+function clearState(){try{sessionStorage.removeItem('tk_confirmed');sessionStorage.removeItem('tk_token');}catch(e){}}
+function wasConfirmed(){try{return sessionStorage.getItem('tk_confirmed')==='1'&&sessionStorage.getItem('tk_token')===tableToken;}catch(e){return false;}}
+
+function openImage(url){
+  document.getElementById('img-overlay-img').src=url;
+  document.getElementById('img-overlay').classList.add('visible');
 }
-function clearState(){
-  try{sessionStorage.removeItem('tk_confirmed');sessionStorage.removeItem('tk_token');}catch(e){}
-}
-function wasConfirmed(){
-  try{return sessionStorage.getItem('tk_confirmed')==='1'&&sessionStorage.getItem('tk_token')===tableToken;}catch(e){return false;}
+function closeImage(){
+  document.getElementById('img-overlay').classList.remove('visible');
 }
 
 function renderGuestButtons(){
@@ -279,16 +294,12 @@ function renderGuestButtons(){
   document.getElementById('guest-count-btns').innerHTML=html;
 }
 
-function setGuests(n){
-  guestCount=n;
-  renderGuestButtons();
-  checkSendBtn();
-}
+function setGuests(n){guestCount=n;renderGuestButtons();checkSendBtn();}
 
 function checkSendBtn(){
-  var ok = guestCount > 0 && servingMode !== null;
-  document.getElementById('send-btn').style.opacity = ok ? '1' : '0.4';
-  document.getElementById('send-btn').style.pointerEvents = ok ? 'auto' : 'none';
+  var ok=guestCount>0&&servingMode!==null;
+  document.getElementById('send-btn').style.opacity=ok?'1':'0.4';
+  document.getElementById('send-btn').style.pointerEvents=ok?'auto':'none';
 }
 
 function updateUITexts(){
@@ -368,7 +379,7 @@ function init(){
   fetch('/api/table-bill?tableToken='+tableToken)
     .then(function(r){return r.json();})
     .then(function(data){
-      if(data.orders && data.orders.length>0){
+      if(data.orders&&data.orders.length>0){
         saveState();
         loadMenu().then(function(){updateUITexts();showConfirmScreen();});
       } else {
@@ -400,7 +411,10 @@ function renderMenu(){
     var ctrl=qty===0
       ?'<button class="add-btn" onclick="addItem(\''+item.id+'\')">+</button>'
       :'<div class="qty-ctrl"><button onclick="removeItem(\''+item.id+'\')">&#8722;</button><span class="qty-num">'+qty+'</span><button onclick="addItem(\''+item.id+'\')" style="background:var(--ink);color:white;border:none">+</button></div>';
-    return '<div class="menu-item"><div class="item-emoji">'+(item.emoji||'&#127869;&#65039;')+'</div><div class="item-body"><div class="item-name">'+item.name+'</div><div class="item-desc">'+(item.description||'')+'</div><div class="item-foot"><div class="item-price">€'+Number(item.price).toFixed(2)+'</div>'+ctrl+'</div></div></div>';
+    var thumb=item.image_url
+      ?'<img class="item-thumb" src="'+item.image_url+'" alt="'+item.name+'" onclick="openImage(\''+item.image_url+'\')" />'
+      :'<div class="item-thumb-emoji">'+(item.emoji||'&#127869;&#65039;')+'</div>';
+    return '<div class="menu-item">'+thumb+'<div class="item-body"><div class="item-name">'+item.name+'</div><div class="item-desc">'+(item.description||'')+'</div><div class="item-foot"><div class="item-price">€'+Number(item.price).toFixed(2)+'</div>'+ctrl+'</div></div></div>';
   }).join('');
 }
 
@@ -482,32 +496,25 @@ function updateCart(){
 }
 
 function showOrder(){
+  document.getElementById('app-header').style.display='none';
   document.getElementById('menu-view').style.display='none';
   document.getElementById('order-view').classList.add('visible');
-  document.body.scrollTop=0;
-  document.documentElement.scrollTop=0;
-  document.getElementById('order-view').scrollTop=0;
-  setTimeout(function(){
-    document.getElementById('order-header') && document.getElementById('order-header').scrollIntoView({block:'start'});
-    document.body.scrollTop=0;
-    document.documentElement.scrollTop=0;
-  },50);
+  document.body.scrollTop=0;document.documentElement.scrollTop=0;
   var e=Object.values(cart);
   var total=e.reduce(function(s,i){return s+i.price*i.qty;},0);
   document.getElementById('order-items-list').innerHTML=e.map(function(item){
     return '<div class="order-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="order-row-name">'+item.name+'</span><span class="order-row-qty">x'+item.qty+'</span><span class="order-row-price">€'+(item.price*item.qty).toFixed(2)+'</span></div>';
   }).join('');
   document.getElementById('order-total-val').textContent='€'+total.toFixed(2);
-  renderGuestButtons();
-  checkSendBtn();
+  renderGuestButtons();checkSendBtn();
   if(servingMode==='courses')renderCourseGroups();
 }
 
 function showMenu(){
+  document.getElementById('app-header').style.display='block';
   document.getElementById('menu-view').style.display='block';
   document.getElementById('order-view').classList.remove('visible');
-  document.body.scrollTop=0;
-  document.documentElement.scrollTop=0;
+  document.body.scrollTop=0;document.documentElement.scrollTop=0;
 }
 
 function toggleBill(){
@@ -544,11 +551,7 @@ function reorder(){
   document.getElementById('coming-next-box').style.display='none';
   document.getElementById('bill-box').style.display='none';
   billVisible=false;
-  servingMode=null;
-  guestCount=0;
-  cart={};
-  lastAddedId=null;
-  currentCat=0;
+  servingMode=null;guestCount=0;cart={};lastAddedId=null;currentCat=0;
   document.getElementById('upsell-bar').classList.remove('visible');
   document.getElementById('send-btn').style.opacity='0.4';
   document.getElementById('send-btn').style.pointerEvents='none';

@@ -7,9 +7,9 @@ const supabase = createClient(
 )
 
 const LANGS = {
-  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker på du vil nulstille dagens omsætning? Dette kan ikke fortrydes.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', period:'Periode', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data i denne periode' },
-  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:"Are you sure you want to reset today's revenue? This cannot be undone.", resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', period:'Period', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data in this period' },
-  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'Αποθήκευση...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️ Επεξεργασία', todayRevenue:'Έσοδα σήμερα', totalToday:'Σύνολο σήμερα', closedTables:'κλειστά τραπέζια', noClosedTables:'Δεν υπάρχουν κλειστά τραπέζια σήμερα', openTables:'Ανοιχτά τραπέζια', noOpenTables:'Δεν υπάρχουν ανοιχτά τραπέζια', loading:'Φόρτωση...', resetRevenue:'Επαναφορά εσόδων', resetConfirm:'Είστε σίγουροι ότι θέλετε να επαναφέρετε τα έσοδα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'Επαναφορά...', stats:'📈 Στατιστικά', period:'Περίοδος', today:'Σήμερα', thisWeek:'Αυτή την εβδομάδα', thisMonth:'Αυτό τον μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Συνολικά έσοδα', avgPerSeating:'Μέσος όρος ανά seating', noStats:'Δεν υπάρχουν δεδομένα' },
+  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker på du vil nulstille dagens omsætning? Dette kan ikke fortrydes.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', period:'Periode', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data i denne periode', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...' },
+  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:"Are you sure you want to reset today's revenue? This cannot be undone.", resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', period:'Period', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data in this period', uploadImage:'Upload image', removeImage:'Remove image', uploading:'Uploading...' },
+  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'Αποθήκευση...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️ Επεξεργασία', todayRevenue:'Έσοδα σήμερα', totalToday:'Σύνολο σήμερα', closedTables:'κλειστά τραπέζια', noClosedTables:'Δεν υπάρχουν κλειστά τραπέζια σήμερα', openTables:'Ανοιχτά τραπέζια', noOpenTables:'Δεν υπάρχουν ανοιχτά τραπέζια', loading:'Φόρτωση...', resetRevenue:'Επαναφορά εσόδων', resetConfirm:'Είστε σίγουροι ότι θέλετε να επαναφέρετε τα έσοδα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'Επαναφορά...', stats:'📈 Στατιστικά', period:'Περίοδος', today:'Σήμερα', thisWeek:'Αυτή την εβδομάδα', thisMonth:'Αυτό τον μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Συνολικά έσοδα', avgPerSeating:'Μέσος όρος ανά seating', noStats:'Δεν υπάρχουν δεδομένα', uploadImage:'Ανεβάστε εικόνα', removeImage:'Αφαίρεση εικόνας', uploading:'Ανεβαίνει...' },
 }
 
 const EMOJI_OPTIONS = {
@@ -26,49 +26,68 @@ function EmojiPicker({ value, onChange, category }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const emojis = EMOJI_OPTIONS[category] || ALL_EMOJIS
-
   useEffect(() => {
-    function handleClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
+    function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
-
   return (
     <div ref={ref} style={{position:'relative'}}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        style={{
-          width:'100%', padding:'8px 12px', border:'1px solid #e5e5e5', borderRadius:8,
-          fontSize:22, cursor:'pointer', background:'white', textAlign:'left',
-          display:'flex', alignItems:'center', gap:8,
-        }}
-      >
+      <button type="button" onClick={() => setOpen(o => !o)} style={{width:'100%',padding:'8px 12px',border:'1px solid #e5e5e5',borderRadius:8,fontSize:22,cursor:'pointer',background:'white',textAlign:'left',display:'flex',alignItems:'center',gap:8}}>
         <span>{value || '➕'}</span>
-        <span style={{fontSize:12, color:'#78716C', marginLeft:'auto'}}>▾</span>
+        <span style={{fontSize:12,color:'#78716C',marginLeft:'auto'}}>▾</span>
       </button>
       {open && (
-        <div style={{
-          position:'absolute', top:'calc(100% + 4px)', left:0, zIndex:100,
-          background:'white', border:'1px solid #e5e5e5', borderRadius:12,
-          padding:10, display:'flex', flexWrap:'wrap', gap:4,
-          width:220, boxShadow:'0 4px 16px rgba(0,0,0,0.10)',
-        }}>
+        <div style={{position:'absolute',top:'calc(100% + 4px)',left:0,zIndex:100,background:'white',border:'1px solid #e5e5e5',borderRadius:12,padding:10,display:'flex',flexWrap:'wrap',gap:4,width:220,boxShadow:'0 4px 16px rgba(0,0,0,0.10)'}}>
           {emojis.map(e => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => { onChange(e); setOpen(false) }}
-              style={{
-                width:36, height:36, fontSize:20, border:'none', borderRadius:8,
-                cursor:'pointer', background: value===e ? '#F4E3D7' : 'transparent',
-                outline: value===e ? '2px solid #C2692A' : 'none',
-              }}
-            >{e}</button>
+            <button key={e} type="button" onClick={() => { onChange(e); setOpen(false) }} style={{width:36,height:36,fontSize:20,border:'none',borderRadius:8,cursor:'pointer',background:value===e?'#F4E3D7':'transparent',outline:value===e?'2px solid #C2692A':'none'}}>{e}</button>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+function ImageUpload({ itemId, currentUrl, onUploaded, onRemoved, t }) {
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef(null)
+
+  const upload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploading(true)
+    const ext = file.name.split('.').pop()
+    const path = `${itemId}.${ext}`
+    const { error } = await supabase.storage.from('menu-images').upload(path, file, { upsert: true })
+    if (!error) {
+      const { data } = supabase.storage.from('menu-images').getPublicUrl(path)
+      const url = data.publicUrl + '?t=' + Date.now()
+      await supabase.from('menu_items').update({ image_url: url }).eq('id', itemId)
+      onUploaded(url)
+    }
+    setUploading(false)
+  }
+
+  const remove = async () => {
+    await supabase.from('menu_items').update({ image_url: null }).eq('id', itemId)
+    onRemoved()
+  }
+
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8,marginTop:8}}>
+      {currentUrl && (
+        <img src={currentUrl} alt="" style={{width:48,height:48,borderRadius:8,objectFit:'cover',border:'1px solid #e5e5e5'}} />
+      )}
+      <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={upload} />
+      <button type="button" onClick={() => fileRef.current.click()} disabled={uploading}
+        style={{padding:'6px 12px',background:'#f5f5f0',border:'1px solid #e5e5e5',borderRadius:8,fontSize:13,cursor:'pointer',fontFamily:'system-ui'}}>
+        {uploading ? t.uploading : (currentUrl ? '🔄 ' + t.uploadImage : '📷 ' + t.uploadImage)}
+      </button>
+      {currentUrl && (
+        <button type="button" onClick={remove}
+          style={{padding:'6px 12px',background:'#FEE2E2',border:'none',borderRadius:8,fontSize:13,cursor:'pointer',color:'#dc2626',fontFamily:'system-ui'}}>
+          {t.removeImage}
+        </button>
       )}
     </div>
   )
@@ -108,22 +127,12 @@ export default function AdminPage() {
   const fetchRevenue = useCallback(async () => {
     const today = new Date()
     today.setHours(0,0,0,0)
-    const { data } = await supabase
-      .from('orders')
-      .select('id, created_at, tables(name), order_lines(name, qty, price)')
-      .eq('status','done')
-      .gte('created_at', today.toISOString())
+    const { data } = await supabase.from('orders').select('id, created_at, tables(name), order_lines(name, qty, price)').eq('status','done').gte('created_at', today.toISOString())
     return data || []
   }, [])
 
-  useEffect(() => {
-    fetchData()
-    fetchRevenue().then(setRevenue)
-  }, [])
-
-  useEffect(() => {
-    if (tab === 'statistik') fetchStats(statsPeriod)
-  }, [tab, statsPeriod])
+  useEffect(() => { fetchData(); fetchRevenue().then(setRevenue) }, [])
+  useEffect(() => { if (tab === 'statistik') fetchStats(statsPeriod) }, [tab, statsPeriod])
 
   const saveItem = async (item) => {
     setSaving(true)
@@ -199,22 +208,12 @@ export default function AdminPage() {
         <span style={s.title}>⚙️ Taverna Kriti — Admin</span>
         <div style={{display:'flex',gap:6,marginRight:12}}>
           {['da','en','el'].map(l => (
-            <button key={l} onClick={() => setLang(l)} style={{
-              padding:'4px 12px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer',
-              background: lang===l ? '#C2692A' : 'transparent',
-              color: lang===l ? 'white' : '#888',
-              border: lang===l ? 'none' : '1px solid #ddd',
-            }}>{l.toUpperCase()}</button>
+            <button key={l} onClick={() => setLang(l)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:lang===l?'#C2692A':'transparent',color:lang===l?'white':'#888',border:lang===l?'none':'1px solid #ddd'}}>{l.toUpperCase()}</button>
           ))}
         </div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {['menu','omsaetning','borde','statistik'].map(tb => (
-            <button key={tb} onClick={() => setTab(tb)} style={{
-              padding:'6px 16px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer',
-              background: tab===tb ? '#C2692A' : 'transparent',
-              color: tab===tb ? 'white' : '#888',
-              border: tab===tb ? 'none' : '1px solid #333',
-            }}>
+            <button key={tb} onClick={() => setTab(tb)} style={{padding:'6px 16px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:tab===tb?'#C2692A':'transparent',color:tab===tb?'white':'#888',border:tab===tb?'none':'1px solid #333'}}>
               {tb==='menu' ? t.menu : tb==='omsaetning' ? t.revenue : tb==='borde' ? t.tables : t.stats}
             </button>
           ))}
@@ -274,6 +273,13 @@ export default function AdminPage() {
                           </select>
                         </div>
                         <textarea style={{...s.input,width:'100%',marginTop:8,resize:'none'}} rows={2} value={editing.description||''} onChange={e => setEditing({...editing, description:e.target.value})} placeholder={t.description} />
+                        <ImageUpload
+                          itemId={editing.id}
+                          currentUrl={editing.image_url}
+                          onUploaded={url => setEditing({...editing, image_url: url})}
+                          onRemoved={() => setEditing({...editing, image_url: null})}
+                          t={t}
+                        />
                         <div style={{display:'flex',gap:8,marginTop:12}}>
                           <button onClick={() => saveItem(editing)} disabled={saving} style={s.saveBtn}>{saving ? t.saving : t.save}</button>
                           <button onClick={() => setEditing(null)} style={s.cancelBtn}>{t.cancel}</button>
@@ -281,7 +287,10 @@ export default function AdminPage() {
                       </div>
                     ) : (
                       <div style={{display:'flex',alignItems:'center',gap:12}}>
-                        <span style={{fontSize:24}}>{item.emoji||'🍽'}</span>
+                        {item.image_url
+                          ? <img src={item.image_url} alt={item.name} style={{width:44,height:44,borderRadius:10,objectFit:'cover',flexShrink:0,border:'1px solid #e5e5e5'}} />
+                          : <span style={{fontSize:24,width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f0',borderRadius:10,flexShrink:0}}>{item.emoji||'🍽'}</span>
+                        }
                         <div style={{flex:1}}>
                           <div style={{fontWeight:600,fontSize:15}}>{item.name}</div>
                           <div style={{fontSize:12,color:'#78716C'}}>{item.description}</div>
@@ -313,12 +322,8 @@ export default function AdminPage() {
             <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:12,padding:20,marginBottom:20}}>
               <p style={{fontWeight:600,color:'#dc2626',marginBottom:16}}>{t.resetConfirm}</p>
               <div style={{display:'flex',gap:8}}>
-                <button onClick={resetRevenue} disabled={resetting} style={{padding:'8px 16px',background:'#dc2626',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer'}}>
-                  {resetting ? t.resetting : t.resetYes}
-                </button>
-                <button onClick={() => setShowResetConfirm(false)} style={{padding:'8px 16px',background:'transparent',border:'1px solid #ddd',borderRadius:8,fontSize:14,cursor:'pointer'}}>
-                  {t.resetNo}
-                </button>
+                <button onClick={resetRevenue} disabled={resetting} style={{padding:'8px 16px',background:'#dc2626',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer'}}>{resetting ? t.resetting : t.resetYes}</button>
+                <button onClick={() => setShowResetConfirm(false)} style={{padding:'8px 16px',background:'transparent',border:'1px solid #ddd',borderRadius:8,fontSize:14,cursor:'pointer'}}>{t.resetNo}</button>
               </div>
             </div>
           )}
@@ -337,9 +342,7 @@ export default function AdminPage() {
                       <span style={{fontWeight:600}}>{order.tables?.name || 'Ukendt bord'}</span>
                       <span style={{fontWeight:700,color:'#C2692A'}}>€{orderTotal.toFixed(2)}</span>
                     </div>
-                    <div style={{fontSize:12,color:'#78716C',marginTop:4}}>
-                      {new Date(order.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'})}
-                    </div>
+                    <div style={{fontSize:12,color:'#78716C',marginTop:4}}>{new Date(order.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
                 )
               })
@@ -353,12 +356,7 @@ export default function AdminPage() {
             <h2 style={{...s.sectionTitle,marginBottom:0}}>{t.stats}</h2>
             <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
               {['today','thisWeek','thisMonth','allTime'].map(p => (
-                <button key={p} onClick={() => setStatsPeriod(p)} style={{
-                  padding:'6px 12px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer',
-                  background: statsPeriod===p ? '#1C1917' : 'transparent',
-                  color: statsPeriod===p ? 'white' : '#888',
-                  border: statsPeriod===p ? 'none' : '1px solid #ddd',
-                }}>
+                <button key={p} onClick={() => setStatsPeriod(p)} style={{padding:'6px 12px',borderRadius:20,fontSize:12,fontWeight:600,cursor:'pointer',background:statsPeriod===p?'#1C1917':'transparent',color:statsPeriod===p?'white':'#888',border:statsPeriod===p?'none':'1px solid #ddd'}}>
                   {p==='today' ? t.today : p==='thisWeek' ? t.thisWeek : p==='thisMonth' ? t.thisMonth : t.allTime}
                 </button>
               ))}
@@ -380,11 +378,7 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <div style={{fontSize:12,color:'#78716C',marginBottom:4}}>{t.avgPerSeating}</div>
-                      <div style={{fontSize:28,fontWeight:700,color:'#1C1917'}}>
-                        €{statsData.reduce((s,r)=>s+r.seatings,0) > 0
-                          ? (statsData.reduce((s,r)=>s+r.total,0) / statsData.reduce((s,r)=>s+r.seatings,0)).toFixed(2)
-                          : '0.00'}
-                      </div>
+                      <div style={{fontSize:28,fontWeight:700,color:'#1C1917'}}>€{statsData.reduce((s,r)=>s+r.seatings,0) > 0 ? (statsData.reduce((s,r)=>s+r.total,0) / statsData.reduce((s,r)=>s+r.seatings,0)).toFixed(2) : '0.00'}</div>
                     </div>
                   </div>
                   <div style={s.card}>
