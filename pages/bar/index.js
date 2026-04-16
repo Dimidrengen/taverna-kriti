@@ -14,6 +14,12 @@ const LANGS = {
   da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total', allTables:'Alle borde', activeDrinks:'Aktive drikkevarer', tableWord:'Bord' },
 }
 
+const LOGIN_LABELS = {
+  da: { title:'Bar', email:'Email', password:'Adgangskode', login:'Log ind', logging:'Logger ind...', error:'Forkert email eller adgangskode', noAccess:'Du har ikke adgang til denne side' },
+  en: { title:'Bar', email:'Email', password:'Password', login:'Log in', logging:'Logging in...', error:'Wrong email or password', noAccess:'You do not have access to this page' },
+  el: { title:'Μπαρ', email:'Email', password:'Κωδικός', login:'Σύνδεση', logging:'Σύνδεση...', error:'Λάθος email ή κωδικός', noAccess:'Δεν έχετε πρόσβαση σε αυτή τη σελίδα' },
+}
+
 function getTableLabel(name, tableWord) {
   if (!name) return name
   return name.replace(/^Table\s*/i, tableWord + ' ').replace(/^Bord\s*/i, tableWord + ' ').replace(/^Τραπέζι\s*/i, tableWord + ' ')
@@ -46,16 +52,17 @@ function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loginLang, setLoginLang] = useState('da')
+  const l = LOGIN_LABELS[loginLang]
 
   const login = async (e) => {
     e.preventDefault()
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
+    if (error || !data.user) { setError(l.error); setLoading(false); return }
     if (data.user.email !== ALLOWED_EMAIL) {
       await supabase.auth.signOut()
-      setError('Du har ikke adgang til denne side')
-      setLoading(false); return
+      setError(l.noAccess); setLoading(false); return
     }
     onLogin(data.user); setLoading(false)
   }
@@ -63,25 +70,32 @@ function LoginScreen({ onLogin }) {
   return (
     <div style={{minHeight:'100dvh',background:'#0d0d0d',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
       <div style={{background:'#1a1a1a',borderRadius:16,border:'1px solid #2a2a2a',padding:40,width:'100%',maxWidth:380}}>
+        <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:24}}>
+          {['da','en','el'].map(lg => (
+            <button key={lg} type="button" onClick={() => setLoginLang(lg)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:loginLang===lg?'#0ea5e9':'transparent',color:loginLang===lg?'#000':'#888',border:loginLang===lg?'none':'1px solid #333'}}>
+              {lg.toUpperCase()}
+            </button>
+          ))}
+        </div>
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{fontSize:40,marginBottom:12}}>🍹</div>
-          <div style={{fontSize:22,fontWeight:700,color:'#f1f1f1'}}>Bar</div>
+          <div style={{fontSize:22,fontWeight:700,color:'#f1f1f1'}}>{l.title}</div>
           <div style={{fontSize:14,color:'#6b7280',marginTop:4}}>Taverna Kriti</div>
         </div>
         <form onSubmit={login}>
           <div style={{marginBottom:16}}>
-            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>Email</label>
+            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>{l.email}</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
               style={{width:'100%',padding:'10px 14px',border:'1px solid #333',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',background:'#0d0d0d',color:'#f1f1f1'}} />
           </div>
           <div style={{marginBottom:24}}>
-            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>Adgangskode</label>
+            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>{l.password}</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
               style={{width:'100%',padding:'10px 14px',border:'1px solid #333',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',background:'#0d0d0d',color:'#f1f1f1'}} />
           </div>
           {error && <div style={{background:'#3a1a1a',border:'1px solid #7f1d1d',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#f87171',marginBottom:16}}>{error}</div>}
           <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:'#0ea5e9',color:'#000',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-            {loading ? 'Logger ind...' : 'Log ind'}
+            {loading ? l.logging : l.login}
           </button>
         </form>
       </div>

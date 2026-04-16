@@ -14,6 +14,12 @@ const LANGS = {
   el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'Αποθήκευση...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️ Επεξεργασία', todayRevenue:'Έσοδα σήμερα', totalToday:'Σύνολο σήμερα', closedTables:'κλειστά τραπέζια', noClosedTables:'Δεν υπάρχουν κλειστά τραπέζια σήμερα', openTables:'Ανοιχτά τραπέζια', noOpenTables:'Δεν υπάρχουν ανοιχτά τραπέζια', loading:'Φόρτωση...', resetRevenue:'Επαναφορά εσόδων', resetConfirm:'Είστε σίγουροι ότι θέλετε να επαναφέρετε τα έσοδα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'Επαναφορά...', stats:'📈 Στατιστικά', period:'Περίοδος', today:'Σήμερα', thisWeek:'Αυτή την εβδομάδα', thisMonth:'Αυτό τον μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Συνολικά έσοδα', avgPerSeating:'Μέσος όρος ανά seating', noStats:'Δεν υπάρχουν δεδομένα', uploadImage:'Ανεβάστε εικόνα', removeImage:'Αφαίρεση εικόνας', uploading:'Ανεβαίνει...' },
 }
 
+const LOGIN_LABELS = {
+  da: { email:'Email', password:'Adgangskode', login:'Log ind', logging:'Logger ind...', error:'Forkert email eller adgangskode', noAccess:'Du har ikke adgang til denne side' },
+  en: { email:'Email', password:'Password', login:'Log in', logging:'Logging in...', error:'Wrong email or password', noAccess:'You do not have access to this page' },
+  el: { email:'Email', password:'Κωδικός', login:'Σύνδεση', logging:'Σύνδεση...', error:'Λάθος email ή κωδικός', noAccess:'Δεν έχετε πρόσβαση σε αυτή τη σελίδα' },
+}
+
 const EMOJI_OPTIONS = {
   Starters: ['🫒','🧆','🥙','🫔','🥗','🐟','🦑','🍋','🧅','🫕','🥚','🧀','🥬','🌿'],
   Salads:   ['🥗','🍅','🥒','🫑','🧅','🫒','🌿','🥬','🍋'],
@@ -24,54 +30,55 @@ const EMOJI_OPTIONS = {
 }
 const ALL_EMOJIS = [...new Set(Object.values(EMOJI_OPTIONS).flat())]
 
-function LoginScreen({ onLogin, title, accentColor }) {
+function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loginLang, setLoginLang] = useState('da')
+  const l = LOGIN_LABELS[loginLang]
 
   const login = async (e) => {
     e.preventDefault()
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
+    if (error || !data.user) { setError(l.error); setLoading(false); return }
     if (data.user.email !== ALLOWED_EMAIL) {
       await supabase.auth.signOut()
-      setError('Du har ikke adgang til denne side')
-      setLoading(false)
-      return
+      setError(l.noAccess); setLoading(false); return
     }
-    onLogin(data.user)
-    setLoading(false)
+    onLogin(data.user); setLoading(false)
   }
 
   return (
     <div style={{minHeight:'100vh',background:'#F5F5F0',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
       <div style={{background:'white',borderRadius:16,border:'1px solid #e5e5e5',padding:40,width:'100%',maxWidth:380}}>
+        <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:24}}>
+          {['da','en','el'].map(lg => (
+            <button key={lg} type="button" onClick={() => setLoginLang(lg)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:loginLang===lg?'#C2692A':'transparent',color:loginLang===lg?'white':'#888',border:loginLang===lg?'none':'1px solid #ddd'}}>
+              {lg.toUpperCase()}
+            </button>
+          ))}
+        </div>
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{fontSize:40,marginBottom:12}}>⚙️</div>
-          <div style={{fontSize:22,fontWeight:700,color:'#1C1917'}}>{title}</div>
+          <div style={{fontSize:22,fontWeight:700,color:'#1C1917'}}>Admin</div>
           <div style={{fontSize:14,color:'#78716C',marginTop:4}}>Taverna Kriti</div>
         </div>
         <form onSubmit={login}>
           <div style={{marginBottom:16}}>
-            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>Email</label>
-            <input
-              type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none'}}
-            />
+            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>{l.email}</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+              style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none'}} />
           </div>
           <div style={{marginBottom:24}}>
-            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>Adgangskode</label>
-            <input
-              type="password" value={password} onChange={e => setPassword(e.target.value)} required
-              style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none'}}
-            />
+            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>{l.password}</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
+              style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none'}} />
           </div>
           {error && <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#dc2626',marginBottom:16}}>{error}</div>}
-          <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:accentColor,color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-            {loading ? 'Logger ind...' : 'Log ind'}
+          <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:'#C2692A',color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
+            {loading ? l.logging : l.login}
           </button>
         </form>
       </div>
@@ -250,7 +257,7 @@ export default function AdminPage() {
   const categories = ['Starters','Salads','Mains','Sides','Desserts','Drinks']
 
   if (authLoading) return <div style={s.center}><p style={{color:'#aaa'}}>...</p></div>
-  if (!user) return <LoginScreen onLogin={setUser} title="Admin" accentColor="#C2692A" />
+  if (!user) return <LoginScreen onLogin={setUser} />
   if (loading) return <div style={s.center}><p style={{color:'#aaa'}}>{t.loading}</p></div>
 
   return (
