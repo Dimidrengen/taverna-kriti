@@ -6,6 +6,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+const ALLOWED_EMAIL = 'kitchen@taverna-kriti.com'
+
 const LANGS = {
   el: { title:'Κουζίνα', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', courses:{ starters:'Ορεκτικά', mains:'Κυρίως', sides:'Συνοδευτικά', salads:'Σαλάτες', dessert:'Επιδόρπια' }, flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά', tableWord:'Τραπέζι' },
   en: { title:'Kitchen', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', courses:{ starters:'Starters', mains:'Mains', sides:'Sides', salads:'Salads', dessert:'Dessert' }, flowAll:'All at once', flowSeq:'By course', tableWord:'Table' },
@@ -21,16 +23,11 @@ function getTableLabel(name, tableWord) {
 }
 
 function formatTime(dateStr) {
-  return new Date(dateStr).toLocaleTimeString('da-DK', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/Copenhagen',
-  })
+  return new Date(dateStr).toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit', timeZone:'Europe/Copenhagen' })
 }
 
 function formatAge(dateStr) {
-  const age = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000)
-  return Math.max(0, age)
+  return Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000))
 }
 
 function groupOrders(rows, translations) {
@@ -47,7 +44,57 @@ function groupOrders(rows, translations) {
   return Object.values(map).filter(o => Object.keys(o.courses).length > 0).sort((a,b) => new Date(a.created_at)-new Date(b.created_at))
 }
 
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const login = async (e) => {
+    e.preventDefault()
+    setLoading(true); setError('')
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
+    if (data.user.email !== ALLOWED_EMAIL) {
+      await supabase.auth.signOut()
+      setError('Du har ikke adgang til denne side')
+      setLoading(false); return
+    }
+    onLogin(data.user); setLoading(false)
+  }
+
+  return (
+    <div style={{minHeight:'100dvh',background:'#0d0d0d',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
+      <div style={{background:'#1a1a1a',borderRadius:16,border:'1px solid #2a2a2a',padding:40,width:'100%',maxWidth:380}}>
+        <div style={{textAlign:'center',marginBottom:32}}>
+          <div style={{fontSize:40,marginBottom:12}}>🍳</div>
+          <div style={{fontSize:22,fontWeight:700,color:'#f1f1f1'}}>Køkken</div>
+          <div style={{fontSize:14,color:'#6b7280',marginTop:4}}>Taverna Kriti</div>
+        </div>
+        <form onSubmit={login}>
+          <div style={{marginBottom:16}}>
+            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+              style={{width:'100%',padding:'10px 14px',border:'1px solid #333',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',background:'#0d0d0d',color:'#f1f1f1'}} />
+          </div>
+          <div style={{marginBottom:24}}>
+            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>Adgangskode</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
+              style={{width:'100%',padding:'10px 14px',border:'1px solid #333',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',background:'#0d0d0d',color:'#f1f1f1'}} />
+          </div>
+          {error && <div style={{background:'#3a1a1a',border:'1px solid #7f1d1d',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#f87171',marginBottom:16}}>{error}</div>}
+          <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:'#f59e0b',color:'#000',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
+            {loading ? 'Logger ind...' : 'Log ind'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function KitchenPage() {
+  const [user, setUser]          = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [orders, setOrders]      = useState([])
   const [loading, setLoading]    = useState(true)
   const [pending, setPending]    = useState({})
@@ -58,17 +105,20 @@ export default function KitchenPage() {
   const t = LANGS[lang]
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email === ALLOWED_EMAIL) setUser(session.user)
+      setAuthLoading(false)
+    })
+  }, [])
+
+  useEffect(() => {
     const interval = setInterval(() => setTick(n => n + 1), 60000)
     return () => clearInterval(interval)
   }, [])
 
   const fetchTranslations = useCallback(async (l) => {
     const { data } = await supabase.from('menu_item_translations').select('item_id, name').eq('lang', l)
-    if (data) {
-      const map = {}
-      data.forEach(r => { map[r.item_id] = r.name })
-      setTrans(map)
-    }
+    if (data) { const map = {}; data.forEach(r => { map[r.item_id] = r.name }); setTrans(map) }
   }, [])
 
   const fetchOrders = useCallback(async () => {
@@ -77,30 +127,25 @@ export default function KitchenPage() {
     setLoading(false)
   }, [translations])
 
-  useEffect(() => { fetchTranslations(lang) }, [lang])
-  useEffect(() => { fetchOrders() }, [translations])
+  useEffect(() => { if (user) fetchTranslations(lang) }, [lang, user])
+  useEffect(() => { if (user) fetchOrders() }, [translations])
 
   useEffect(() => {
+    if (!user) return
     const channel = supabase.channel('kitchen-realtime')
       .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, fetchOrders)
       .on('postgres_changes', { event:'*', schema:'public', table:'order_lines' }, fetchOrders)
       .subscribe()
     return () => supabase.removeChannel(channel)
-  }, [fetchOrders])
+  }, [fetchOrders, user])
 
-  const changeLang = (l) => {
-    setLang(l)
-    fetchTranslations(l).then(() => fetchOrders())
-  }
+  const changeLang = (l) => { setLang(l); fetchTranslations(l).then(() => fetchOrders()) }
 
   const markDone = async (orderId, course) => {
     const key = `${orderId}-${course}`
     setPending(p => ({ ...p, [key]: true }))
     try {
-      await fetch('/api/course-done', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ orderId, course }),
-      })
+      await fetch('/api/course-done', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ orderId, course }) })
     } catch(e) { console.error(e) }
     finally { setPending(p => { const n={...p}; delete n[key]; return n }) }
   }
@@ -108,11 +153,13 @@ export default function KitchenPage() {
   const toggleServed = async (lineId) => {
     const isServed = !!served[lineId]
     setServed(p => ({ ...p, [lineId]: !isServed }))
-    await supabase.from('order_lines')
-      .update({ served_at: isServed ? null : new Date().toISOString() })
-      .eq('id', lineId)
+    await supabase.from('order_lines').update({ served_at: isServed ? null : new Date().toISOString() }).eq('id', lineId)
   }
 
+  const logout = async () => { await supabase.auth.signOut(); setUser(null) }
+
+  if (authLoading) return <div style={styles.center}><p style={{color:'#aaa'}}>...</p></div>
+  if (!user) return <LoginScreen onLogin={setUser} />
   if (loading) return <div style={styles.center}><p style={{color:'#aaa',fontSize:18}}>{t.noOrders}</p></div>
 
   return (
@@ -121,30 +168,18 @@ export default function KitchenPage() {
         <span style={styles.headerTitle}>🍳 {t.title}</span>
         <div style={{display:'flex',gap:8}}>
           {Object.keys(LANGS).map(l => (
-            <button key={l} onClick={() => changeLang(l)} style={{
-              padding:'4px 12px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer',
-              background: lang===l ? '#f59e0b' : 'transparent',
-              color: lang===l ? '#000' : '#888',
-              border: lang===l ? 'none' : '1px solid #333',
-            }}>{l.toUpperCase()}</button>
+            <button key={l} onClick={() => changeLang(l)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:lang===l?'#f59e0b':'transparent',color:lang===l?'#000':'#888',border:lang===l?'none':'1px solid #333'}}>{l.toUpperCase()}</button>
           ))}
         </div>
         <span style={{fontSize:14,color:'#6b7280'}}>{orders.length}</span>
+        <button onClick={logout} style={{padding:'6px 14px',background:'transparent',border:'1px solid #333',borderRadius:8,fontSize:13,cursor:'pointer',color:'#6b7280'}}>Log ud</button>
       </header>
 
       {orders.length === 0
         ? <div style={styles.emptyWrap}><div style={{fontSize:64}}>🍳</div><p style={{color:'#aaa',fontSize:20,marginTop:16}}>{t.noOrders}</p></div>
         : <div style={styles.grid}>
             {orders.map(order => (
-              <OrderCard
-                key={order.order_id + '-' + tick}
-                order={order}
-                pending={pending}
-                served={served}
-                onMarkDone={markDone}
-                onToggleServed={toggleServed}
-                t={t}
-              />
+              <OrderCard key={order.order_id + '-' + tick} order={order} pending={pending} served={served} onMarkDone={markDone} onToggleServed={toggleServed} t={t} />
             ))}
           </div>
       }
@@ -163,9 +198,7 @@ function OrderCard({ order, pending, served, onMarkDone, onToggleServed, t }) {
           <span style={{fontSize:14,fontWeight:600,color:'#f1f1f1'}}>{time}</span>
           <span style={{fontSize:12,color:age>20?'#ef4444':'#9ca3af'}}>{age} min</span>
         </div>
-        <span style={{fontSize:11,fontWeight:600,padding:'3px 8px',borderRadius:6,
-          background:order.flow_type==='sequential'?'#1e3a5f':'#1a3a2a',
-          color:order.flow_type==='sequential'?'#7dd3fc':'#86efac'}}>
+        <span style={{fontSize:11,fontWeight:600,padding:'3px 8px',borderRadius:6,background:order.flow_type==='sequential'?'#1e3a5f':'#1a3a2a',color:order.flow_type==='sequential'?'#7dd3fc':'#86efac'}}>
           {order.flow_type==='sequential' ? t.flowSeq : t.flowAll}
         </span>
       </div>
@@ -181,9 +214,7 @@ function OrderCard({ order, pending, served, onMarkDone, onToggleServed, t }) {
           <div key={course} style={styles.courseBlock}>
             <div style={styles.courseHeader}>
               <span style={{width:8,height:8,borderRadius:'50%',background:color,display:'inline-block',marginRight:8}}/>
-              <span style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color}}>
-                {t.courses[course] || course}
-              </span>
+              <span style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color}}>{t.courses[course] || course}</span>
             </div>
             <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:6}}>
               {lines.map(line => {
@@ -192,22 +223,13 @@ function OrderCard({ order, pending, served, onMarkDone, onToggleServed, t }) {
                   <li key={line.line_id} style={{display:'flex',gap:8,padding:'4px 0',fontSize:16,alignItems:'center',opacity:isServed?0.4:1,transition:'opacity 0.2s'}}>
                     <span style={{fontSize:14,color:'#6b7280',minWidth:24}}>{line.qty}×</span>
                     <span style={{flex:1,textDecoration:isServed?'line-through':'none'}}>{line.name}</span>
-                    <button
-                      onClick={() => onToggleServed(line.line_id)}
-                      style={{width:32,height:32,borderRadius:'50%',border:'none',cursor:'pointer',fontSize:16,flexShrink:0,
-                        background: isServed ? '#22c55e' : '#2a2a2a',
-                        color: isServed ? 'white' : '#555',
-                      }}>✓</button>
+                    <button onClick={() => onToggleServed(line.line_id)} style={{width:32,height:32,borderRadius:'50%',border:'none',cursor:'pointer',fontSize:16,flexShrink:0,background:isServed?'#22c55e':'#2a2a2a',color:isServed?'white':'#555'}}>✓</button>
                   </li>
                 )
               })}
             </ul>
-            <button
-              style={{marginTop:12,width:'100%',padding:'10px 0',background:'transparent',
-                border:`1px solid ${color}`,borderRadius:8,fontSize:14,fontWeight:600,
-                color,opacity:pending[key]?0.5:1,cursor:pending[key]?'wait':'pointer'}}
-              disabled={pending[key]}
-              onClick={() => onMarkDone(order.order_id, course)}>
+            <button style={{marginTop:12,width:'100%',padding:'10px 0',background:'transparent',border:`1px solid ${color}`,borderRadius:8,fontSize:14,fontWeight:600,color,opacity:pending[key]?0.5:1,cursor:pending[key]?'wait':'pointer'}}
+              disabled={pending[key]} onClick={() => onMarkDone(order.order_id, course)}>
               {pending[key] ? t.sending : t.done}
             </button>
           </div>

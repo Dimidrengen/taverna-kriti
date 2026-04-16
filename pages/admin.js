@@ -6,6 +6,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+const ALLOWED_EMAIL = 'admin@taverna-kriti.com'
+
 const LANGS = {
   da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker på du vil nulstille dagens omsætning? Dette kan ikke fortrydes.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', period:'Periode', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data i denne periode', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...' },
   en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:"Are you sure you want to reset today's revenue? This cannot be undone.", resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', period:'Period', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data in this period', uploadImage:'Upload image', removeImage:'Remove image', uploading:'Uploading...' },
@@ -21,6 +23,61 @@ const EMOJI_OPTIONS = {
   Drinks:   ['🍺','🍻','🍷','🥂','🍸','🍹','☕','🫖','🥤','💧','🧃','🍵','🥛'],
 }
 const ALL_EMOJIS = [...new Set(Object.values(EMOJI_OPTIONS).flat())]
+
+function LoginScreen({ onLogin, title, accentColor }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const login = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
+    if (data.user.email !== ALLOWED_EMAIL) {
+      await supabase.auth.signOut()
+      setError('Du har ikke adgang til denne side')
+      setLoading(false)
+      return
+    }
+    onLogin(data.user)
+    setLoading(false)
+  }
+
+  return (
+    <div style={{minHeight:'100vh',background:'#F5F5F0',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
+      <div style={{background:'white',borderRadius:16,border:'1px solid #e5e5e5',padding:40,width:'100%',maxWidth:380}}>
+        <div style={{textAlign:'center',marginBottom:32}}>
+          <div style={{fontSize:40,marginBottom:12}}>⚙️</div>
+          <div style={{fontSize:22,fontWeight:700,color:'#1C1917'}}>{title}</div>
+          <div style={{fontSize:14,color:'#78716C',marginTop:4}}>Taverna Kriti</div>
+        </div>
+        <form onSubmit={login}>
+          <div style={{marginBottom:16}}>
+            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>Email</label>
+            <input
+              type="email" value={email} onChange={e => setEmail(e.target.value)} required
+              style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none'}}
+            />
+          </div>
+          <div style={{marginBottom:24}}>
+            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>Adgangskode</label>
+            <input
+              type="password" value={password} onChange={e => setPassword(e.target.value)} required
+              style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none'}}
+            />
+          </div>
+          {error && <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#dc2626',marginBottom:16}}>{error}</div>}
+          <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:accentColor,color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
+            {loading ? 'Logger ind...' : 'Log ind'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 function EmojiPicker({ value, onChange, category }) {
   const [open, setOpen] = useState(false)
@@ -75,17 +132,13 @@ function ImageUpload({ itemId, currentUrl, onUploaded, onRemoved, t }) {
 
   return (
     <div style={{display:'flex',alignItems:'center',gap:8,marginTop:8}}>
-      {currentUrl && (
-        <img src={currentUrl} alt="" style={{width:48,height:48,borderRadius:8,objectFit:'cover',border:'1px solid #e5e5e5'}} />
-      )}
+      {currentUrl && <img src={currentUrl} alt="" style={{width:48,height:48,borderRadius:8,objectFit:'cover',border:'1px solid #e5e5e5'}} />}
       <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={upload} />
-      <button type="button" onClick={() => fileRef.current.click()} disabled={uploading}
-        style={{padding:'6px 12px',background:'#f5f5f0',border:'1px solid #e5e5e5',borderRadius:8,fontSize:13,cursor:'pointer',fontFamily:'system-ui'}}>
+      <button type="button" onClick={() => fileRef.current.click()} disabled={uploading} style={{padding:'6px 12px',background:'#f5f5f0',border:'1px solid #e5e5e5',borderRadius:8,fontSize:13,cursor:'pointer',fontFamily:'system-ui'}}>
         {uploading ? t.uploading : (currentUrl ? '🔄 ' + t.uploadImage : '📷 ' + t.uploadImage)}
       </button>
       {currentUrl && (
-        <button type="button" onClick={remove}
-          style={{padding:'6px 12px',background:'#FEE2E2',border:'none',borderRadius:8,fontSize:13,cursor:'pointer',color:'#dc2626',fontFamily:'system-ui'}}>
+        <button type="button" onClick={remove} style={{padding:'6px 12px',background:'#FEE2E2',border:'none',borderRadius:8,fontSize:13,cursor:'pointer',color:'#dc2626',fontFamily:'system-ui'}}>
           {t.removeImage}
         </button>
       )}
@@ -94,6 +147,8 @@ function ImageUpload({ itemId, currentUrl, onUploaded, onRemoved, t }) {
 }
 
 export default function AdminPage() {
+  const [user, setUser] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [tab, setTab] = useState('menu')
   const [lang, setLang] = useState('da')
   const [items, setItems] = useState([])
@@ -112,6 +167,13 @@ export default function AdminPage() {
   const [statsLoading, setStatsLoading] = useState(false)
   const t = LANGS[lang]
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email === ALLOWED_EMAIL) setUser(session.user)
+      setAuthLoading(false)
+    })
+  }, [])
+
   const fetchData = useCallback(async () => {
     const [{ data: menuItems }, { data: openOrders }, { data: allTables }] = await Promise.all([
       supabase.from('menu_items').select('*').order('category').order('name'),
@@ -125,36 +187,25 @@ export default function AdminPage() {
   }, [])
 
   const fetchRevenue = useCallback(async () => {
-    const today = new Date()
-    today.setHours(0,0,0,0)
+    const today = new Date(); today.setHours(0,0,0,0)
     const { data } = await supabase.from('orders').select('id, created_at, tables(name), order_lines(name, qty, price)').eq('status','done').gte('created_at', today.toISOString())
     return data || []
   }, [])
 
-  useEffect(() => { fetchData(); fetchRevenue().then(setRevenue) }, [])
+  useEffect(() => { if (user) { fetchData(); fetchRevenue().then(setRevenue) } }, [user])
   useEffect(() => { if (tab === 'statistik') fetchStats(statsPeriod) }, [tab, statsPeriod])
 
   const saveItem = async (item) => {
     setSaving(true)
-    await supabase.from('menu_items').update({
-      name: item.name, description: item.description, price: parseFloat(item.price),
-      category: item.category, emoji: item.emoji, available: item.available, station: item.station,
-    }).eq('id', item.id)
-    setSaving(false)
-    setEditing(null)
-    fetchData()
+    await supabase.from('menu_items').update({ name:item.name, description:item.description, price:parseFloat(item.price), category:item.category, emoji:item.emoji, available:item.available, station:item.station }).eq('id', item.id)
+    setSaving(false); setEditing(null); fetchData()
   }
 
   const addItem = async () => {
     setSaving(true)
     const { data: restaurant } = await supabase.from('restaurants').select('id').eq('slug','taverna-kriti').single()
-    await supabase.from('menu_items').insert({
-      restaurant_id: restaurant.id, name: newItem.name, description: newItem.description,
-      price: parseFloat(newItem.price), category: newItem.category, emoji: newItem.emoji,
-      station: newItem.station, available: true,
-    })
-    setSaving(false)
-    setShowAdd(false)
+    await supabase.from('menu_items').insert({ restaurant_id:restaurant.id, name:newItem.name, description:newItem.description, price:parseFloat(newItem.price), category:newItem.category, emoji:newItem.emoji, station:newItem.station, available:true })
+    setSaving(false); setShowAdd(false)
     setNewItem({ name:'', description:'', price:'', category:'Starters', emoji:'', station:'kitchen' })
     fetchData()
   }
@@ -166,8 +217,7 @@ export default function AdminPage() {
 
   const fetchStats = async (period) => {
     setStatsLoading(true)
-    const now = new Date()
-    let from = new Date()
+    const now = new Date(); let from = new Date()
     if (period === 'today') { from.setHours(0,0,0,0) }
     else if (period === 'thisWeek') { from.setDate(now.getDate() - now.getDay()); from.setHours(0,0,0,0) }
     else if (period === 'thisMonth') { from = new Date(now.getFullYear(), now.getMonth(), 1) }
@@ -179,7 +229,7 @@ export default function AdminPage() {
     const map = {}
     data.forEach(order => {
       const name = order.tables?.name || 'Ukendt'
-      if (!map[name]) map[name] = { name, seatings: 0, total: 0 }
+      if (!map[name]) map[name] = { name, seatings:0, total:0 }
       map[name].seatings++
       map[name].total += (order.order_lines||[]).reduce((s,l) => s + l.price * l.qty, 0)
     })
@@ -189,17 +239,18 @@ export default function AdminPage() {
 
   const resetRevenue = async () => {
     setResetting(true)
-    const today = new Date()
-    today.setHours(0,0,0,0)
-    await supabase.from('orders').update({ status: 'archived' }).eq('status', 'done').gte('created_at', today.toISOString())
-    setRevenue([])
-    setResetting(false)
-    setShowResetConfirm(false)
+    const today = new Date(); today.setHours(0,0,0,0)
+    await supabase.from('orders').update({ status:'archived' }).eq('status','done').gte('created_at', today.toISOString())
+    setRevenue([]); setResetting(false); setShowResetConfirm(false)
   }
+
+  const logout = async () => { await supabase.auth.signOut(); setUser(null) }
 
   const grandTotal = revenue.reduce((s, o) => s + (o.order_lines||[]).reduce((ls, l) => ls + l.price * l.qty, 0), 0)
   const categories = ['Starters','Salads','Mains','Sides','Desserts','Drinks']
 
+  if (authLoading) return <div style={s.center}><p style={{color:'#aaa'}}>...</p></div>
+  if (!user) return <LoginScreen onLogin={setUser} title="Admin" accentColor="#C2692A" />
   if (loading) return <div style={s.center}><p style={{color:'#aaa'}}>{t.loading}</p></div>
 
   return (
@@ -218,6 +269,7 @@ export default function AdminPage() {
             </button>
           ))}
         </div>
+        <button onClick={logout} style={{padding:'6px 14px',background:'transparent',border:'1px solid #ddd',borderRadius:8,fontSize:13,cursor:'pointer',color:'#78716C'}}>Log ud</button>
       </header>
 
       {tab === 'menu' && (
@@ -226,7 +278,6 @@ export default function AdminPage() {
             <h2 style={s.sectionTitle}>{t.menuItems}</h2>
             <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{t.addItem}</button>
           </div>
-
           {showAdd && (
             <div style={{...s.card, marginBottom:20}}>
               <h3 style={{fontSize:16,fontWeight:600,marginBottom:16,color:'#1C1917'}}>{t.newItem}</h3>
@@ -249,7 +300,6 @@ export default function AdminPage() {
               </div>
             </div>
           )}
-
           {categories.map(cat => {
             const catItems = items.filter(i => i.category === cat)
             if (!catItems.length) return null
@@ -273,13 +323,7 @@ export default function AdminPage() {
                           </select>
                         </div>
                         <textarea style={{...s.input,width:'100%',marginTop:8,resize:'none'}} rows={2} value={editing.description||''} onChange={e => setEditing({...editing, description:e.target.value})} placeholder={t.description} />
-                        <ImageUpload
-                          itemId={editing.id}
-                          currentUrl={editing.image_url}
-                          onUploaded={url => setEditing({...editing, image_url: url})}
-                          onRemoved={() => setEditing({...editing, image_url: null})}
-                          t={t}
-                        />
+                        <ImageUpload itemId={editing.id} currentUrl={editing.image_url} onUploaded={url => setEditing({...editing, image_url:url})} onRemoved={() => setEditing({...editing, image_url:null})} t={t} />
                         <div style={{display:'flex',gap:8,marginTop:12}}>
                           <button onClick={() => saveItem(editing)} disabled={saving} style={s.saveBtn}>{saving ? t.saving : t.save}</button>
                           <button onClick={() => setEditing(null)} style={s.cancelBtn}>{t.cancel}</button>
@@ -296,9 +340,7 @@ export default function AdminPage() {
                           <div style={{fontSize:12,color:'#78716C'}}>{item.description}</div>
                         </div>
                         <div style={{fontWeight:700,fontSize:15,minWidth:50}}>€{Number(item.price).toFixed(2)}</div>
-                        <button onClick={() => toggleAvailable(item)} style={{...s.iconBtn, background: item.available ? '#EBF5EF' : '#FEE2E2', color: item.available ? '#2D7A4F' : '#dc2626'}}>
-                          {item.available ? t.active : t.inactive}
-                        </button>
+                        <button onClick={() => toggleAvailable(item)} style={{...s.iconBtn, background:item.available?'#EBF5EF':'#FEE2E2', color:item.available?'#2D7A4F':'#dc2626'}}>{item.available ? t.active : t.inactive}</button>
                         <button onClick={() => setEditing({...item})} style={s.iconBtn}>{t.edit}</button>
                       </div>
                     )}
@@ -314,9 +356,7 @@ export default function AdminPage() {
         <div style={s.content}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap',gap:12}}>
             <h2 style={{...s.sectionTitle,marginBottom:0}}>{t.todayRevenue}</h2>
-            <button onClick={() => setShowResetConfirm(true)} style={{padding:'8px 16px',background:'transparent',border:'1px solid #dc2626',borderRadius:8,fontSize:14,fontWeight:600,color:'#dc2626',cursor:'pointer'}}>
-              🔄 {t.resetRevenue}
-            </button>
+            <button onClick={() => setShowResetConfirm(true)} style={{padding:'8px 16px',background:'transparent',border:'1px solid #dc2626',borderRadius:8,fontSize:14,fontWeight:600,color:'#dc2626',cursor:'pointer'}}>🔄 {t.resetRevenue}</button>
           </div>
           {showResetConfirm && (
             <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:12,padding:20,marginBottom:20}}>
@@ -332,8 +372,7 @@ export default function AdminPage() {
             <div style={{fontSize:48,fontWeight:700,color:'#C2692A'}}>€{grandTotal.toFixed(2)}</div>
             <div style={{fontSize:13,color:'#78716C',marginTop:4}}>{revenue.length} {t.closedTables}</div>
           </div>
-          {revenue.length === 0
-            ? <p style={{color:'#aaa',textAlign:'center'}}>{t.noClosedTables}</p>
+          {revenue.length === 0 ? <p style={{color:'#aaa',textAlign:'center'}}>{t.noClosedTables}</p>
             : revenue.map(order => {
                 const orderTotal = (order.order_lines||[]).reduce((s,l) => s+l.price*l.qty, 0)
                 return (
@@ -362,42 +401,31 @@ export default function AdminPage() {
               ))}
             </div>
           </div>
-          {statsLoading
-            ? <p style={{color:'#aaa',textAlign:'center'}}>{t.loading}</p>
-            : statsData.length === 0
-              ? <p style={{color:'#aaa',textAlign:'center'}}>{t.noStats}</p>
-              : <>
-                  <div style={{...s.card, marginBottom:20, display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16, textAlign:'center'}}>
-                    <div>
-                      <div style={{fontSize:12,color:'#78716C',marginBottom:4}}>{t.totalRevenue}</div>
-                      <div style={{fontSize:28,fontWeight:700,color:'#C2692A'}}>€{statsData.reduce((s,r)=>s+r.total,0).toFixed(2)}</div>
-                    </div>
-                    <div>
-                      <div style={{fontSize:12,color:'#78716C',marginBottom:4}}>{t.seatings}</div>
-                      <div style={{fontSize:28,fontWeight:700,color:'#1C1917'}}>{statsData.reduce((s,r)=>s+r.seatings,0)}</div>
-                    </div>
-                    <div>
-                      <div style={{fontSize:12,color:'#78716C',marginBottom:4}}>{t.avgPerSeating}</div>
-                      <div style={{fontSize:28,fontWeight:700,color:'#1C1917'}}>€{statsData.reduce((s,r)=>s+r.seatings,0) > 0 ? (statsData.reduce((s,r)=>s+r.total,0) / statsData.reduce((s,r)=>s+r.seatings,0)).toFixed(2) : '0.00'}</div>
-                    </div>
+          {statsLoading ? <p style={{color:'#aaa',textAlign:'center'}}>{t.loading}</p>
+            : statsData.length === 0 ? <p style={{color:'#aaa',textAlign:'center'}}>{t.noStats}</p>
+            : <>
+                <div style={{...s.card, marginBottom:20, display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16, textAlign:'center'}}>
+                  <div><div style={{fontSize:12,color:'#78716C',marginBottom:4}}>{t.totalRevenue}</div><div style={{fontSize:28,fontWeight:700,color:'#C2692A'}}>€{statsData.reduce((s,r)=>s+r.total,0).toFixed(2)}</div></div>
+                  <div><div style={{fontSize:12,color:'#78716C',marginBottom:4}}>{t.seatings}</div><div style={{fontSize:28,fontWeight:700,color:'#1C1917'}}>{statsData.reduce((s,r)=>s+r.seatings,0)}</div></div>
+                  <div><div style={{fontSize:12,color:'#78716C',marginBottom:4}}>{t.avgPerSeating}</div><div style={{fontSize:28,fontWeight:700,color:'#1C1917'}}>€{statsData.reduce((s,r)=>s+r.seatings,0) > 0 ? (statsData.reduce((s,r)=>s+r.total,0)/statsData.reduce((s,r)=>s+r.seatings,0)).toFixed(2) : '0.00'}</div></div>
+                </div>
+                <div style={s.card}>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 120px',gap:8,padding:'8px 0',borderBottom:'1px solid #e5e5e5',marginBottom:8}}>
+                    <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase'}}>{t.table}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase',textAlign:'center'}}>{t.seatings}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase',textAlign:'right'}}>{t.totalRevenue}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase',textAlign:'right'}}>{t.avgPerSeating}</div>
                   </div>
-                  <div style={s.card}>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 120px',gap:8,padding:'8px 0',borderBottom:'1px solid #e5e5e5',marginBottom:8}}>
-                      <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase'}}>{t.table}</div>
-                      <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase',textAlign:'center'}}>{t.seatings}</div>
-                      <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase',textAlign:'right'}}>{t.totalRevenue}</div>
-                      <div style={{fontSize:12,fontWeight:700,color:'#78716C',textTransform:'uppercase',textAlign:'right'}}>{t.avgPerSeating}</div>
+                  {statsData.map(row => (
+                    <div key={row.name} style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 120px',gap:8,padding:'10px 0',borderBottom:'1px solid #f5f5f0'}}>
+                      <div style={{fontWeight:600}}>{row.name}</div>
+                      <div style={{textAlign:'center',color:'#78716C'}}>{row.seatings}</div>
+                      <div style={{textAlign:'right',fontWeight:600,color:'#C2692A'}}>€{row.total.toFixed(2)}</div>
+                      <div style={{textAlign:'right',color:'#78716C'}}>€{row.seatings > 0 ? (row.total/row.seatings).toFixed(2) : '0.00'}</div>
                     </div>
-                    {statsData.map(row => (
-                      <div key={row.name} style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 120px',gap:8,padding:'10px 0',borderBottom:'1px solid #f5f5f0'}}>
-                        <div style={{fontWeight:600}}>{row.name}</div>
-                        <div style={{textAlign:'center',color:'#78716C'}}>{row.seatings}</div>
-                        <div style={{textAlign:'right',fontWeight:600,color:'#C2692A'}}>€{row.total.toFixed(2)}</div>
-                        <div style={{textAlign:'right',color:'#78716C'}}>€{row.seatings > 0 ? (row.total/row.seatings).toFixed(2) : '0.00'}</div>
-                      </div>
-                    ))}
-                  </div>
-                </>
+                  ))}
+                </div>
+              </>
           }
         </div>
       )}
@@ -405,8 +433,7 @@ export default function AdminPage() {
       {tab === 'borde' && (
         <div style={s.content}>
           <h2 style={s.sectionTitle}>{t.openTables}</h2>
-          {orders.length === 0
-            ? <p style={{color:'#aaa',textAlign:'center'}}>{t.noOpenTables}</p>
+          {orders.length === 0 ? <p style={{color:'#aaa',textAlign:'center'}}>{t.noOpenTables}</p>
             : orders.map(order => (
                 <div key={order.id} style={{...s.card, marginBottom:8}}>
                   <div style={{display:'flex',justifyContent:'space-between'}}>
