@@ -6,35 +6,15 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
-const ALLOWED_EMAIL = 'admin@taverna-kriti.com'
-
-const ALLERGENS = [
-  { id:'gluten',      icon:'🌾', da:'Gluten',      en:'Gluten',      el:'Γλουτένη' },
-  { id:'crustaceans', icon:'🦞', da:'Skaldyr',     en:'Crustaceans', el:'Οστρακοειδή' },
-  { id:'eggs',        icon:'🥚', da:'Æg',          en:'Eggs',        el:'Αυγά' },
-  { id:'fish',        icon:'🐟', da:'Fisk',        en:'Fish',        el:'Ψάρι' },
-  { id:'peanuts',     icon:'🥜', da:'Jordnødder',  en:'Peanuts',     el:'Φιστίκια' },
-  { id:'soy',         icon:'🫘', da:'Soja',        en:'Soy',         el:'Σόγια' },
-  { id:'milk',        icon:'🥛', da:'Laktose',     en:'Milk',        el:'Γαλακτοκομικά' },
-  { id:'nuts',        icon:'🌰', da:'Nødder',      en:'Nuts',        el:'Ξηροί καρποί' },
-  { id:'celery',      icon:'🥬', da:'Selleri',     en:'Celery',      el:'Σέλινο' },
-  { id:'mustard',     icon:'🟡', da:'Sennep',      en:'Mustard',     el:'Μουστάρδα' },
-  { id:'sesame',      icon:'🌱', da:'Sesam',       en:'Sesame',      el:'Σουσάμι' },
-  { id:'sulphites',   icon:'🍷', da:'Sulfitter',   en:'Sulphites',   el:'Θειώδη' },
-  { id:'lupin',       icon:'🌼', da:'Lupin',       en:'Lupin',       el:'Λούπινο' },
-  { id:'molluscs',    icon:'🐚', da:'Bløddyr',     en:'Molluscs',    el:'Μαλάκια' },
-]
-
-const LANGS = {
-  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker på du vil nulstille dagens omsætning? Dette kan ikke fortrydes.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', period:'Periode', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data i denne periode', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...', allergens:'Allergener', logout:'Log ud' },
-  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:"Are you sure you want to reset today's revenue? This cannot be undone.", resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', period:'Period', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data in this period', uploadImage:'Upload image', removeImage:'Remove image', uploading:'Uploading...', allergens:'Allergens', logout:'Log out' },
-  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'Αποθήκευση...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️ Επεξεργασία', todayRevenue:'Έσοδα σήμερα', totalToday:'Σύνολο σήμερα', closedTables:'κλειστά τραπέζια', noClosedTables:'Δεν υπάρχουν κλειστά τραπέζια σήμερα', openTables:'Ανοιχτά τραπέζια', noOpenTables:'Δεν υπάρχουν ανοιχτά τραπέζια', loading:'Φόρτωση...', resetRevenue:'Επαναφορά εσόδων', resetConfirm:'Είστε σίγουροι ότι θέλετε να επαναφέρετε τα έσοδα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'Επαναφορά...', stats:'📈 Στατιστικά', period:'Περίοδος', today:'Σήμερα', thisWeek:'Αυτή την εβδομάδα', thisMonth:'Αυτό τον μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Συνολικά έσοδα', avgPerSeating:'Μέσος όρος ανά seating', noStats:'Δεν υπάρχουν δεδομένα', uploadImage:'Ανεβάστε εικόνα', removeImage:'Αφαίρεση εικόνας', uploading:'Ανεβαίνει...', allergens:'Αλλεργιογόνα', logout:'Αποσύνδεση' },
+function extractSlugFromEmail(email) {
+  const match = email.match(/^(admin|kitchen|bar)@(.+)\.com$/i)
+  return match ? match[2] : null
 }
 
-const LOGIN_LABELS = {
-  da: { email:'Email', password:'Adgangskode', login:'Log ind', logging:'Logger ind...', error:'Forkert email eller adgangskode', noAccess:'Du har ikke adgang til denne side' },
-  en: { email:'Email', password:'Password', login:'Log in', logging:'Logging in...', error:'Wrong email or password', noAccess:'You do not have access to this page' },
-  el: { email:'Email', password:'Κωδικός', login:'Σύνδεση', logging:'Σύνδεση...', error:'Λάθος email ή κωδικός', noAccess:'Δεν έχετε πρόσβαση σε αυτή τη σελίδα' },
+const LANGS = {
+  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker på du vil nulstille dagens omsætning?', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...', logout:'Log ud', noItems:'Ingen menupunkter endnu. Klik "+ Tilføj ret" for at oprette din første ret!' },
+  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:"Are you sure you want to reset today's revenue?", resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data', uploadImage:'Upload image', removeImage:'Remove image', uploading:'Uploading...', logout:'Log out', noItems:'No menu items yet. Click "+ Add item" to create your first dish!' },
+  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'Αποθήκευση...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️ Επεξεργασία', todayRevenue:'Έσοδα σήμερα', totalToday:'Σύνολο σήμερα', closedTables:'κλειστά τραπέζια', noClosedTables:'Δεν υπάρχουν κλειστά τραπέζια', openTables:'Ανοιχτά τραπέζια', noOpenTables:'Δεν υπάρχουν ανοιχτά τραπέζια', loading:'Φόρτωση...', resetRevenue:'Επαναφορά εσόδων', resetConfirm:'Επαναφορά εσόδων;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'Επαναφορά...', stats:'📈 Στατιστικά', today:'Σήμερα', thisWeek:'Αυτή την εβδομάδα', thisMonth:'Αυτό τον μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Συνολικά έσοδα', avgPerSeating:'Μέσος όρος', noStats:'Δεν υπάρχουν δεδομένα', uploadImage:'Ανεβάστε εικόνα', removeImage:'Αφαίρεση', uploading:'Ανεβαίνει...', logout:'Αποσύνδεση', noItems:'Δεν υπάρχουν στοιχεία μενού ακόμα.' },
 }
 
 const EMOJI_OPTIONS = {
@@ -47,86 +27,53 @@ const EMOJI_OPTIONS = {
 }
 const ALL_EMOJIS = [...new Set(Object.values(EMOJI_OPTIONS).flat())]
 
-function AllergenPicker({ value = [], onChange, lang, label }) {
-  return (
-    <div style={{marginTop:8}}>
-      <div style={{fontSize:13,color:'#78716C',marginBottom:8}}>{label}</div>
-      <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-        {ALLERGENS.map(a => {
-          const active = value.includes(a.id)
-          return (
-            <button
-              key={a.id}
-              type="button"
-              onClick={() => onChange(active ? value.filter(x => x !== a.id) : [...value, a.id])}
-              style={{
-                display:'flex',alignItems:'center',gap:4,
-                padding:'4px 10px',borderRadius:20,fontSize:12,cursor:'pointer',
-                background: active ? '#FEF3C7' : '#f5f5f0',
-                border: active ? '1.5px solid #F59E0B' : '1px solid #e5e5e5',
-                color: active ? '#92400E' : '#78716C',
-                fontWeight: active ? 600 : 400,
-              }}
-            >
-              <span>{a.icon}</span>
-              <span>{a[lang] || a.en}</span>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [loginLang, setLoginLang] = useState('da')
-  const l = LOGIN_LABELS[loginLang]
 
   const login = async (e) => {
     e.preventDefault()
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error || !data.user) { setError(l.error); setLoading(false); return }
-    if (data.user.email !== ALLOWED_EMAIL) {
+    if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
+    if (!data.user.email.startsWith('admin@')) {
       await supabase.auth.signOut()
-      setError(l.noAccess); setLoading(false); return
+      setError('Du har ikke admin adgang')
+      setLoading(false); return
     }
-    onLogin(data.user); setLoading(false)
+    const slug = extractSlugFromEmail(data.user.email)
+    if (!slug) { await supabase.auth.signOut(); setError('Ugyldig email format'); setLoading(false); return }
+    const { data: restaurant } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
+    if (!restaurant) { await supabase.auth.signOut(); setError('Restaurant ikke fundet'); setLoading(false); return }
+    if (!restaurant.active) { await supabase.auth.signOut(); setError('Restauranten er deaktiveret. Kontakt platform admin.'); setLoading(false); return }
+    onLogin(data.user, restaurant)
+    setLoading(false)
   }
 
   return (
     <div style={{minHeight:'100vh',background:'#F5F5F0',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
       <div style={{background:'white',borderRadius:16,border:'1px solid #e5e5e5',padding:40,width:'100%',maxWidth:380}}>
-        <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:24}}>
-          {['da','en','el'].map(lg => (
-            <button key={lg} type="button" onClick={() => setLoginLang(lg)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:loginLang===lg?'#C2692A':'transparent',color:loginLang===lg?'white':'#888',border:loginLang===lg?'none':'1px solid #ddd'}}>
-              {lg.toUpperCase()}
-            </button>
-          ))}
-        </div>
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{fontSize:40,marginBottom:12}}>⚙️</div>
           <div style={{fontSize:22,fontWeight:700,color:'#1C1917'}}>Admin</div>
-          <div style={{fontSize:14,color:'#78716C',marginTop:4}}>Taverna Kriti</div>
+          <div style={{fontSize:14,color:'#78716C',marginTop:4}}>TableFlow</div>
         </div>
         <form onSubmit={login}>
           <div style={{marginBottom:16}}>
-            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>{l.email}</label>
+            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
               style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none'}} />
           </div>
           <div style={{marginBottom:24}}>
-            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>{l.password}</label>
+            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>Adgangskode</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
               style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none'}} />
           </div>
           {error && <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#dc2626',marginBottom:16}}>{error}</div>}
           <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:'#C2692A',color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-            {loading ? l.logging : l.login}
+            {loading ? 'Logger ind...' : 'Log ind'}
           </button>
         </form>
       </div>
@@ -203,6 +150,7 @@ function ImageUpload({ itemId, currentUrl, onUploaded, onRemoved, t }) {
 
 export default function AdminPage() {
   const [user, setUser] = useState(null)
+  const [restaurant, setRestaurant] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [tab, setTab] = useState('menu')
   const [lang, setLang] = useState('da')
@@ -213,7 +161,7 @@ export default function AdminPage() {
   const [editing, setEditing] = useState(null)
   const [saving, setSaving] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
-  const [newItem, setNewItem] = useState({ name:'', description:'', price:'', category:'Starters', emoji:'', station:'kitchen', allergens:[] })
+  const [newItem, setNewItem] = useState({ name:'', description:'', price:'', category:'Starters', emoji:'', station:'kitchen' })
   const [revenue, setRevenue] = useState([])
   const [resetting, setResetting] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
@@ -223,53 +171,60 @@ export default function AdminPage() {
   const t = LANGS[lang]
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email === ALLOWED_EMAIL) setUser(session.user)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user?.email?.startsWith('admin@')) {
+        const slug = extractSlugFromEmail(session.user.email)
+        if (slug) {
+          const { data: rest } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
+          if (rest && rest.active) { setUser(session.user); setRestaurant(rest) }
+        }
+      }
       setAuthLoading(false)
     })
   }, [])
 
+  const handleLogin = (u, r) => { setUser(u); setRestaurant(r) }
+
   const fetchData = useCallback(async () => {
-    const [{ data: menuItems }, { data: openOrders }, { data: allTables }] = await Promise.all([
-      supabase.from('menu_items').select('*').order('category').order('name'),
-      supabase.from('orders').select('id, created_at, status, tables(name, token)').eq('status','open'),
-      supabase.from('tables').select('*').order('name'),
+    if (!restaurant) return
+    const [{ data: menuItems }, { data: restaurantTables }] = await Promise.all([
+      supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('category').order('name'),
+      supabase.from('tables').select('*').eq('restaurant_id', restaurant.id).order('name'),
     ])
     if (menuItems) setItems(menuItems)
-    if (openOrders) setOrders(openOrders)
-    if (allTables) setTables(allTables)
+    if (restaurantTables) setTables(restaurantTables)
+    if (restaurantTables && restaurantTables.length > 0) {
+      const tableIds = restaurantTables.map(t => t.id)
+      const { data: openOrders } = await supabase.from('orders').select('id, created_at, status, tables(name, token)').eq('status','open').in('table_id', tableIds)
+      if (openOrders) setOrders(openOrders)
+    } else { setOrders([]) }
     setLoading(false)
-  }, [])
+  }, [restaurant])
 
   const fetchRevenue = useCallback(async () => {
+    if (!restaurant) return []
     const today = new Date(); today.setHours(0,0,0,0)
-    const { data } = await supabase.from('orders').select('id, created_at, tables(name), order_lines(name, qty, price)').eq('status','done').gte('created_at', today.toISOString())
+    const { data: restaurantTables } = await supabase.from('tables').select('id').eq('restaurant_id', restaurant.id)
+    if (!restaurantTables || restaurantTables.length === 0) return []
+    const tableIds = restaurantTables.map(t => t.id)
+    const { data } = await supabase.from('orders').select('id, created_at, tables(name), order_lines(name, qty, price)').eq('status','done').gte('created_at', today.toISOString()).in('table_id', tableIds)
     return data || []
-  }, [])
+  }, [restaurant])
 
-  useEffect(() => { if (user) { fetchData(); fetchRevenue().then(setRevenue) } }, [user])
+  useEffect(() => { if (user && restaurant) { fetchData(); fetchRevenue().then(setRevenue) } }, [user, restaurant])
   useEffect(() => { if (tab === 'statistik') fetchStats(statsPeriod) }, [tab, statsPeriod])
 
   const saveItem = async (item) => {
     setSaving(true)
-    await supabase.from('menu_items').update({
-      name:item.name, description:item.description, price:parseFloat(item.price),
-      category:item.category, emoji:item.emoji, available:item.available,
-      station:item.station, allergens:item.allergens||[],
-    }).eq('id', item.id)
+    await supabase.from('menu_items').update({ name:item.name, description:item.description, price:parseFloat(item.price), category:item.category, emoji:item.emoji, available:item.available, station:item.station }).eq('id', item.id)
     setSaving(false); setEditing(null); fetchData()
   }
 
   const addItem = async () => {
     setSaving(true)
-    const { data: restaurant } = await supabase.from('restaurants').select('id').eq('slug','taverna-kriti').single()
-    await supabase.from('menu_items').insert({
-      restaurant_id:restaurant.id, name:newItem.name, description:newItem.description,
-      price:parseFloat(newItem.price), category:newItem.category, emoji:newItem.emoji,
-      station:newItem.station, available:true, allergens:newItem.allergens||[],
-    })
+    await supabase.from('menu_items').insert({ restaurant_id:restaurant.id, name:newItem.name, description:newItem.description, price:parseFloat(newItem.price), category:newItem.category, emoji:newItem.emoji, station:newItem.station, available:true })
     setSaving(false); setShowAdd(false)
-    setNewItem({ name:'', description:'', price:'', category:'Starters', emoji:'', station:'kitchen', allergens:[] })
+    setNewItem({ name:'', description:'', price:'', category:'Starters', emoji:'', station:'kitchen' })
     fetchData()
   }
 
@@ -279,13 +234,17 @@ export default function AdminPage() {
   }
 
   const fetchStats = async (period) => {
+    if (!restaurant) return
     setStatsLoading(true)
     const now = new Date(); let from = new Date()
     if (period === 'today') { from.setHours(0,0,0,0) }
     else if (period === 'thisWeek') { from.setDate(now.getDate() - now.getDay()); from.setHours(0,0,0,0) }
     else if (period === 'thisMonth') { from = new Date(now.getFullYear(), now.getMonth(), 1) }
     else { from = new Date('2020-01-01') }
-    const query = supabase.from('orders').select('id, created_at, tables(name), order_lines(qty, price)').in('status', ['done', 'archived'])
+    const { data: restaurantTables } = await supabase.from('tables').select('id').eq('restaurant_id', restaurant.id)
+    if (!restaurantTables || restaurantTables.length === 0) { setStatsData([]); setStatsLoading(false); return }
+    const tableIds = restaurantTables.map(t => t.id)
+    const query = supabase.from('orders').select('id, created_at, tables(name), order_lines(qty, price)').in('status', ['done', 'archived']).in('table_id', tableIds)
     if (period !== 'allTime') query.gte('created_at', from.toISOString())
     const { data } = await query
     if (!data) { setStatsData([]); setStatsLoading(false); return }
@@ -301,25 +260,28 @@ export default function AdminPage() {
   }
 
   const resetRevenue = async () => {
+    if (!restaurant) return
     setResetting(true)
     const today = new Date(); today.setHours(0,0,0,0)
-    await supabase.from('orders').update({ status:'archived' }).eq('status','done').gte('created_at', today.toISOString())
+    const { data: restaurantTables } = await supabase.from('tables').select('id').eq('restaurant_id', restaurant.id)
+    const tableIds = restaurantTables.map(t => t.id)
+    await supabase.from('orders').update({ status:'archived' }).eq('status','done').gte('created_at', today.toISOString()).in('table_id', tableIds)
     setRevenue([]); setResetting(false); setShowResetConfirm(false)
   }
 
-  const logout = async () => { await supabase.auth.signOut(); setUser(null) }
+  const logout = async () => { await supabase.auth.signOut(); setUser(null); setRestaurant(null) }
 
   const grandTotal = revenue.reduce((s, o) => s + (o.order_lines||[]).reduce((ls, l) => ls + l.price * l.qty, 0), 0)
   const categories = ['Starters','Salads','Mains','Sides','Desserts','Drinks']
 
   if (authLoading) return <div style={s.center}><p style={{color:'#aaa'}}>...</p></div>
-  if (!user) return <LoginScreen onLogin={setUser} />
+  if (!user || !restaurant) return <LoginScreen onLogin={handleLogin} />
   if (loading) return <div style={s.center}><p style={{color:'#aaa'}}>{t.loading}</p></div>
 
   return (
     <div style={s.page}>
       <header style={s.header}>
-        <span style={s.title}>⚙️ Taverna Kriti — Admin</span>
+        <span style={s.title}>⚙️ {restaurant.name} — Admin</span>
         <div style={{display:'flex',gap:6,marginRight:12}}>
           {['da','en','el'].map(l => (
             <button key={l} onClick={() => setLang(l)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:lang===l?'#C2692A':'transparent',color:lang===l?'white':'#888',border:lang===l?'none':'1px solid #ddd'}}>{l.toUpperCase()}</button>
@@ -357,11 +319,16 @@ export default function AdminPage() {
                 </select>
               </div>
               <textarea style={{...s.input, width:'100%', marginTop:8, resize:'none'}} rows={2} placeholder={t.description} value={newItem.description} onChange={e => setNewItem({...newItem, description:e.target.value})} />
-              <AllergenPicker value={newItem.allergens} onChange={v => setNewItem({...newItem, allergens:v})} lang={lang} label={t.allergens} />
               <div style={{display:'flex',gap:8,marginTop:12}}>
                 <button onClick={addItem} disabled={saving||!newItem.name||!newItem.price} style={s.saveBtn}>{saving ? t.saving : t.save}</button>
                 <button onClick={() => setShowAdd(false)} style={s.cancelBtn}>{t.cancel}</button>
               </div>
+            </div>
+          )}
+          {items.length === 0 && !showAdd && (
+            <div style={{...s.card, textAlign:'center', padding:40, color:'#78716C'}}>
+              <div style={{fontSize:48,marginBottom:12}}>🍽</div>
+              <p>{t.noItems}</p>
             </div>
           )}
           {categories.map(cat => {
@@ -387,7 +354,6 @@ export default function AdminPage() {
                           </select>
                         </div>
                         <textarea style={{...s.input,width:'100%',marginTop:8,resize:'none'}} rows={2} value={editing.description||''} onChange={e => setEditing({...editing, description:e.target.value})} placeholder={t.description} />
-                        <AllergenPicker value={editing.allergens||[]} onChange={v => setEditing({...editing, allergens:v})} lang={lang} label={t.allergens} />
                         <ImageUpload itemId={editing.id} currentUrl={editing.image_url} onUploaded={url => setEditing({...editing, image_url:url})} onRemoved={() => setEditing({...editing, image_url:null})} t={t} />
                         <div style={{display:'flex',gap:8,marginTop:12}}>
                           <button onClick={() => saveItem(editing)} disabled={saving} style={s.saveBtn}>{saving ? t.saving : t.save}</button>
@@ -403,18 +369,10 @@ export default function AdminPage() {
                         <div style={{flex:1}}>
                           <div style={{fontWeight:600,fontSize:15}}>{item.name}</div>
                           <div style={{fontSize:12,color:'#78716C'}}>{item.description}</div>
-                          {item.allergens && item.allergens.length > 0 && (
-                            <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:4}}>
-                              {item.allergens.map(aid => {
-                                const a = ALLERGENS.find(x => x.id === aid)
-                                return a ? <span key={aid} style={{fontSize:11,background:'#FEF3C7',border:'1px solid #F59E0B',borderRadius:10,padding:'1px 7px',color:'#92400E'}}>{a.icon} {a[lang]||a.en}</span> : null
-                              })}
-                            </div>
-                          )}
                         </div>
                         <div style={{fontWeight:700,fontSize:15,minWidth:50}}>€{Number(item.price).toFixed(2)}</div>
                         <button onClick={() => toggleAvailable(item)} style={{...s.iconBtn, background:item.available?'#EBF5EF':'#FEE2E2', color:item.available?'#2D7A4F':'#dc2626'}}>{item.available ? t.active : t.inactive}</button>
-                        <button onClick={() => setEditing({...item, allergens:item.allergens||[]})} style={s.iconBtn}>{t.edit}</button>
+                        <button onClick={() => setEditing({...item})} style={s.iconBtn}>{t.edit}</button>
                       </div>
                     )}
                   </div>

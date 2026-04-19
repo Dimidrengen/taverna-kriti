@@ -6,18 +6,15 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
-const ALLOWED_EMAIL = 'bar@taverna-kriti.com'
-
-const LANGS = {
-  el: { title:'Μπαρ', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', drinks:'Ποτά', closeTable:'Κλείσιμο & Πληρωμή', closing:'Κλείνει…', bill:'Λογαριασμός', total:'Σύνολο', allTables:'Όλα τα τραπέζια', activeDrinks:'Ενεργά ποτά', tableWord:'Τραπέζι' },
-  en: { title:'Bar', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', drinks:'Drinks', closeTable:'Close & Payment', closing:'Closing…', bill:'Bill', total:'Total', allTables:'All tables', activeDrinks:'Active drinks', tableWord:'Table' },
-  da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total', allTables:'Alle borde', activeDrinks:'Aktive drikkevarer', tableWord:'Bord' },
+function extractSlugFromEmail(email) {
+  const match = email.match(/^(admin|kitchen|bar)@(.+)\.com$/i)
+  return match ? match[2] : null
 }
 
-const LOGIN_LABELS = {
-  da: { title:'Bar', email:'Email', password:'Adgangskode', login:'Log ind', logging:'Logger ind...', error:'Forkert email eller adgangskode', noAccess:'Du har ikke adgang til denne side' },
-  en: { title:'Bar', email:'Email', password:'Password', login:'Log in', logging:'Logging in...', error:'Wrong email or password', noAccess:'You do not have access to this page' },
-  el: { title:'Μπαρ', email:'Email', password:'Κωδικός', login:'Σύνδεση', logging:'Σύνδεση...', error:'Λάθος email ή κωδικός', noAccess:'Δεν έχετε πρόσβαση σε αυτή τη σελίδα' },
+const LANGS = {
+  el: { title:'Μπαρ', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', drinks:'Ποτά', closeTable:'Κλείσιμο & Πληρωμή', closing:'Κλείνει…', bill:'Λογαριασμός', total:'Σύνολο', allTables:'Όλα τα τραπέζια', activeDrinks:'Ενεργά ποτά', tableWord:'Τραπέζι', logout:'Αποσύνδεση' },
+  en: { title:'Bar', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', drinks:'Drinks', closeTable:'Close & Payment', closing:'Closing…', bill:'Bill', total:'Total', allTables:'All tables', activeDrinks:'Active drinks', tableWord:'Table', logout:'Log out' },
+  da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total', allTables:'Alle borde', activeDrinks:'Aktive drikkevarer', tableWord:'Bord', logout:'Log ud' },
 }
 
 function getTableLabel(name, tableWord) {
@@ -52,50 +49,48 @@ function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [loginLang, setLoginLang] = useState('da')
-  const l = LOGIN_LABELS[loginLang]
 
   const login = async (e) => {
     e.preventDefault()
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error || !data.user) { setError(l.error); setLoading(false); return }
-    if (data.user.email !== ALLOWED_EMAIL) {
+    if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
+    if (!data.user.email.startsWith('bar@')) {
       await supabase.auth.signOut()
-      setError(l.noAccess); setLoading(false); return
+      setError('Du har ikke bar adgang')
+      setLoading(false); return
     }
-    onLogin(data.user); setLoading(false)
+    const slug = extractSlugFromEmail(data.user.email)
+    if (!slug) { await supabase.auth.signOut(); setError('Ugyldig email'); setLoading(false); return }
+    const { data: restaurant } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
+    if (!restaurant) { await supabase.auth.signOut(); setError('Restaurant ikke fundet'); setLoading(false); return }
+    if (!restaurant.active) { await supabase.auth.signOut(); setError('Restauranten er deaktiveret'); setLoading(false); return }
+    onLogin(data.user, restaurant)
+    setLoading(false)
   }
 
   return (
     <div style={{minHeight:'100dvh',background:'#0d0d0d',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
       <div style={{background:'#1a1a1a',borderRadius:16,border:'1px solid #2a2a2a',padding:40,width:'100%',maxWidth:380}}>
-        <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:24}}>
-          {['da','en','el'].map(lg => (
-            <button key={lg} type="button" onClick={() => setLoginLang(lg)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:loginLang===lg?'#0ea5e9':'transparent',color:loginLang===lg?'#000':'#888',border:loginLang===lg?'none':'1px solid #333'}}>
-              {lg.toUpperCase()}
-            </button>
-          ))}
-        </div>
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{fontSize:40,marginBottom:12}}>🍹</div>
-          <div style={{fontSize:22,fontWeight:700,color:'#f1f1f1'}}>{l.title}</div>
-          <div style={{fontSize:14,color:'#6b7280',marginTop:4}}>Taverna Kriti</div>
+          <div style={{fontSize:22,fontWeight:700,color:'#f1f1f1'}}>Bar</div>
+          <div style={{fontSize:14,color:'#6b7280',marginTop:4}}>TableFlow</div>
         </div>
         <form onSubmit={login}>
           <div style={{marginBottom:16}}>
-            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>{l.email}</label>
+            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
               style={{width:'100%',padding:'10px 14px',border:'1px solid #333',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',background:'#0d0d0d',color:'#f1f1f1'}} />
           </div>
           <div style={{marginBottom:24}}>
-            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>{l.password}</label>
+            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>Adgangskode</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
               style={{width:'100%',padding:'10px 14px',border:'1px solid #333',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',background:'#0d0d0d',color:'#f1f1f1'}} />
           </div>
           {error && <div style={{background:'#3a1a1a',border:'1px solid #7f1d1d',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#f87171',marginBottom:16}}>{error}</div>}
           <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:'#0ea5e9',color:'#000',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-            {loading ? l.logging : l.login}
+            {loading ? 'Logger ind...' : 'Log ind'}
           </button>
         </form>
       </div>
@@ -104,27 +99,36 @@ function LoginScreen({ onLogin }) {
 }
 
 export default function BarPage() {
-  const [user, setUser]           = useState(null)
+  const [user, setUser] = useState(null)
+  const [restaurant, setRestaurant] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [drinkOrders, setDrinkOrders] = useState([])
-  const [allTables, setAllTables]     = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [pending, setPending]         = useState({})
-  const [closing, setClosing]         = useState({})
-  const [bills, setBills]             = useState({})
-  const [served, setServed]           = useState({})
-  const [tab, setTab]                 = useState('drinks')
-  const [lang, setLang]               = useState('el')
-  const [translations, setTrans]      = useState({})
-  const [tick, setTick]               = useState(0)
+  const [allTables, setAllTables] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [pending, setPending] = useState({})
+  const [closing, setClosing] = useState({})
+  const [bills, setBills] = useState({})
+  const [served, setServed] = useState({})
+  const [tab, setTab] = useState('drinks')
+  const [lang, setLang] = useState('el')
+  const [translations, setTrans] = useState({})
+  const [tick, setTick] = useState(0)
   const t = LANGS[lang]
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email === ALLOWED_EMAIL) setUser(session.user)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user?.email?.startsWith('bar@')) {
+        const slug = extractSlugFromEmail(session.user.email)
+        if (slug) {
+          const { data: rest } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
+          if (rest && rest.active) { setUser(session.user); setRestaurant(rest) }
+        }
+      }
       setAuthLoading(false)
     })
   }, [])
+
+  const handleLogin = (u, r) => { setUser(u); setRestaurant(r) }
 
   useEffect(() => {
     const interval = setInterval(() => setTick(n => n + 1), 60000)
@@ -137,30 +141,35 @@ export default function BarPage() {
   }, [])
 
   const fetchOrders = useCallback(async () => {
-    const { data } = await supabase.from('bar_open_orders').select('*')
+    if (!restaurant) return
+    const { data } = await supabase.from('bar_open_orders').select('*').eq('restaurant_id', restaurant.id)
     if (data) setDrinkOrders(groupDrinkOrders(data, translations))
     setLoading(false)
-  }, [translations])
+  }, [translations, restaurant])
 
   const fetchAllTables = useCallback(async () => {
-    const { data: orders } = await supabase.from('orders').select('table_id').eq('status', 'open')
+    if (!restaurant) return
+    const { data: restaurantTables } = await supabase.from('tables').select('id').eq('restaurant_id', restaurant.id)
+    if (!restaurantTables || restaurantTables.length === 0) { setAllTables([]); return }
+    const tableIds = restaurantTables.map(t => t.id)
+    const { data: orders } = await supabase.from('orders').select('table_id').eq('status', 'open').in('table_id', tableIds)
     if (!orders || orders.length === 0) { setAllTables([]); return }
-    const tableIds = [...new Set(orders.map(o => o.table_id))]
-    const { data: tables } = await supabase.from('tables').select('id, name, token').in('id', tableIds).order('name')
+    const activeTableIds = [...new Set(orders.map(o => o.table_id))]
+    const { data: tables } = await supabase.from('tables').select('id, name, token').in('id', activeTableIds).order('name')
     if (tables) setAllTables(tables)
-  }, [])
+  }, [restaurant])
 
   useEffect(() => { if (user) fetchTranslations(lang) }, [lang, user])
-  useEffect(() => { if (user) { fetchOrders(); fetchAllTables() } }, [translations])
+  useEffect(() => { if (user && restaurant) { fetchOrders(); fetchAllTables() } }, [translations, restaurant])
 
   useEffect(() => {
-    if (!user) return
-    const channel = supabase.channel('bar-realtime')
+    if (!user || !restaurant) return
+    const channel = supabase.channel('bar-realtime-' + restaurant.id)
       .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, () => { fetchOrders(); fetchAllTables() })
       .on('postgres_changes', { event:'*', schema:'public', table:'order_lines' }, () => { fetchOrders(); fetchAllTables() })
       .subscribe()
     return () => supabase.removeChannel(channel)
-  }, [fetchOrders, fetchAllTables, user])
+  }, [fetchOrders, fetchAllTables, user, restaurant])
 
   const changeLang = (l) => { setLang(l); fetchTranslations(l).then(() => fetchOrders()) }
 
@@ -196,22 +205,22 @@ export default function BarPage() {
     finally { setClosing(p => { const n={...p}; delete n[tableToken]; return n }) }
   }
 
-  const logout = async () => { await supabase.auth.signOut(); setUser(null) }
+  const logout = async () => { await supabase.auth.signOut(); setUser(null); setRestaurant(null) }
 
   if (authLoading) return <div style={styles.center}><p style={{color:'#aaa'}}>...</p></div>
-  if (!user) return <LoginScreen onLogin={setUser} />
+  if (!user || !restaurant) return <LoginScreen onLogin={handleLogin} />
   if (loading) return <div style={styles.center}><p style={{color:'#aaa'}}>...</p></div>
 
   return (
     <div style={styles.page}>
       <header style={styles.header}>
-        <span style={styles.headerTitle}>🍹 {t.title}</span>
+        <span style={styles.headerTitle}>🍹 {restaurant.name} — {t.title}</span>
         <div style={{display:'flex',gap:8}}>
           {Object.keys(LANGS).map(l => (
             <button key={l} onClick={() => changeLang(l)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:lang===l?'#0ea5e9':'transparent',color:lang===l?'#000':'#888',border:lang===l?'none':'1px solid #333'}}>{l.toUpperCase()}</button>
           ))}
         </div>
-        <button onClick={logout} style={{padding:'6px 14px',background:'transparent',border:'1px solid #333',borderRadius:8,fontSize:13,cursor:'pointer',color:'#6b7280'}}>Log ud</button>
+        <button onClick={logout} style={{padding:'6px 14px',background:'transparent',border:'1px solid #333',borderRadius:8,fontSize:13,cursor:'pointer',color:'#6b7280'}}>{t.logout}</button>
       </header>
 
       <div style={{display:'flex',gap:0,borderBottom:'1px solid #222',padding:'0 24px'}}>

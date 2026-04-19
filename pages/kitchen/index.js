@@ -6,18 +6,15 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
-const ALLOWED_EMAIL = 'kitchen@taverna-kriti.com'
-
-const LANGS = {
-  el: { title:'Κουζίνα', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', courses:{ starters:'Ορεκτικά', mains:'Κυρίως', sides:'Συνοδευτικά', salads:'Σαλάτες', dessert:'Επιδόρπια' }, flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά', tableWord:'Τραπέζι' },
-  en: { title:'Kitchen', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', courses:{ starters:'Starters', mains:'Mains', sides:'Sides', salads:'Salads', dessert:'Dessert' }, flowAll:'All at once', flowSeq:'By course', tableWord:'Table' },
-  da: { title:'Køkken', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', courses:{ starters:'Forretter', mains:'Hovedretter', sides:'Tilbehør', salads:'Salater', dessert:'Dessert' }, flowAll:'Alt på én gang', flowSeq:'Kursvis', tableWord:'Bord' },
+function extractSlugFromEmail(email) {
+  const match = email.match(/^(admin|kitchen|bar)@(.+)\.com$/i)
+  return match ? match[2] : null
 }
 
-const LOGIN_LABELS = {
-  da: { title:'Køkken', email:'Email', password:'Adgangskode', login:'Log ind', logging:'Logger ind...', error:'Forkert email eller adgangskode', noAccess:'Du har ikke adgang til denne side' },
-  en: { title:'Kitchen', email:'Email', password:'Password', login:'Log in', logging:'Logging in...', error:'Wrong email or password', noAccess:'You do not have access to this page' },
-  el: { title:'Κουζίνα', email:'Email', password:'Κωδικός', login:'Σύνδεση', logging:'Σύνδεση...', error:'Λάθος email ή κωδικός', noAccess:'Δεν έχετε πρόσβαση σε αυτή τη σελίδα' },
+const LANGS = {
+  el: { title:'Κουζίνα', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', courses:{ starters:'Ορεκτικά', mains:'Κυρίως', sides:'Συνοδευτικά', salads:'Σαλάτες', dessert:'Επιδόρπια' }, flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά', tableWord:'Τραπέζι', logout:'Αποσύνδεση' },
+  en: { title:'Kitchen', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', courses:{ starters:'Starters', mains:'Mains', sides:'Sides', salads:'Salads', dessert:'Dessert' }, flowAll:'All at once', flowSeq:'By course', tableWord:'Table', logout:'Log out' },
+  da: { title:'Køkken', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', courses:{ starters:'Forretter', mains:'Hovedretter', sides:'Tilbehør', salads:'Salater', dessert:'Dessert' }, flowAll:'Alt på én gang', flowSeq:'Kursvis', tableWord:'Bord', logout:'Log ud' },
 }
 
 const COURSE_COLOR = { starters:'#f59e0b', mains:'#ef4444', sides:'#8b5cf6', salads:'#22c55e', dessert:'#ec4899' }
@@ -55,50 +52,48 @@ function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [loginLang, setLoginLang] = useState('da')
-  const l = LOGIN_LABELS[loginLang]
 
   const login = async (e) => {
     e.preventDefault()
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error || !data.user) { setError(l.error); setLoading(false); return }
-    if (data.user.email !== ALLOWED_EMAIL) {
+    if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
+    if (!data.user.email.startsWith('kitchen@')) {
       await supabase.auth.signOut()
-      setError(l.noAccess); setLoading(false); return
+      setError('Du har ikke kitchen adgang')
+      setLoading(false); return
     }
-    onLogin(data.user); setLoading(false)
+    const slug = extractSlugFromEmail(data.user.email)
+    if (!slug) { await supabase.auth.signOut(); setError('Ugyldig email'); setLoading(false); return }
+    const { data: restaurant } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
+    if (!restaurant) { await supabase.auth.signOut(); setError('Restaurant ikke fundet'); setLoading(false); return }
+    if (!restaurant.active) { await supabase.auth.signOut(); setError('Restauranten er deaktiveret'); setLoading(false); return }
+    onLogin(data.user, restaurant)
+    setLoading(false)
   }
 
   return (
     <div style={{minHeight:'100dvh',background:'#0d0d0d',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
       <div style={{background:'#1a1a1a',borderRadius:16,border:'1px solid #2a2a2a',padding:40,width:'100%',maxWidth:380}}>
-        <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:24}}>
-          {['da','en','el'].map(lg => (
-            <button key={lg} type="button" onClick={() => setLoginLang(lg)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:loginLang===lg?'#f59e0b':'transparent',color:loginLang===lg?'#000':'#888',border:loginLang===lg?'none':'1px solid #333'}}>
-              {lg.toUpperCase()}
-            </button>
-          ))}
-        </div>
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{fontSize:40,marginBottom:12}}>🍳</div>
-          <div style={{fontSize:22,fontWeight:700,color:'#f1f1f1'}}>{l.title}</div>
-          <div style={{fontSize:14,color:'#6b7280',marginTop:4}}>Taverna Kriti</div>
+          <div style={{fontSize:22,fontWeight:700,color:'#f1f1f1'}}>Køkken</div>
+          <div style={{fontSize:14,color:'#6b7280',marginTop:4}}>TableFlow</div>
         </div>
         <form onSubmit={login}>
           <div style={{marginBottom:16}}>
-            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>{l.email}</label>
+            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
               style={{width:'100%',padding:'10px 14px',border:'1px solid #333',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',background:'#0d0d0d',color:'#f1f1f1'}} />
           </div>
           <div style={{marginBottom:24}}>
-            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>{l.password}</label>
+            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>Adgangskode</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
               style={{width:'100%',padding:'10px 14px',border:'1px solid #333',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',background:'#0d0d0d',color:'#f1f1f1'}} />
           </div>
           {error && <div style={{background:'#3a1a1a',border:'1px solid #7f1d1d',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#f87171',marginBottom:16}}>{error}</div>}
           <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:'#f59e0b',color:'#000',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-            {loading ? l.logging : l.login}
+            {loading ? 'Logger ind...' : 'Log ind'}
           </button>
         </form>
       </div>
@@ -107,23 +102,32 @@ function LoginScreen({ onLogin }) {
 }
 
 export default function KitchenPage() {
-  const [user, setUser]          = useState(null)
+  const [user, setUser] = useState(null)
+  const [restaurant, setRestaurant] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
-  const [orders, setOrders]      = useState([])
-  const [loading, setLoading]    = useState(true)
-  const [pending, setPending]    = useState({})
-  const [served, setServed]      = useState({})
-  const [lang, setLang]          = useState('el')
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [pending, setPending] = useState({})
+  const [served, setServed] = useState({})
+  const [lang, setLang] = useState('el')
   const [translations, setTrans] = useState({})
-  const [tick, setTick]          = useState(0)
+  const [tick, setTick] = useState(0)
   const t = LANGS[lang]
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email === ALLOWED_EMAIL) setUser(session.user)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user?.email?.startsWith('kitchen@')) {
+        const slug = extractSlugFromEmail(session.user.email)
+        if (slug) {
+          const { data: rest } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
+          if (rest && rest.active) { setUser(session.user); setRestaurant(rest) }
+        }
+      }
       setAuthLoading(false)
     })
   }, [])
+
+  const handleLogin = (u, r) => { setUser(u); setRestaurant(r) }
 
   useEffect(() => {
     const interval = setInterval(() => setTick(n => n + 1), 60000)
@@ -136,22 +140,23 @@ export default function KitchenPage() {
   }, [])
 
   const fetchOrders = useCallback(async () => {
-    const { data, error } = await supabase.from('kitchen_active_orders').select('*')
+    if (!restaurant) return
+    const { data, error } = await supabase.from('kitchen_active_orders').select('*').eq('restaurant_id', restaurant.id)
     if (!error && data) setOrders(groupOrders(data, translations))
     setLoading(false)
-  }, [translations])
+  }, [translations, restaurant])
 
   useEffect(() => { if (user) fetchTranslations(lang) }, [lang, user])
-  useEffect(() => { if (user) fetchOrders() }, [translations])
+  useEffect(() => { if (user && restaurant) fetchOrders() }, [translations, restaurant])
 
   useEffect(() => {
-    if (!user) return
-    const channel = supabase.channel('kitchen-realtime')
+    if (!user || !restaurant) return
+    const channel = supabase.channel('kitchen-realtime-' + restaurant.id)
       .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, fetchOrders)
       .on('postgres_changes', { event:'*', schema:'public', table:'order_lines' }, fetchOrders)
       .subscribe()
     return () => supabase.removeChannel(channel)
-  }, [fetchOrders, user])
+  }, [fetchOrders, user, restaurant])
 
   const changeLang = (l) => { setLang(l); fetchTranslations(l).then(() => fetchOrders()) }
 
@@ -170,23 +175,23 @@ export default function KitchenPage() {
     await supabase.from('order_lines').update({ served_at: isServed ? null : new Date().toISOString() }).eq('id', lineId)
   }
 
-  const logout = async () => { await supabase.auth.signOut(); setUser(null) }
+  const logout = async () => { await supabase.auth.signOut(); setUser(null); setRestaurant(null) }
 
   if (authLoading) return <div style={styles.center}><p style={{color:'#aaa'}}>...</p></div>
-  if (!user) return <LoginScreen onLogin={setUser} />
+  if (!user || !restaurant) return <LoginScreen onLogin={handleLogin} />
   if (loading) return <div style={styles.center}><p style={{color:'#aaa',fontSize:18}}>{t.noOrders}</p></div>
 
   return (
     <div style={styles.page}>
       <header style={styles.header}>
-        <span style={styles.headerTitle}>🍳 {t.title}</span>
+        <span style={styles.headerTitle}>🍳 {restaurant.name} — {t.title}</span>
         <div style={{display:'flex',gap:8}}>
           {Object.keys(LANGS).map(l => (
             <button key={l} onClick={() => changeLang(l)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:lang===l?'#f59e0b':'transparent',color:lang===l?'#000':'#888',border:lang===l?'none':'1px solid #333'}}>{l.toUpperCase()}</button>
           ))}
         </div>
         <span style={{fontSize:14,color:'#6b7280'}}>{orders.length}</span>
-        <button onClick={logout} style={{padding:'6px 14px',background:'transparent',border:'1px solid #333',borderRadius:8,fontSize:13,cursor:'pointer',color:'#6b7280'}}>Log ud</button>
+        <button onClick={logout} style={{padding:'6px 14px',background:'transparent',border:'1px solid #333',borderRadius:8,fontSize:13,cursor:'pointer',color:'#6b7280'}}>{t.logout}</button>
       </header>
 
       {orders.length === 0
