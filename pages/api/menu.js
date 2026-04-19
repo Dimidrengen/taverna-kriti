@@ -6,7 +6,7 @@ const supabase = createClient(
 )
 
 export default async function handler(req, res) {
-  const { restaurant, lang = 'en' } = req.query
+  const { restaurant, lang = 'en', table: tableToken } = req.query
 
   if (!restaurant) return res.status(400).json({ error: 'Missing restaurant' })
 
@@ -51,6 +51,25 @@ export default async function handler(req, res) {
     category: catMap[item.category] || item.category,
     originalCategory: item.category,
   }))
+
+  // === ANALYTICS EVENT ===
+  if (tableToken) {
+    const { data: table } = await supabase
+      .from('tables')
+      .select('id')
+      .eq('token', tableToken)
+      .eq('restaurant_id', restaurantData.id)
+      .single()
+
+    if (table) {
+      await supabase.from('analytics_events').insert({
+        restaurant_id: restaurantData.id,
+        event_type: 'menu_viewed',
+        table_id: table.id,
+        event_data: { lang: lang, item_count: items.length }
+      })
+    }
+  }
 
   res.status(200).json({
     restaurant: restaurantData,
