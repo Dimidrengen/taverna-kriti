@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
+const PLAN_PRICES = { trial: 0, basic: 100, pro: 200, enterprise: 300 }
+const PLAN_TABLE_LIMITS = { trial: 15, basic: 15, pro: 50, enterprise: 9999 }
+
 function generatePassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
   let pw = ''
@@ -19,17 +22,13 @@ export default async function handler(req, res) {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !serviceKey) {
-    return res.status(500).json({ error: 'Server not configured — missing Supabase credentials' })
-  }
+  if (!supabaseUrl || !serviceKey) return res.status(500).json({ error: 'Server not configured' })
 
   const supabaseAdmin = createClient(supabaseUrl, serviceKey)
 
   try {
     const authHeader = req.headers.authorization
     if (!authHeader) return res.status(401).json({ error: 'Missing auth' })
-
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
     if (userError || !user) return res.status(401).json({ error: 'Invalid auth' })
@@ -45,8 +44,13 @@ export default async function handler(req, res) {
 
     if (!name || !ownerEmail) return res.status(400).json({ error: 'Missing required fields' })
 
-    const slug = slugify(name)
+    // Check table count vs plan limit
+    const limit = PLAN_TABLE_LIMITS[plan] || 15
+    if (tableCount > limit) {
+      return res.status(400).json({ error: `${plan} plan allows max ${limit} tables. You requested ${tableCount}.` })
+    }
 
+    const slug = slugify(name)
     const { data: existing } = await supabaseAdmin.from('restaurants').select('id').eq('slug', slug).maybeSingle()
     if (existing) return res.status(400).json({ error: `Restaurant with slug "${slug}" already exists` })
 
@@ -54,11 +58,9 @@ export default async function handler(req, res) {
       .from('restaurants')
       .insert({
         name, slug, owner_email: ownerEmail, owner_name: ownerName,
-        phone, address, city, country, plan, currency, timezone,
-        active: true,
+        phone, address, city, country, plan, currency, timezone, active: true,
       })
       .select().single()
-
     if (restError) return res.status(500).json({ error: 'Could not create restaurant: ' + restError.message })
 
     const tablesToInsert = []
@@ -68,6 +70,7 @@ export default async function handler(req, res) {
         restaurant_id: restaurant.id,
         name: `Table ${i}`,
         token: `${slug}-tbl-${padded}`,
+        position: i,
       })
     }
     const { error: tablesError } = await supabaseAdmin.from('tables').insert(tablesToInsert)
@@ -76,12 +79,11 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Could not create tables: ' + tablesError.message })
     }
 
-    const planPrices = { trial: 0, basic: 29, pro: 79, enterprise: 199 }
     await supabaseAdmin.from('subscriptions').insert({
       restaurant_id: restaurant.id,
       plan,
       status: 'active',
-      price_monthly: planPrices[plan] || 0,
+      price_monthly: PLAN_PRICES[plan] || 0,
     })
 
     const adminPassword = generatePassword()
