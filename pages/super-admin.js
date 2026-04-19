@@ -18,7 +18,6 @@ function LoginScreen({ onLogin }) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error || !data.user) { setError('Wrong email or password'); setLoading(false); return }
 
-    // Tjek om email er super-admin
     const { data: superAdmin } = await supabase
       .from('super_admins')
       .select('*')
@@ -63,6 +62,233 @@ function LoginScreen({ onLogin }) {
   )
 }
 
+function CreateRestaurantModal({ onClose, onCreated }) {
+  const [step, setStep] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [result, setResult] = useState(null)
+  const [form, setForm] = useState({
+    name: '', ownerName: '', ownerEmail: '', phone: '',
+    address: '', city: '', country: 'Greece',
+    plan: 'trial', tableCount: 10,
+    currency: 'EUR', timezone: 'Europe/Athens',
+  })
+
+  const update = (key, value) => setForm(f => ({ ...f, [key]: value }))
+
+  const submit = async () => {
+    setLoading(true); setError('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/create-restaurant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (!data.success) { setError(data.error || 'Failed'); setLoading(false); return }
+      setResult(data)
+      setStep(4)
+      setLoading(false)
+    } catch (e) {
+      setError(e.message); setLoading(false)
+    }
+  }
+
+  const copyCredentials = () => {
+    if (!result) return
+    const text = `TableFlow — ${result.restaurant.name}\n\nAdmin panel: https://taverna-kriti.vercel.app/admin\nEmail: ${result.credentials.admin.email}\nPassword: ${result.credentials.admin.password}\n\nKitchen: https://taverna-kriti.vercel.app/kitchen\nEmail: ${result.credentials.kitchen.email}\nPassword: ${result.credentials.kitchen.password}\n\nBar: https://taverna-kriti.vercel.app/bar\nEmail: ${result.credentials.bar.email}\nPassword: ${result.credentials.bar.password}\n\nMenu URL format: https://taverna-kriti.vercel.app/menu.html?restaurant=${result.restaurant.slug}&table=tbl-001`
+    navigator.clipboard.writeText(text)
+    alert('Credentials copied to clipboard!')
+  }
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100,padding:20}}>
+      <div style={{background:'#141414',border:'1px solid #262626',borderRadius:16,width:'100%',maxWidth:600,maxHeight:'90vh',overflow:'auto'}}>
+        <div style={{padding:'24px 28px',borderBottom:'1px solid #262626',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <div style={{fontSize:18,fontWeight:700,color:'white'}}>
+              {step === 4 ? '✓ Restaurant Created' : 'Create New Restaurant'}
+            </div>
+            {step < 4 && <div style={{fontSize:12,color:'#888',marginTop:4}}>Step {step} of 3</div>}
+          </div>
+          <button onClick={onClose} style={{background:'transparent',border:'none',color:'#888',fontSize:24,cursor:'pointer'}}>×</button>
+        </div>
+
+        <div style={{padding:28}}>
+          {step < 4 && (
+            <div style={{display:'flex',gap:4,marginBottom:24}}>
+              {[1,2,3].map(i => (
+                <div key={i} style={{flex:1,height:3,borderRadius:2,background: step >= i ? 'linear-gradient(90deg, #6366f1, #8b5cf6)' : '#262626'}}/>
+              ))}
+            </div>
+          )}
+
+          {/* Step 1: Basic info */}
+          {step === 1 && (
+            <div>
+              <h3 style={{fontSize:15,color:'white',marginBottom:16}}>Restaurant Info</h3>
+              <Field label="Restaurant Name" value={form.name} onChange={v => update('name', v)} required placeholder="e.g. Taverna Kriti" />
+              <Field label="Owner Name" value={form.ownerName} onChange={v => update('ownerName', v)} placeholder="e.g. Dimi Kostas" />
+              <Field label="Owner Email" value={form.ownerEmail} onChange={v => update('ownerEmail', v)} type="email" required placeholder="owner@example.com" />
+              <Field label="Phone" value={form.phone} onChange={v => update('phone', v)} placeholder="+30 123 456 789" />
+              <Field label="Address" value={form.address} onChange={v => update('address', v)} placeholder="Street address" />
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                <Field label="City" value={form.city} onChange={v => update('city', v)} placeholder="Crete" />
+                <Field label="Country" value={form.country} onChange={v => update('country', v)} placeholder="Greece" />
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Plan & tables */}
+          {step === 2 && (
+            <div>
+              <h3 style={{fontSize:15,color:'white',marginBottom:16}}>Plan & Setup</h3>
+              <div style={{fontSize:12,color:'#888',marginBottom:8}}>Subscription Plan</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:20}}>
+                {[
+                  {id:'trial', name:'Trial', price:'Free 30 days', limit:'15 tables'},
+                  {id:'basic', name:'Basic', price:'€29/mo', limit:'15 tables'},
+                  {id:'pro', name:'Pro', price:'€79/mo', limit:'50 tables'},
+                  {id:'enterprise', name:'Enterprise', price:'€199/mo', limit:'Unlimited'},
+                ].map(p => (
+                  <button key={p.id} onClick={() => update('plan', p.id)}
+                    style={{
+                      padding:'14px 12px', textAlign:'left', borderRadius:10, cursor:'pointer',
+                      background: form.plan === p.id ? '#1a1a2e' : '#0a0a0a',
+                      border: form.plan === p.id ? '1.5px solid #6366f1' : '1px solid #262626',
+                      color:'white', fontFamily:'system-ui',
+                    }}>
+                    <div style={{fontSize:14,fontWeight:600}}>{p.name}</div>
+                    <div style={{fontSize:12,color:'#888',marginTop:2}}>{p.price}</div>
+                    <div style={{fontSize:11,color:'#666',marginTop:4}}>{p.limit}</div>
+                  </button>
+                ))}
+              </div>
+              <Field label="Number of Tables" value={form.tableCount} onChange={v => update('tableCount', parseInt(v)||10)} type="number" required />
+              <div style={{fontSize:12,color:'#666',marginTop:-8,marginBottom:16}}>
+                Tables will be auto-generated: Table 1, Table 2... — can be renamed later
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                <Field label="Currency" value={form.currency} onChange={v => update('currency', v)} placeholder="EUR" />
+                <Field label="Timezone" value={form.timezone} onChange={v => update('timezone', v)} placeholder="Europe/Athens" />
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Review */}
+          {step === 3 && (
+            <div>
+              <h3 style={{fontSize:15,color:'white',marginBottom:16}}>Review & Create</h3>
+              <div style={{background:'#0a0a0a',border:'1px solid #262626',borderRadius:10,padding:16,marginBottom:16}}>
+                <Row label="Restaurant" value={form.name} />
+                <Row label="Owner" value={`${form.ownerName} (${form.ownerEmail})`} />
+                <Row label="Location" value={`${form.city}, ${form.country}`} />
+                <Row label="Plan" value={form.plan.toUpperCase()} />
+                <Row label="Tables" value={form.tableCount} />
+                <Row label="Currency" value={form.currency} />
+              </div>
+              <div style={{background:'#1a1a2e',border:'1px solid #3730a3',borderRadius:10,padding:14,fontSize:12,color:'#a5b4fc'}}>
+                <strong>What happens when you click Create:</strong>
+                <ul style={{marginTop:8,paddingLeft:20,listStyle:'disc'}}>
+                  <li>Restaurant is created with slug auto-generated from name</li>
+                  <li>{form.tableCount} tables with unique QR tokens are created</li>
+                  <li>Admin, kitchen, and bar users are created with auto-generated passwords</li>
+                  <li>You'll see the login credentials on the next screen — copy them immediately</li>
+                </ul>
+              </div>
+              {error && <div style={{background:'#2a1515',border:'1px solid #7f1d1d',borderRadius:8,padding:12,fontSize:13,color:'#f87171',marginTop:16}}>{error}</div>}
+            </div>
+          )}
+
+          {/* Step 4: Success */}
+          {step === 4 && result && (
+            <div>
+              <div style={{textAlign:'center',marginBottom:24}}>
+                <div style={{width:60,height:60,margin:'0 auto 12px',background:'#0d2f1f',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>✓</div>
+                <div style={{fontSize:18,fontWeight:600,color:'white'}}>{result.restaurant.name} created!</div>
+                <div style={{fontSize:12,color:'#888',marginTop:4}}>{result.tableCount} tables · slug: {result.restaurant.slug}</div>
+              </div>
+
+              <div style={{background:'#2a2015',border:'1px solid #78350f',borderRadius:10,padding:14,marginBottom:16,fontSize:12,color:'#fbbf24'}}>
+                ⚠️ <strong>Save these credentials now!</strong> Passwords cannot be recovered — only reset.
+              </div>
+
+              <CredentialCard title="Admin" email={result.credentials.admin.email} password={result.credentials.admin.password} url="/admin" />
+              <CredentialCard title="Kitchen" email={result.credentials.kitchen.email} password={result.credentials.kitchen.password} url="/kitchen" />
+              <CredentialCard title="Bar" email={result.credentials.bar.email} password={result.credentials.bar.password} url="/bar" />
+
+              <div style={{marginTop:16,padding:14,background:'#0a0a0a',border:'1px solid #262626',borderRadius:10,fontSize:12,color:'#888'}}>
+                <div style={{fontWeight:600,color:'white',marginBottom:4}}>Menu URL format:</div>
+                <code style={{fontSize:11,color:'#10b981',wordBreak:'break-all'}}>/menu.html?restaurant={result.restaurant.slug}&table=tbl-001</code>
+              </div>
+
+              <button onClick={copyCredentials} style={{width:'100%',marginTop:16,padding:12,background:'#262626',color:'white',border:'1px solid #333',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                📋 Copy all credentials
+              </button>
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div style={{display:'flex',justifyContent:'space-between',marginTop:24,gap:8}}>
+            {step === 4 ? (
+              <button onClick={() => { onCreated(); onClose() }} style={{flex:1,padding:12,background:'linear-gradient(135deg, #6366f1, #8b5cf6)',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>Done</button>
+            ) : (
+              <>
+                <button onClick={() => step > 1 ? setStep(step-1) : onClose()} style={{padding:'10px 20px',background:'transparent',border:'1px solid #262626',color:'#888',borderRadius:10,fontSize:14,cursor:'pointer'}}>
+                  {step > 1 ? '← Back' : 'Cancel'}
+                </button>
+                {step < 3 ? (
+                  <button onClick={() => setStep(step+1)} disabled={step === 1 && (!form.name || !form.ownerEmail)}
+                    style={{padding:'10px 24px',background:'linear-gradient(135deg, #6366f1, #8b5cf6)',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',opacity: (step === 1 && (!form.name || !form.ownerEmail)) ? 0.5 : 1}}>
+                    Next →
+                  </button>
+                ) : (
+                  <button onClick={submit} disabled={loading}
+                    style={{padding:'10px 24px',background:'linear-gradient(135deg, #6366f1, #8b5cf6)',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                    {loading ? 'Creating...' : '✓ Create Restaurant'}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Field({ label, value, onChange, type = 'text', required, placeholder }) {
+  return (
+    <div style={{marginBottom:14}}>
+      <label style={{fontSize:12,color:'#888',display:'block',marginBottom:6}}>
+        {label}{required && <span style={{color:'#f87171'}}> *</span>}
+      </label>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={{width:'100%',padding:'10px 12px',border:'1px solid #262626',borderRadius:8,fontSize:14,fontFamily:'system-ui',outline:'none',background:'#0a0a0a',color:'white'}} />
+    </div>
+  )
+}
+
+function Row({ label, value }) {
+  return (
+    <div style={{display:'flex',justifyContent:'space-between',padding:'6px 0',fontSize:13}}>
+      <span style={{color:'#888'}}>{label}</span>
+      <span style={{color:'white',fontWeight:500}}>{value}</span>
+    </div>
+  )
+}
+
+function CredentialCard({ title, email, password, url }) {
+  return (
+    <div style={{background:'#0a0a0a',border:'1px solid #262626',borderRadius:10,padding:12,marginBottom:8}}>
+      <div style={{fontSize:11,color:'#888',textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:8}}>{title} · {url}</div>
+      <div style={{fontSize:12,color:'#aaa',marginBottom:4}}><strong style={{color:'white'}}>Email:</strong> {email}</div>
+      <div style={{fontSize:12,color:'#aaa'}}><strong style={{color:'white'}}>Password:</strong> <code style={{color:'#10b981',fontSize:12}}>{password}</code></div>
+    </div>
+  )
+}
+
 export default function SuperAdminPage() {
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -71,6 +297,7 @@ export default function SuperAdminPage() {
   const [restaurants, setRestaurants] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -112,6 +339,8 @@ export default function SuperAdminPage() {
 
   return (
     <div style={s.page}>
+      {showCreate && <CreateRestaurantModal onClose={() => setShowCreate(false)} onCreated={fetchData} />}
+
       <header style={s.header}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <span style={{fontSize:20}}>⚡</span>
@@ -170,7 +399,7 @@ export default function SuperAdminPage() {
         <div style={s.content}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,gap:16,flexWrap:'wrap'}}>
             <h1 style={{...s.h1, marginBottom:0}}>Restaurants</h1>
-            <button style={s.primaryBtn} onClick={() => alert('Opret-restaurant wizard kommer i næste step!')}>+ New restaurant</button>
+            <button style={s.primaryBtn} onClick={() => setShowCreate(true)}>+ New restaurant</button>
           </div>
 
           <input
