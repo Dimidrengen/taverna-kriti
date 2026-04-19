@@ -1,11 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Service role client (til at oprette brugere)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
-
 function generatePassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
   let pw = ''
@@ -22,6 +16,16 @@ function slugify(text) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  // Opret Supabase client inde i handleren (runtime) så build ikke fejler
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !serviceKey) {
+    return res.status(500).json({ error: 'Server not configured — missing Supabase credentials' })
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, serviceKey)
 
   try {
     // Verify super-admin via JWT token
@@ -46,7 +50,7 @@ export default async function handler(req, res) {
     const slug = slugify(name)
 
     // Check slug is unique
-    const { data: existing } = await supabaseAdmin.from('restaurants').select('id').eq('slug', slug).single()
+    const { data: existing } = await supabaseAdmin.from('restaurants').select('id').eq('slug', slug).maybeSingle()
     if (existing) return res.status(400).json({ error: `Restaurant with slug "${slug}" already exists` })
 
     // 1. Create restaurant
@@ -95,9 +99,9 @@ export default async function handler(req, res) {
     const barEmail = `bar@${slug}.com`
 
     const users = [
-      { email: adminEmail, password: adminPassword, role: 'admin' },
-      { email: kitchenEmail, password: kitchenPassword, role: 'kitchen' },
-      { email: barEmail, password: barPassword, role: 'bar' },
+      { email: adminEmail, password: adminPassword },
+      { email: kitchenEmail, password: kitchenPassword },
+      { email: barEmail, password: barPassword },
     ]
 
     for (const u of users) {
