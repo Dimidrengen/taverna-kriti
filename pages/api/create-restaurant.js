@@ -17,7 +17,6 @@ function slugify(text) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Opret Supabase client inde i handleren (runtime) så build ikke fejler
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -28,7 +27,6 @@ export default async function handler(req, res) {
   const supabaseAdmin = createClient(supabaseUrl, serviceKey)
 
   try {
-    // Verify super-admin via JWT token
     const authHeader = req.headers.authorization
     if (!authHeader) return res.status(401).json({ error: 'Missing auth' })
 
@@ -49,11 +47,9 @@ export default async function handler(req, res) {
 
     const slug = slugify(name)
 
-    // Check slug is unique
     const { data: existing } = await supabaseAdmin.from('restaurants').select('id').eq('slug', slug).maybeSingle()
     if (existing) return res.status(400).json({ error: `Restaurant with slug "${slug}" already exists` })
 
-    // 1. Create restaurant
     const { data: restaurant, error: restError } = await supabaseAdmin
       .from('restaurants')
       .insert({
@@ -65,7 +61,6 @@ export default async function handler(req, res) {
 
     if (restError) return res.status(500).json({ error: 'Could not create restaurant: ' + restError.message })
 
-    // 2. Create tables
     const tablesToInsert = []
     for (let i = 1; i <= tableCount; i++) {
       const padded = String(i).padStart(3, '0')
@@ -81,7 +76,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Could not create tables: ' + tablesError.message })
     }
 
-    // 3. Create subscription
     const planPrices = { trial: 0, basic: 29, pro: 79, enterprise: 199 }
     await supabaseAdmin.from('subscriptions').insert({
       restaurant_id: restaurant.id,
@@ -90,7 +84,6 @@ export default async function handler(req, res) {
       price_monthly: planPrices[plan] || 0,
     })
 
-    // 4. Create auth users (admin, kitchen, bar)
     const adminPassword = generatePassword()
     const kitchenPassword = generatePassword()
     const barPassword = generatePassword()
