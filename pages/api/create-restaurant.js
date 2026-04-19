@@ -67,7 +67,7 @@ export default async function handler(req, res) {
       tablesToInsert.push({
         restaurant_id: restaurant.id,
         name: `Table ${i}`,
-        token: `tbl-${padded}`,
+        token: `${slug}-tbl-${padded}`,
       })
     }
     const { error: tablesError } = await supabaseAdmin.from('tables').insert(tablesToInsert)
