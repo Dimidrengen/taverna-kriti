@@ -7,41 +7,48 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   const { tableToken } = req.query
-
   if (!tableToken) return res.status(400).json({ error: 'Missing tableToken' })
 
   const { data: table } = await supabase
     .from('tables')
-    .select('*')
+    .select('id, name, token, restaurant_id, restaurants(show_live_status)')
     .eq('token', tableToken)
     .single()
-
   if (!table) return res.status(404).json({ error: 'Table not found' })
 
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, created_at, total, note, status')
+    .select('id, created_at, note, flow_type, guest_count, order_number, guest_status, order_lines(id, name, qty, price, course, station, sent_at, kitchen_done_at, served_at)')
     .eq('table_id', table.id)
     .eq('status', 'open')
-    .order('created_at')
+    .order('created_at', { ascending: true })
 
-  if (!orders || orders.length === 0) {
-    return res.status(200).json({ orders: [], grandTotal: 0 })
-  }
+  const allLines = []
+  const orderSummaries = []
+  let grandTotal = 0
 
-  const orderIds = orders.map(o => o.id)
+  orders?.forEach(o => {
+    const lines = o.order_lines || []
+    const orderTotal = lines.reduce((s, l) => s + l.price * l.qty, 0)
+    grandTotal += orderTotal
+    orderSummaries.push({
+      id: o.id,
+      order_number: o.order_number,
+      guest_status: o.guest_status || 'received',
+      created_at: o.created_at,
+      total: orderTotal,
+      item_count: lines.reduce((s, l) => s + l.qty, 0),
+      lines: lines,
+      note: o.note,
+    })
+    allLines.push(...lines)
+  })
 
-  const { data: lines } = await supabase
-    .from('order_lines')
-    .select('order_id, name, qty, price')
-    .in('order_id', orderIds)
-
-  const ordersWithLines = orders.map(order => ({
-    ...order,
-    lines: lines.filter(l => l.order_id === order.id)
-  }))
-
-  const grandTotal = ordersWithLines.reduce((s, o) => s + o.lines.reduce((ls, l) => ls + l.price * l.qty, 0), 0)
-
-  return res.status(200).json({ orders: ordersWithLines, grandTotal, tableName: table.name })
+  return res.status(200).json({
+    table: { id: table.id, name: table.name, token: table.token },
+    showLiveStatus: table.restaurants?.show_live_status || false,
+    orders: orderSummaries,
+    grandTotal,
+    itemCount: allLines.reduce((s, l) => s + l.qty, 0),
+  })
 }

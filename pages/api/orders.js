@@ -25,6 +25,29 @@ export default async function handler(req, res) {
 
   if (!table) return res.status(404).json({ error: 'Table not found' })
 
+  // Get next order number for this restaurant
+  let orderNumber = null
+  const { data: counter } = await supabase
+    .from('restaurant_order_counters')
+    .select('last_number')
+    .eq('restaurant_id', table.restaurant_id)
+    .single()
+
+  if (counter) {
+    orderNumber = (counter.last_number || 0) + 1
+    await supabase
+      .from('restaurant_order_counters')
+      .update({ last_number: orderNumber, updated_at: new Date().toISOString() })
+      .eq('restaurant_id', table.restaurant_id)
+  } else {
+    // First order for this restaurant
+    orderNumber = 1
+    await supabase.from('restaurant_order_counters').insert({
+      restaurant_id: table.restaurant_id,
+      last_number: 1,
+    })
+  }
+
   const { data: order } = await supabase
     .from('orders')
     .insert({
@@ -35,6 +58,8 @@ export default async function handler(req, res) {
       current_course: 'drinks',
       status:         'open',
       guest_count:    guestCount || null,
+      order_number:   orderNumber,
+      guest_status:   'received',
     })
     .select()
     .single()
@@ -79,6 +104,7 @@ export default async function handler(req, res) {
       total_qty: lines.reduce((s, l) => s + l.qty, 0),
       has_drinks: lines.some(l => l.course === 'drinks'),
       has_food: lines.some(l => l.course !== 'drinks'),
+      order_number: orderNumber,
     }
   })
 
@@ -101,5 +127,5 @@ export default async function handler(req, res) {
     await supabase.from('analytics_events').insert(itemEvents)
   }
 
-  return res.status(200).json({ success: true, orderId: order.id })
+  return res.status(200).json({ success: true, orderId: order.id, orderNumber })
 }

@@ -12,9 +12,14 @@ function extractSlugFromEmail(email) {
 }
 
 const LANGS = {
-  el: { title:'Μπαρ', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', drinks:'Ποτά', closeTable:'Κλείσιμο & Πληρωμή', closing:'Κλείνει…', bill:'Λογαριασμός', total:'Σύνολο', allTables:'Όλα τα τραπέζια', activeDrinks:'Ενεργά ποτά', tableWord:'Τραπέζι', logout:'Αποσύνδεση' },
-  en: { title:'Bar', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', drinks:'Drinks', closeTable:'Close & Payment', closing:'Closing…', bill:'Bill', total:'Total', allTables:'All tables', activeDrinks:'Active drinks', tableWord:'Table', logout:'Log out' },
-  da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total', allTables:'Alle borde', activeDrinks:'Aktive drikkevarer', tableWord:'Bord', logout:'Log ud' },
+  el: { title:'Μπαρ', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', drinks:'Ποτά', closeTable:'Κλείσιμο & Πληρωμή', closing:'Κλείνει…', bill:'Λογαριασμός', total:'Σύνολο', allTables:'Όλα τα τραπέζια', activeDrinks:'Ενεργά ποτά', tableWord:'Τραπέζι', logout:'Αποσύνδεση', deliver:'📦 Παραδόθηκε', delivered:'✓ Παραδόθηκε', delivering:'...', order:'Παραγγελία', statusReceived:'🟡 Ελήφθη', statusPreparing:'🔵 Ετοιμάζεται', statusReady:'🟢 Έτοιμο', statusDelivered:'⚫ Παραδόθηκε' },
+  en: { title:'Bar', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', drinks:'Drinks', closeTable:'Close & Payment', closing:'Closing…', bill:'Bill', total:'Total', allTables:'All tables', activeDrinks:'Active drinks', tableWord:'Table', logout:'Log out', deliver:'📦 Deliver', delivered:'✓ Delivered', delivering:'...', order:'Order', statusReceived:'🟡 Received', statusPreparing:'🔵 Preparing', statusReady:'🟢 Ready', statusDelivered:'⚫ Delivered' },
+  da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total', allTables:'Alle borde', activeDrinks:'Aktive drikkevarer', tableWord:'Bord', logout:'Log ud', deliver:'📦 Leveret', delivered:'✓ Leveret', delivering:'...', order:'Ordre', statusReceived:'🟡 Modtaget', statusPreparing:'🔵 Tilberedes', statusReady:'🟢 Klar', statusDelivered:'⚫ Leveret' },
+}
+
+function getStatusLabel(status, t) {
+  const map = { received:t.statusReceived, preparing:t.statusPreparing, ready:t.statusReady, delivered:t.statusDelivered }
+  return map[status] || status
 }
 
 function getTableLabel(name, tableWord) {
@@ -36,7 +41,7 @@ function groupDrinkOrders(rows, translations) {
     const key = row.table_token
     if (!map[key]) map[key] = { table_label:row.table_label, table_token:row.table_token, orders:{} }
     if (!map[key].orders[row.order_id]) {
-      map[key].orders[row.order_id] = { order_id:row.order_id, flow_type:row.flow_type, created_at:row.created_at, order_note:row.order_note, drinks:[] }
+      map[key].orders[row.order_id] = { order_id:row.order_id, flow_type:row.flow_type, created_at:row.created_at, order_note:row.order_note, order_number:row.order_number, guest_status:row.guest_status, drinks:[] }
     }
     const translatedName = translations[row.item_id] || row.name
     map[key].orders[row.order_id].drinks.push({ ...row, name: translatedName })
@@ -55,16 +60,11 @@ function LoginScreen({ onLogin }) {
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
-    if (!data.user.email.startsWith('bar@')) {
-      await supabase.auth.signOut()
-      setError('Du har ikke bar adgang')
-      setLoading(false); return
-    }
+    if (!data.user.email.startsWith('bar@')) { await supabase.auth.signOut(); setError('Ikke bar'); setLoading(false); return }
     const slug = extractSlugFromEmail(data.user.email)
     if (!slug) { await supabase.auth.signOut(); setError('Ugyldig email'); setLoading(false); return }
     const { data: restaurant } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
-    if (!restaurant) { await supabase.auth.signOut(); setError('Restaurant ikke fundet'); setLoading(false); return }
-    if (!restaurant.active) { await supabase.auth.signOut(); setError('Restauranten er deaktiveret'); setLoading(false); return }
+    if (!restaurant || !restaurant.active) { await supabase.auth.signOut(); setError('Ikke fundet eller deaktiveret'); setLoading(false); return }
     onLogin(data.user, restaurant)
     setLoading(false)
   }
@@ -103,10 +103,12 @@ export default function BarPage() {
   const [restaurant, setRestaurant] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [drinkOrders, setDrinkOrders] = useState([])
+  const [readyOrders, setReadyOrders] = useState([])
   const [allTables, setAllTables] = useState([])
   const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState({})
   const [closing, setClosing] = useState({})
+  const [delivering, setDelivering] = useState({})
   const [bills, setBills] = useState({})
   const [served, setServed] = useState({})
   const [tab, setTab] = useState('drinks')
@@ -142,8 +144,32 @@ export default function BarPage() {
 
   const fetchOrders = useCallback(async () => {
     if (!restaurant) return
-    const { data } = await supabase.from('bar_open_orders').select('*').eq('restaurant_id', restaurant.id)
-    if (data) setDrinkOrders(groupDrinkOrders(data, translations))
+    const { data: viewData } = await supabase.from('bar_open_orders').select('*').eq('restaurant_id', restaurant.id)
+    if (viewData) {
+      const orderIds = [...new Set(viewData.map(r => r.order_id))]
+      if (orderIds.length > 0) {
+        const { data: orderInfo } = await supabase.from('orders').select('id, order_number, guest_status').in('id', orderIds)
+        const orderMap = {}
+        orderInfo?.forEach(o => { orderMap[o.id] = o })
+        const enriched = viewData.map(r => ({ ...r, order_number: orderMap[r.order_id]?.order_number, guest_status: orderMap[r.order_id]?.guest_status }))
+        setDrinkOrders(groupDrinkOrders(enriched, translations))
+      } else {
+        setDrinkOrders([])
+      }
+    }
+
+    // Fetch all "ready" orders for this restaurant (need delivery)
+    const { data: restaurantTables } = await supabase.from('tables').select('id, name, token').eq('restaurant_id', restaurant.id)
+    if (restaurantTables && restaurantTables.length > 0) {
+      const tableIds = restaurantTables.map(t => t.id)
+      const { data: ready } = await supabase
+        .from('orders')
+        .select('id, order_number, guest_status, created_at, table_id, tables(name, token), order_lines(name, qty, price, course)')
+        .eq('status', 'open')
+        .eq('guest_status', 'ready')
+        .in('table_id', tableIds)
+      setReadyOrders(ready || [])
+    }
     setLoading(false)
   }, [translations, restaurant])
 
@@ -179,6 +205,20 @@ export default function BarPage() {
       await fetch('/api/course-done', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ orderId, course:'drinks' }) })
     } catch(e) { console.error(e) }
     finally { setPending(p => { const n={...p}; delete n[orderId]; return n }) }
+  }
+
+  const markDelivered = async (orderId) => {
+    setDelivering(d => ({ ...d, [orderId]: true }))
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      await fetch('/api/order-status', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ orderId, newStatus: 'delivered' }),
+      })
+      fetchOrders()
+    } catch(e) { console.error(e) }
+    finally { setDelivering(d => { const n={...d}; delete n[orderId]; return n }) }
   }
 
   const toggleServed = async (lineId) => {
@@ -223,11 +263,14 @@ export default function BarPage() {
         <button onClick={logout} style={{padding:'6px 14px',background:'transparent',border:'1px solid #333',borderRadius:8,fontSize:13,cursor:'pointer',color:'#6b7280'}}>{t.logout}</button>
       </header>
 
-      <div style={{display:'flex',gap:0,borderBottom:'1px solid #222',padding:'0 24px'}}>
-        <button onClick={() => setTab('drinks')} style={{padding:'12px 20px',fontSize:14,fontWeight:600,cursor:'pointer',background:'transparent',border:'none',color:tab==='drinks'?'#0ea5e9':'#666',borderBottom:tab==='drinks'?'2px solid #0ea5e9':'2px solid transparent'}}>
+      <div style={{display:'flex',gap:0,borderBottom:'1px solid #222',padding:'0 24px',overflowX:'auto'}}>
+        <button onClick={() => setTab('drinks')} style={{padding:'12px 20px',fontSize:14,fontWeight:600,cursor:'pointer',background:'transparent',border:'none',color:tab==='drinks'?'#0ea5e9':'#666',borderBottom:tab==='drinks'?'2px solid #0ea5e9':'2px solid transparent',whiteSpace:'nowrap'}}>
           🍹 {t.activeDrinks} {drinkOrders.length > 0 && <span style={{background:'#0ea5e9',color:'#000',borderRadius:10,padding:'1px 7px',fontSize:11,marginLeft:6}}>{drinkOrders.length}</span>}
         </button>
-        <button onClick={() => setTab('tables')} style={{padding:'12px 20px',fontSize:14,fontWeight:600,cursor:'pointer',background:'transparent',border:'none',color:tab==='tables'?'#0ea5e9':'#666',borderBottom:tab==='tables'?'2px solid #0ea5e9':'2px solid transparent'}}>
+        <button onClick={() => setTab('delivery')} style={{padding:'12px 20px',fontSize:14,fontWeight:600,cursor:'pointer',background:'transparent',border:'none',color:tab==='delivery'?'#22c55e':'#666',borderBottom:tab==='delivery'?'2px solid #22c55e':'2px solid transparent',whiteSpace:'nowrap'}}>
+          📦 Delivery {readyOrders.length > 0 && <span style={{background:'#22c55e',color:'#000',borderRadius:10,padding:'1px 7px',fontSize:11,marginLeft:6}}>{readyOrders.length}</span>}
+        </button>
+        <button onClick={() => setTab('tables')} style={{padding:'12px 20px',fontSize:14,fontWeight:600,cursor:'pointer',background:'transparent',border:'none',color:tab==='tables'?'#0ea5e9':'#666',borderBottom:tab==='tables'?'2px solid #0ea5e9':'2px solid transparent',whiteSpace:'nowrap'}}>
           🪑 {t.allTables} {allTables.length > 0 && <span style={{background:'#444',color:'#fff',borderRadius:10,padding:'1px 7px',fontSize:11,marginLeft:6}}>{allTables.length}</span>}
         </button>
       </div>
@@ -247,7 +290,10 @@ export default function BarPage() {
                     return (
                       <div key={order.order_id}>
                         <div style={{padding:'6px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:'1px solid #1f1f1f'}}>
-                          <span style={{fontSize:14,fontWeight:600,color:'#f1f1f1'}}>{time}</span>
+                          <div>
+                            {order.order_number && <div style={{fontSize:11,color:'#0ea5e9',fontWeight:700,letterSpacing:'0.08em'}}>{t.order} #{order.order_number}</div>}
+                            <span style={{fontSize:14,fontWeight:600,color:'#f1f1f1'}}>{time}</span>
+                          </div>
                           <span style={{fontSize:12,color:age>20?'#ef4444':'#9ca3af'}}>{age} min</span>
                         </div>
                         {order.order_note && (
@@ -282,6 +328,43 @@ export default function BarPage() {
                   })}
                 </div>
               ))}
+            </div>
+      )}
+
+      {tab === 'delivery' && (
+        readyOrders.length === 0
+          ? <div style={styles.emptyWrap}><div style={{fontSize:48}}>📦</div><p style={{color:'#aaa',fontSize:18,marginTop:12}}>No orders ready for delivery</p></div>
+          : <div style={styles.grid}>
+              {readyOrders.map(order => {
+                const age = formatAge(order.created_at)
+                const itemCount = (order.order_lines||[]).reduce((s,l) => s+l.qty, 0)
+                return (
+                  <div key={order.id} style={{...styles.card, outline:'2px solid #22c55e'}}>
+                    <div style={{padding:'14px 16px',borderBottom:'1px solid #222'}}>
+                      {order.order_number && <div style={{fontSize:11,color:'#22c55e',fontWeight:700,letterSpacing:'0.08em',marginBottom:2}}>{t.order} #{order.order_number}</div>}
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <span style={styles.tableLabel}>{getTableLabel(order.tables?.name, t.tableWord)}</span>
+                        <span style={{fontSize:12,color:age>20?'#ef4444':'#9ca3af'}}>{age} min</span>
+                      </div>
+                      <div style={{fontSize:13,color:'#22c55e',marginTop:6,fontWeight:600}}>{t.statusReady} · {itemCount} items</div>
+                    </div>
+                    <div style={styles.lineList}>
+                      {(order.order_lines||[]).map((line,i) => (
+                        <div key={i} style={{...styles.lineItem, opacity:1}}>
+                          <span style={{fontSize:14,color:'#6b7280',minWidth:24}}>{line.qty}×</span>
+                          <span style={{fontSize:15,flex:1}}>{line.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{padding:'12px 16px 16px'}}>
+                      <button disabled={delivering[order.id]} onClick={() => markDelivered(order.id)}
+                        style={{width:'100%',padding:'12px 0',background:'#22c55e',border:'none',borderRadius:8,fontSize:15,fontWeight:700,color:'#000',opacity:delivering[order.id]?0.5:1,cursor:'pointer'}}>
+                        {delivering[order.id] ? t.delivering : t.deliver}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
       )}
 

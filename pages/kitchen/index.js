@@ -12,9 +12,9 @@ function extractSlugFromEmail(email) {
 }
 
 const LANGS = {
-  el: { title:'Κουζίνα', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', courses:{ starters:'Ορεκτικά', mains:'Κυρίως', sides:'Συνοδευτικά', salads:'Σαλάτες', dessert:'Επιδόρπια' }, flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά', tableWord:'Τραπέζι', logout:'Αποσύνδεση' },
-  en: { title:'Kitchen', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', courses:{ starters:'Starters', mains:'Mains', sides:'Sides', salads:'Salads', dessert:'Dessert' }, flowAll:'All at once', flowSeq:'By course', tableWord:'Table', logout:'Log out' },
-  da: { title:'Køkken', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', courses:{ starters:'Forretter', mains:'Hovedretter', sides:'Tilbehør', salads:'Salater', dessert:'Dessert' }, flowAll:'Alt på én gang', flowSeq:'Kursvis', tableWord:'Bord', logout:'Log ud' },
+  el: { title:'Κουζίνα', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', accept:'▶ Έναρξη', accepting:'...', courses:{ starters:'Ορεκτικά', mains:'Κυρίως', sides:'Συνοδευτικά', salads:'Σαλάτες', dessert:'Επιδόρπια' }, flowAll:'Όλα μαζί', flowSeq:'Ανά σειρά', tableWord:'Τραπέζι', logout:'Αποσύνδεση', order:'Παραγγελία' },
+  en: { title:'Kitchen', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', accept:'▶ Start', accepting:'...', courses:{ starters:'Starters', mains:'Mains', sides:'Sides', salads:'Salads', dessert:'Dessert' }, flowAll:'All at once', flowSeq:'By course', tableWord:'Table', logout:'Log out', order:'Order' },
+  da: { title:'Køkken', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', accept:'▶ Start', accepting:'...', courses:{ starters:'Forretter', mains:'Hovedretter', sides:'Tilbehør', salads:'Salater', dessert:'Dessert' }, flowAll:'Alt på én gang', flowSeq:'Kursvis', tableWord:'Bord', logout:'Log ud', order:'Ordre' },
 }
 
 const COURSE_COLOR = { starters:'#f59e0b', mains:'#ef4444', sides:'#8b5cf6', salads:'#22c55e', dessert:'#ec4899' }
@@ -38,7 +38,7 @@ function groupOrders(rows, translations) {
   for (const row of rows) {
     if (!KITCHEN_COURSES.includes(row.course)) continue
     if (!map[row.order_id]) {
-      map[row.order_id] = { order_id:row.order_id, table_label:row.table_label, flow_type:row.flow_type, created_at:row.created_at, order_note:row.order_note, courses:{} }
+      map[row.order_id] = { order_id:row.order_id, table_label:row.table_label, flow_type:row.flow_type, created_at:row.created_at, order_note:row.order_note, order_number:row.order_number, guest_status:row.guest_status, courses:{} }
     }
     if (!map[row.order_id].courses[row.course]) map[row.order_id].courses[row.course] = []
     const translatedName = translations[row.item_id] || row.name
@@ -58,16 +58,11 @@ function LoginScreen({ onLogin }) {
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
-    if (!data.user.email.startsWith('kitchen@')) {
-      await supabase.auth.signOut()
-      setError('Du har ikke kitchen adgang')
-      setLoading(false); return
-    }
+    if (!data.user.email.startsWith('kitchen@')) { await supabase.auth.signOut(); setError('Ikke kitchen'); setLoading(false); return }
     const slug = extractSlugFromEmail(data.user.email)
     if (!slug) { await supabase.auth.signOut(); setError('Ugyldig email'); setLoading(false); return }
     const { data: restaurant } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
-    if (!restaurant) { await supabase.auth.signOut(); setError('Restaurant ikke fundet'); setLoading(false); return }
-    if (!restaurant.active) { await supabase.auth.signOut(); setError('Restauranten er deaktiveret'); setLoading(false); return }
+    if (!restaurant || !restaurant.active) { await supabase.auth.signOut(); setError('Ikke fundet eller deaktiveret'); setLoading(false); return }
     onLogin(data.user, restaurant)
     setLoading(false)
   }
@@ -109,6 +104,7 @@ export default function KitchenPage() {
   const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState({})
   const [served, setServed] = useState({})
+  const [accepting, setAccepting] = useState({})
   const [lang, setLang] = useState('el')
   const [translations, setTrans] = useState({})
   const [tick, setTick] = useState(0)
@@ -141,8 +137,16 @@ export default function KitchenPage() {
 
   const fetchOrders = useCallback(async () => {
     if (!restaurant) return
-    const { data, error } = await supabase.from('kitchen_active_orders').select('*').eq('restaurant_id', restaurant.id)
-    if (!error && data) setOrders(groupOrders(data, translations))
+    // Join with orders to get order_number and guest_status
+    const { data: viewData } = await supabase.from('kitchen_active_orders').select('*').eq('restaurant_id', restaurant.id)
+    if (!viewData) { setLoading(false); return }
+    // Enrich with order_number and guest_status
+    const orderIds = [...new Set(viewData.map(r => r.order_id))]
+    const { data: orderInfo } = await supabase.from('orders').select('id, order_number, guest_status').in('id', orderIds)
+    const orderMap = {}
+    orderInfo?.forEach(o => { orderMap[o.id] = o })
+    const enriched = viewData.map(r => ({ ...r, order_number: orderMap[r.order_id]?.order_number, guest_status: orderMap[r.order_id]?.guest_status }))
+    setOrders(groupOrders(enriched, translations))
     setLoading(false)
   }, [translations, restaurant])
 
@@ -167,6 +171,20 @@ export default function KitchenPage() {
       await fetch('/api/course-done', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ orderId, course }) })
     } catch(e) { console.error(e) }
     finally { setPending(p => { const n={...p}; delete n[key]; return n }) }
+  }
+
+  const acceptOrder = async (orderId) => {
+    setAccepting(a => ({ ...a, [orderId]: true }))
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      await fetch('/api/order-status', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ orderId, newStatus: 'preparing' }),
+      })
+      fetchOrders()
+    } catch(e) { console.error(e) }
+    finally { setAccepting(a => { const n={...a}; delete n[orderId]; return n }) }
   }
 
   const toggleServed = async (lineId) => {
@@ -198,7 +216,7 @@ export default function KitchenPage() {
         ? <div style={styles.emptyWrap}><div style={{fontSize:64}}>🍳</div><p style={{color:'#aaa',fontSize:20,marginTop:16}}>{t.noOrders}</p></div>
         : <div style={styles.grid}>
             {orders.map(order => (
-              <OrderCard key={order.order_id + '-' + tick} order={order} pending={pending} served={served} onMarkDone={markDone} onToggleServed={toggleServed} t={t} />
+              <OrderCard key={order.order_id + '-' + tick} order={order} pending={pending} served={served} accepting={accepting} onAccept={acceptOrder} onMarkDone={markDone} onToggleServed={toggleServed} t={t} />
             ))}
           </div>
       }
@@ -206,13 +224,21 @@ export default function KitchenPage() {
   )
 }
 
-function OrderCard({ order, pending, served, onMarkDone, onToggleServed, t }) {
+function OrderCard({ order, pending, served, accepting, onAccept, onMarkDone, onToggleServed, t }) {
   const age = formatAge(order.created_at)
   const time = formatTime(order.created_at)
+  const isReceived = order.guest_status === 'received'
   return (
-    <div style={styles.card}>
+    <div style={{...styles.card, outline: isReceived ? '2px solid #f59e0b' : 'none'}}>
       <div style={styles.cardHeader}>
-        <span style={styles.tableLabel}>{getTableLabel(order.table_label, t.tableWord)}</span>
+        <div style={{flex:1}}>
+          {order.order_number && (
+            <div style={{fontSize:11,color:'#f59e0b',fontWeight:700,letterSpacing:'0.08em',marginBottom:2}}>
+              {t.order} #{order.order_number}
+            </div>
+          )}
+          <span style={styles.tableLabel}>{getTableLabel(order.table_label, t.tableWord)}</span>
+        </div>
         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2}}>
           <span style={{fontSize:14,fontWeight:600,color:'#f1f1f1'}}>{time}</span>
           <span style={{fontSize:12,color:age>20?'#ef4444':'#9ca3af'}}>{age} min</span>
@@ -224,6 +250,14 @@ function OrderCard({ order, pending, served, onMarkDone, onToggleServed, t }) {
       {order.order_note && (
         <div style={{padding:'10px 16px',background:'#1f1a0e',borderBottom:'1px solid #333',fontSize:13,color:'#f59e0b',fontStyle:'italic',display:'flex',gap:6,alignItems:'flex-start'}}>
           <span>📝</span><span>{order.order_note}</span>
+        </div>
+      )}
+      {isReceived && (
+        <div style={{padding:'12px 16px',background:'#1f1a0e',borderBottom:'1px solid #333'}}>
+          <button onClick={() => onAccept(order.order_id)} disabled={accepting[order.order_id]}
+            style={{width:'100%',padding:'10px 0',background:'#f59e0b',border:'none',borderRadius:8,fontSize:14,fontWeight:700,color:'#000',cursor:'pointer',opacity:accepting[order.order_id]?0.5:1}}>
+            {accepting[order.order_id] ? t.accepting : t.accept}
+          </button>
         </div>
       )}
       {Object.entries(order.courses).map(([course, lines]) => {
