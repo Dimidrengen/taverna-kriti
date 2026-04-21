@@ -8,6 +8,7 @@ const supabase = createClient(
 
 const PLAN_TABLE_LIMITS = { trial: 15, basic: 15, pro: 50, enterprise: 9999 }
 const PLAN_PRICES = { trial: 0, basic: 100, pro: 200, enterprise: 300 }
+const LIVE_STATUS_PLANS = ['pro', 'enterprise']
 
 function extractSlugFromEmail(email) {
   const match = email.match(/^(admin|kitchen|bar)@(.+)\.com$/i)
@@ -15,9 +16,9 @@ function extractSlugFromEmail(email) {
 }
 
 const LANGS = {
-  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', settings:'⚙️ Indstillinger', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker?', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...', logout:'Log ud', noItems:'Ingen menupunkter endnu', tableName:'Bord navn', addTable:'+ Tilføj bord', printAllQR:'🖨 Print alle QR', viewQR:'📱 QR-kode', rename:'Omdøb', deactivate:'⏸ Deaktiver', activate:'▶ Aktiver', deleteTable:'🗑 Slet', confirmDelete:'Er du sikker på du vil slette dette bord?', tablesUsed:'borde brugt', upgradePlan:'Opgrader plan for at tilføje flere borde', password:'Adgangskode', changePassword:'Skift adgangskode', newPassword:'Ny adgangskode', passwordMin:'Min. 8 tegn', passwordChanged:'Adgangskode opdateret!', planInfo:'Plan information', currentPlan:'Nuværende plan', plan_trial:'Trial (gratis)', plan_basic:'Basic', plan_pro:'Pro', plan_enterprise:'Enterprise' },
-  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', settings:'⚙️ Settings', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:'Are you sure?', resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data', uploadImage:'Upload image', removeImage:'Remove', uploading:'Uploading...', logout:'Log out', noItems:'No menu items yet', tableName:'Table name', addTable:'+ Add table', printAllQR:'🖨 Print all QR', viewQR:'📱 QR code', rename:'Rename', deactivate:'⏸ Deactivate', activate:'▶ Activate', deleteTable:'🗑 Delete', confirmDelete:'Delete this table?', tablesUsed:'tables used', upgradePlan:'Upgrade plan to add more tables', password:'Password', changePassword:'Change password', newPassword:'New password', passwordMin:'Min. 8 chars', passwordChanged:'Password updated!', planInfo:'Plan information', currentPlan:'Current plan', plan_trial:'Trial (free)', plan_basic:'Basic', plan_pro:'Pro', plan_enterprise:'Enterprise' },
-  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', settings:'⚙️ Ρυθμίσεις', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'...', cancel:'Ακύρωση', active:'✓ Ενεργό', inactive:'✗ Ανενεργό', edit:'✏️', todayRevenue:'Έσοδα', totalToday:'Σύνολο', closedTables:'κλειστά', noClosedTables:'Κανένα', openTables:'Ανοιχτά', noOpenTables:'Κανένα', loading:'Φόρτωση...', resetRevenue:'Επαναφορά', resetConfirm:'Σίγουρα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'...', stats:'📈 Στατιστικά', today:'Σήμερα', thisWeek:'Εβδομάδα', thisMonth:'Μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Σύνολο', avgPerSeating:'Μέσος', noStats:'Κανένα', uploadImage:'Upload', removeImage:'Αφαίρεση', uploading:'...', logout:'Αποσύνδεση', noItems:'Κανένα', tableName:'Όνομα', addTable:'+ Προσθήκη', printAllQR:'🖨 QR', viewQR:'📱 QR', rename:'Μετονομασία', deactivate:'⏸', activate:'▶', deleteTable:'🗑', confirmDelete:'Διαγραφή;', tablesUsed:'τραπέζια', upgradePlan:'Αναβάθμιση', password:'Κωδικός', changePassword:'Αλλαγή', newPassword:'Νέος', passwordMin:'Min 8', passwordChanged:'OK!', planInfo:'Plan', currentPlan:'Plan', plan_trial:'Trial', plan_basic:'Basic', plan_pro:'Pro', plan_enterprise:'Enterprise' },
+  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', settings:'⚙️ Indstillinger', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker? Dette nulstiller også ordrenumre.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...', logout:'Log ud', noItems:'Ingen menupunkter endnu', tableName:'Bord navn', addTable:'+ Tilføj bord', printAllQR:'🖨 Print alle QR', viewQR:'📱 QR-kode', rename:'Omdøb', deactivate:'⏸ Deaktiver', activate:'▶ Aktiver', deleteTable:'🗑 Slet', confirmDelete:'Er du sikker på du vil slette dette bord?', tablesUsed:'borde brugt', upgradePlan:'Opgrader plan for at tilføje flere borde', password:'Adgangskode', changePassword:'Skift adgangskode', newPassword:'Ny adgangskode', passwordMin:'Min. 8 tegn', passwordChanged:'Adgangskode opdateret!', planInfo:'Plan information', currentPlan:'Nuværende plan', liveStatus:'Live ordre status for gæster', liveStatusDesc:'Gæster kan se live status af deres ordre (Modtaget → Tilberedes → Klar → Leveret) og ordrenummer', liveStatusUpgrade:'⭐ Opgrader til Pro eller Enterprise for at aktivere denne feature', liveStatusSaved:'Indstilling gemt' },
+  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', settings:'⚙️ Settings', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:'Are you sure? This also resets order numbers.', resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data', uploadImage:'Upload image', removeImage:'Remove', uploading:'Uploading...', logout:'Log out', noItems:'No menu items yet', tableName:'Table name', addTable:'+ Add table', printAllQR:'🖨 Print all QR', viewQR:'📱 QR code', rename:'Rename', deactivate:'⏸ Deactivate', activate:'▶ Activate', deleteTable:'🗑 Delete', confirmDelete:'Delete this table?', tablesUsed:'tables used', upgradePlan:'Upgrade plan to add more tables', password:'Password', changePassword:'Change password', newPassword:'New password', passwordMin:'Min. 8 chars', passwordChanged:'Password updated!', planInfo:'Plan information', currentPlan:'Current plan', liveStatus:'Live order status for guests', liveStatusDesc:'Guests can see live order status (Received → Preparing → Ready → Delivered) and order number', liveStatusUpgrade:'⭐ Upgrade to Pro or Enterprise to enable this feature', liveStatusSaved:'Setting saved' },
+  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', settings:'⚙️ Ρυθμίσεις', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'...', cancel:'Ακύρωση', active:'✓', inactive:'✗', edit:'✏️', todayRevenue:'Έσοδα', totalToday:'Σύνολο', closedTables:'κλειστά', noClosedTables:'Κανένα', openTables:'Ανοιχτά', noOpenTables:'Κανένα', loading:'Φόρτωση...', resetRevenue:'Επαναφορά', resetConfirm:'Σίγουρα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'...', stats:'📈 Στατιστικά', today:'Σήμερα', thisWeek:'Εβδομάδα', thisMonth:'Μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Σύνολο', avgPerSeating:'Μέσος', noStats:'Κανένα', uploadImage:'Upload', removeImage:'Αφαίρεση', uploading:'...', logout:'Αποσύνδεση', noItems:'Κανένα', tableName:'Όνομα', addTable:'+ Προσθήκη', printAllQR:'🖨 QR', viewQR:'📱 QR', rename:'Μετονομασία', deactivate:'⏸', activate:'▶', deleteTable:'🗑', confirmDelete:'Διαγραφή;', tablesUsed:'τραπέζια', upgradePlan:'Αναβάθμιση', password:'Κωδικός', changePassword:'Αλλαγή', newPassword:'Νέος', passwordMin:'Min 8', passwordChanged:'OK!', planInfo:'Plan', currentPlan:'Plan', liveStatus:'Live status παραγγελιών', liveStatusDesc:'Οι πελάτες βλέπουν live status', liveStatusUpgrade:'⭐ Αναβάθμιση σε Pro/Enterprise', liveStatusSaved:'Αποθηκεύτηκε' },
 }
 
 const EMOJI_OPTIONS = {
@@ -41,9 +42,7 @@ function LoginScreen({ onLogin }) {
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
-    if (!data.user.email.startsWith('admin@')) {
-      await supabase.auth.signOut(); setError('Ikke admin'); setLoading(false); return
-    }
+    if (!data.user.email.startsWith('admin@')) { await supabase.auth.signOut(); setError('Ikke admin'); setLoading(false); return }
     const slug = extractSlugFromEmail(data.user.email)
     if (!slug) { await supabase.auth.signOut(); setError('Ugyldig email'); setLoading(false); return }
     const { data: restaurant } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
@@ -186,17 +185,18 @@ export default function AdminPage() {
   const [statsData, setStatsData] = useState([])
   const [statsLoading, setStatsLoading] = useState(false)
 
-  // Table management state
   const [qrTable, setQrTable] = useState(null)
   const [newTableName, setNewTableName] = useState('')
   const [addingTable, setAddingTable] = useState(false)
   const [editingTable, setEditingTable] = useState(null)
   const [tableError, setTableError] = useState('')
 
-  // Password change state
   const [passwords, setPasswords] = useState({ admin:'', kitchen:'', bar:'' })
   const [pwMessage, setPwMessage] = useState({})
   const [pwSaving, setPwSaving] = useState({})
+
+  const [liveStatusSaving, setLiveStatusSaving] = useState(false)
+  const [liveStatusMsg, setLiveStatusMsg] = useState('')
 
   const t = LANGS[lang]
 
@@ -296,10 +296,11 @@ export default function AdminPage() {
     const { data: restaurantTables } = await supabase.from('tables').select('id').eq('restaurant_id', restaurant.id)
     const tableIds = restaurantTables.map(t => t.id)
     await supabase.from('orders').update({ status:'archived' }).eq('status','done').gte('created_at', today.toISOString()).in('table_id', tableIds)
+    // NEW: Reset order counter for this restaurant
+    await supabase.from('restaurant_order_counters').update({ last_number: 0, updated_at: new Date().toISOString() }).eq('restaurant_id', restaurant.id)
     setRevenue([]); setResetting(false); setShowResetConfirm(false)
   }
 
-  // === TABLE MANAGEMENT ===
   const callAdminAPI = async (body) => {
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/restaurant-admin', {
@@ -338,7 +339,6 @@ export default function AdminPage() {
     else alert(result.error)
   }
 
-  // === PASSWORD CHANGE ===
   const changePassword = async (role) => {
     const newPassword = passwords[role]
     if (!newPassword || newPassword.length < 8) {
@@ -357,6 +357,19 @@ export default function AdminPage() {
     setTimeout(() => setPwMessage(p => { const n={...p}; delete n[role]; return n }), 3000)
   }
 
+  const toggleLiveStatus = async () => {
+    if (!LIVE_STATUS_PLANS.includes(restaurant.plan)) return
+    setLiveStatusSaving(true); setLiveStatusMsg('')
+    const newValue = !restaurant.show_live_status
+    const { error } = await supabase.from('restaurants').update({ show_live_status: newValue }).eq('id', restaurant.id)
+    if (!error) {
+      setRestaurant({ ...restaurant, show_live_status: newValue })
+      setLiveStatusMsg(t.liveStatusSaved)
+      setTimeout(() => setLiveStatusMsg(''), 2000)
+    }
+    setLiveStatusSaving(false)
+  }
+
   const logout = async () => { await supabase.auth.signOut(); setUser(null); setRestaurant(null) }
 
   const grandTotal = revenue.reduce((s, o) => s + (o.order_lines||[]).reduce((ls, l) => ls + l.price * l.qty, 0), 0)
@@ -370,6 +383,7 @@ export default function AdminPage() {
   const tableLimit = PLAN_TABLE_LIMITS[restaurant.plan] || 15
   const tablesUsedPct = Math.min(100, (activeTables.length / tableLimit) * 100)
   const atLimit = activeTables.length >= tableLimit && restaurant.plan !== 'enterprise'
+  const canUseLiveStatus = LIVE_STATUS_PLANS.includes(restaurant.plan)
 
   return (
     <div style={s.page}>
@@ -558,7 +572,6 @@ export default function AdminPage() {
 
       {tab === 'borde' && (
         <div style={s.content}>
-          {/* Plan info card */}
           <div style={{...s.card, marginBottom:20, background:'linear-gradient(135deg, #F4E3D7, #E8D5C0)'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12,flexWrap:'wrap',gap:8}}>
               <div>
@@ -578,7 +591,6 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* Add table + Print all */}
           <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
             <input value={newTableName} onChange={e => setNewTableName(e.target.value)} placeholder={t.tableName} 
               style={{...s.input, flex:1, minWidth:200}} disabled={atLimit} />
@@ -592,7 +604,6 @@ export default function AdminPage() {
           {atLimit && <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:12,marginBottom:16,fontSize:13,color:'#dc2626'}}>⚠️ {t.upgradePlan}</div>}
           {tableError && <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:12,marginBottom:16,fontSize:13,color:'#dc2626'}}>{tableError}</div>}
 
-          {/* Tables list */}
           {tables.map(table => (
             <div key={table.id} style={{...s.card, marginBottom:8, opacity: table.active === false ? 0.5 : 1}}>
               <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
@@ -631,12 +642,40 @@ export default function AdminPage() {
       {tab === 'settings' && (
         <div style={s.content}>
           <h2 style={s.sectionTitle}>{t.settings}</h2>
+
+          {/* Live order status for guests - Pro/Enterprise only */}
+          <div style={{...s.card, marginBottom:20}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
+              <div style={{flex:1,minWidth:250}}>
+                <h3 style={{fontSize:16,fontWeight:600,color:'#1C1917',marginBottom:4}}>🔴 {t.liveStatus}</h3>
+                <p style={{fontSize:13,color:'#78716C',lineHeight:1.5}}>{t.liveStatusDesc}</p>
+                {!canUseLiveStatus && (
+                  <div style={{marginTop:10,padding:10,background:'#FEF3C7',border:'1px solid #FCD34D',borderRadius:8,fontSize:12,color:'#92400E',fontWeight:600}}>
+                    {t.liveStatusUpgrade}
+                  </div>
+                )}
+                {liveStatusMsg && <div style={{marginTop:8,fontSize:12,color:'#10b981',fontWeight:600}}>✓ {liveStatusMsg}</div>}
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:12}}>
+                <button onClick={toggleLiveStatus} disabled={!canUseLiveStatus || liveStatusSaving}
+                  style={{
+                    width:56,height:32,borderRadius:16,border:'none',cursor:canUseLiveStatus?'pointer':'not-allowed',
+                    background: restaurant.show_live_status ? '#10b981' : '#e5e5e5',
+                    opacity: canUseLiveStatus ? 1 : 0.5,
+                    position:'relative',transition:'background 0.2s',
+                  }}>
+                  <div style={{
+                    width:26,height:26,borderRadius:'50%',background:'white',position:'absolute',top:3,
+                    left: restaurant.show_live_status ? 27 : 3,
+                    transition:'left 0.2s',boxShadow:'0 2px 4px rgba(0,0,0,0.2)',
+                  }}/>
+                </button>
+              </div>
+            </div>
+          </div>
           
           <div style={{...s.card, marginBottom:20}}>
             <h3 style={{fontSize:16,fontWeight:600,marginBottom:16,color:'#1C1917'}}>{t.changePassword}</h3>
-            <p style={{fontSize:13,color:'#78716C',marginBottom:20}}>
-              Skift adgangskode for admin, køkken og bar brugere.
-            </p>
             {['admin','kitchen','bar'].map(role => (
               <div key={role} style={{marginBottom:16,padding:16,background:'#f5f5f0',borderRadius:10}}>
                 <div style={{fontSize:13,fontWeight:600,color:'#1C1917',marginBottom:4,textTransform:'uppercase',letterSpacing:'0.05em'}}>{role}</div>
@@ -662,9 +701,6 @@ export default function AdminPage() {
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
               <div><div style={{fontSize:12,color:'#78716C'}}>{t.currentPlan}</div><div style={{fontSize:20,fontWeight:700,marginTop:2,textTransform:'capitalize'}}>{restaurant.plan}</div></div>
               <div><div style={{fontSize:12,color:'#78716C'}}>Tables</div><div style={{fontSize:20,fontWeight:700,marginTop:2}}>{activeTables.length} / {restaurant.plan === 'enterprise' ? '∞' : tableLimit}</div></div>
-            </div>
-            <div style={{marginTop:16,fontSize:12,color:'#78716C'}}>
-              Kontakt platform admin for at opgradere dit abonnement.
             </div>
           </div>
         </div>

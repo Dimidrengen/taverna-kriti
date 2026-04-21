@@ -21,6 +21,31 @@
     .lang-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
     .lang-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 10px; font-size: 16px; cursor: pointer; transition: all 0.15s; color: white; }
     .lang-btn.active { background: var(--accent); border-color: var(--accent); }
+    
+    /* LIVE STATUS WIDGET */
+    .live-status-wrap { margin: 12px 20px 0; display: none; flex-direction: column; gap: 8px; }
+    .live-status-wrap.visible { display: flex; }
+    .live-order-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; transition: all 0.2s; }
+    .live-order-card.received { border-left: 4px solid #F59E0B; }
+    .live-order-card.preparing { border-left: 4px solid #3B82F6; }
+    .live-order-card.ready { border-left: 4px solid #10B981; background: #F0FDF4; }
+    .live-order-card.delivered { border-left: 4px solid #6B7280; opacity: 0.7; }
+    .live-order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .live-order-number { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--ink); }
+    .live-order-total { font-size: 14px; font-weight: 500; color: var(--muted); }
+    .live-order-status-row { display: flex; align-items: center; gap: 6px; }
+    .live-status-badge { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 10px; }
+    .live-status-badge.received { background: #FEF3C7; color: #92400E; }
+    .live-status-badge.preparing { background: #DBEAFE; color: #1E40AF; }
+    .live-status-badge.ready { background: #D1FAE5; color: #065F46; animation: pulse 2s infinite; }
+    .live-status-badge.delivered { background: #E5E7EB; color: #374151; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    .live-order-meta { font-size: 11px; color: var(--muted); }
+    .live-progress { display: flex; gap: 4px; margin-top: 8px; }
+    .live-progress-step { flex: 1; height: 4px; background: #E5E7EB; border-radius: 2px; transition: background 0.3s; }
+    .live-progress-step.done { background: #10B981; }
+    .live-progress-step.active { background: #3B82F6; }
+
     .cat-scroll { display: flex; gap: 8px; padding: 16px 20px 12px; overflow-x: auto; scrollbar-width: none; background: var(--cream); border-bottom: 1px solid var(--border); }
     .cat-scroll::-webkit-scrollbar { display: none; }
     .cat-tab { flex-shrink: 0; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid var(--border); background: transparent; color: var(--muted); transition: all 0.15s; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
@@ -99,6 +124,7 @@
     .confirm-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--ink); }
     .confirm-sub { font-size: 14px; color: var(--muted); line-height: 1.6; max-width: 280px; }
     .confirm-table { font-size: 13px; color: var(--accent); font-weight: 500; }
+    .confirm-order-num { font-size: 20px; font-weight: 700; color: var(--accent); background: var(--accent-light); padding: 8px 20px; border-radius: 20px; font-family: 'Playfair Display', serif; }
     .coming-next-box { background: #EBF5EF; border: 1px solid rgba(45,122,79,0.2); border-radius: 12px; padding: 14px 16px; width: 100%; text-align: left; }
     .coming-next-title { font-size: 11px; font-weight: 600; color: var(--green); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
     .coming-next-item { font-size: 13px; color: var(--ink); padding: 3px 0; }
@@ -136,6 +162,10 @@
       <button class="lang-btn" onclick="setLang('fi')">&#127467;&#127470;</button>
     </div>
   </div>
+
+  <!-- LIVE ORDER STATUS WIDGET -->
+  <div class="live-status-wrap" id="live-status-wrap"></div>
+
   <div id="menu-view" style="display:none">
     <div class="cat-scroll" id="cat-row"></div>
     <div class="upsell-bar" id="upsell-bar">
@@ -192,6 +222,7 @@
   <div class="confirm-screen" id="confirm-view">
     <div class="confirm-icon">&#10003;</div>
     <div class="confirm-title" id="confirm-title">Order sent!</div>
+    <div class="confirm-order-num" id="confirm-order-num" style="display:none"></div>
     <div class="confirm-sub" id="confirm-sub">Your order is on its way.</div>
     <div class="confirm-table" id="confirm-table"></div>
     <div class="coming-next-box" id="coming-next-box" style="display:none">
@@ -235,14 +266,14 @@ var ALLERGEN_DATA={
 };
 
 var UI_TEXT={
-  en:{viewOrder:'View order',sendBtn:'Send order to kitchen',notePlaceholder:'Any notes? (e.g. no onions, allergy info...)',total:'Total',orderTitle:'Your order',confirmTitle:'Order sent!',confirmSub:'Your order is on its way. The kitchen will serve each course when ready.',upsellLabel:'goes well with',servingModeTitle:'How would you like your food?',modeAllLabel:'All at once',modeAllDesc:'Everything together',modeCoursesLabel:'By course',modeCoursesDesc:'Starters first, then mains',comingNext:'Coming up next',reorderBtn:'+ Order more',billBtn:'View bill',hideBillBtn:'Hide bill',billTitle:'Your bill',guestCountTitle:'How many guests are you?'},
-  da:{viewOrder:'Se bestilling',sendBtn:'Send bestilling til køkkenet',notePlaceholder:'Bemærkninger?',total:'I alt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er på vej. Køkkenet serverer hvert kursus når det er klart.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du have maden?',modeAllLabel:'Alt på én gang',modeAllDesc:'Alt serveres sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forretter først, derefter hovedretter',comingNext:'Kommer næste',reorderBtn:'+ Bestil mere',billBtn:'Se regning',hideBillBtn:'Skjul regning',billTitle:'Din regning',guestCountTitle:'Hvor mange gæster er I?'},
-  de:{viewOrder:'Bestellung',sendBtn:'Bestellung senden',notePlaceholder:'Anmerkungen?',total:'Gesamt',orderTitle:'Ihre Bestellung',confirmTitle:'Bestellung gesendet!',confirmSub:'Ihre Bestellung ist auf dem Weg.',upsellLabel:'passt gut dazu',servingModeTitle:'Wie mochten Sie Ihr Essen?',modeAllLabel:'Alles auf einmal',modeAllDesc:'Alles zusammen',modeCoursesLabel:'Nach Gang',modeCoursesDesc:'Erst Vorspeise, dann Hauptgang',comingNext:'Als nachstes',reorderBtn:'+ Mehr bestellen',billBtn:'Rechnung',hideBillBtn:'Ausblenden',billTitle:'Ihre Rechnung',guestCountTitle:'Wie viele Gäste sind Sie?'},
-  fr:{viewOrder:'Voir la commande',sendBtn:'Envoyer la commande',notePlaceholder:'Remarques?',total:'Total',orderTitle:'Votre commande',confirmTitle:'Commande envoyee!',confirmSub:'Votre commande est en route.',upsellLabel:'va bien avec',servingModeTitle:'Comment souhaitez-vous votre repas?',modeAllLabel:'Tout ensemble',modeAllDesc:'Tout en meme temps',modeCoursesLabel:'Par plat',modeCoursesDesc:'Entree puis plat',comingNext:'A venir',reorderBtn:'+ Commander encore',billBtn:'Voir addition',hideBillBtn:'Masquer',billTitle:'Votre addition',guestCountTitle:'Combien êtes-vous?'},
-  el:{viewOrder:'\u0394\u03b5\u03af\u03c4\u03b5 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1',sendBtn:'\u0391\u03c0\u03bf\u03c3\u03c4\u03bf\u03bb\u03ae \u03c3\u03c4\u03b7\u03bd \u03ba\u03bf\u03c5\u03b6\u03af\u03bd\u03b1',notePlaceholder:'\u03a3\u03b7\u03bc\u03b5\u03b9\u03ce\u03c3\u03b5\u03b9\u03c2;',total:'\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf',orderTitle:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2',confirmTitle:'\u0395\u03c3\u03c4\u03ac\u03bb\u03b7!',confirmSub:'\u0397 \u03c0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03bb\u03af\u03b1 \u03c3\u03b1\u03c2 \u03b5\u03af\u03bd\u03b1\u03b9 \u03ba\u03b1\u03c4\u03ac \u03c4\u03b7\u03bd \u03bf\u03b4\u03cc.',upsellLabel:'\u03c4\u03b1\u03b9\u03c1\u03b9\u03ac\u03b6\u03b5\u03b9 \u03bc\u03b5',servingModeTitle:'\u03a0\u03ce\u03c2 \u03b8\u03ad\u03bb\u03b5\u03c4\u03b5 \u03c4\u03bf \u03c6\u03b1\u03b3\u03b7\u03c4\u03cc \u03c3\u03b1\u03c2;',modeAllLabel:'\u038c\u03bb\u03b1 \u03bc\u03b1\u03b6\u03af',modeAllDesc:'\u038c\u03bb\u03b1 \u03c4\u03b1\u03c5\u03c4\u03cc\u03c7\u03c1\u03bf\u03bd\u03b1',modeCoursesLabel:'\u0391\u03bd\u03ac \u03c3\u03b5\u03b9\u03c1\u03ac',modeCoursesDesc:'\u03a0\u03c1\u03ce\u03c4\u03b1 \u03bf\u03c1\u03b5\u03ba\u03c4\u03b9\u03ba\u03ac, \u03bc\u03b5\u03c4\u03ac \u03ba\u03c5\u03c1\u03af\u03c9\u03c2',comingNext:'\u0395\u03c0\u03cc\u03bc\u03b5\u03bd\u03bf',reorderBtn:'+ \u03a0\u03b1\u03c1\u03b1\u03b3\u03b3\u03b5\u03af\u03bb\u03b5\u03c4\u03b5 \u03be\u03b1\u03bd\u03ac',billBtn:'\u0394\u03b5\u03af\u03c4\u03b5 \u03bb\u03bf\u03b3\u03b1\u03c1\u03b9\u03b1\u03c3\u03bc\u03cc',hideBillBtn:'\u0391\u03c0\u03cc\u03ba\u03c1\u03c5\u03c8\u03b7',billTitle:'\u039b\u03bf\u03b3\u03b1\u03c1\u03b9\u03b1\u03c3\u03bc\u03cc\u03c2',guestCountTitle:'\u03a0\u03cc\u03c3\u03b1 \u03ac\u03c4\u03bf\u03bc\u03b1 \u03b5\u03af\u03c3\u03c4\u03b5;'},
-  sv:{viewOrder:'Visa bestallning',sendBtn:'Skicka bestallning',notePlaceholder:'Anteckningar?',total:'Totalt',orderTitle:'Din bestallning',confirmTitle:'Bestallning skickad!',confirmSub:'Din bestallning ar pa vag.',upsellLabel:'passar bra till',servingModeTitle:'Hur vill du ha din mat?',modeAllLabel:'Allt pa en gang',modeAllDesc:'Allt tillsammans',modeCoursesLabel:'Per kurs',modeCoursesDesc:'Forratt forst, sedan huvudratt',comingNext:'Kommer harnaest',reorderBtn:'+ Bestall mer',billBtn:'Visa nota',hideBillBtn:'Dold',billTitle:'Din nota',guestCountTitle:'Hur manga är ni?'},
-  no:{viewOrder:'Se bestilling',sendBtn:'Send bestilling',notePlaceholder:'Merknader?',total:'Totalt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vei.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du ha maten?',modeAllLabel:'Alt på én gang',modeAllDesc:'Alt sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forrett forst, deretter hovedrett',comingNext:'Kommer neste',reorderBtn:'+ Bestill mer',billBtn:'Se regning',hideBillBtn:'Skjul',billTitle:'Din regning',guestCountTitle:'Hvor mange er dere?'},
-  fi:{viewOrder:'Nayta tilaus',sendBtn:'Laheta tilaus keittioon',notePlaceholder:'Huomioita?',total:'Yhteensa',orderTitle:'Tilauksesi',confirmTitle:'Tilaus lahetetty!',confirmSub:'Tilauksesi on matkalla keittioon.',upsellLabel:'sopii hyvin kanssa',servingModeTitle:'Miten haluatte ruokanne?',modeAllLabel:'Kaikki kerralla',modeAllDesc:'Kaikki yhta aikaa',modeCoursesLabel:'Annoksittain',modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat',comingNext:'Seuraavaksi',reorderBtn:'+ Tilaa lisaa',billBtn:'Nayta lasku',hideBillBtn:'Piilota',billTitle:'Laskusi',guestCountTitle:'Kuinka monta teitä on?'}
+  en:{viewOrder:'View order',sendBtn:'Send order to kitchen',notePlaceholder:'Any notes? (e.g. no onions, allergy info...)',total:'Total',orderTitle:'Your order',confirmTitle:'Order sent!',confirmSub:'Your order is on its way. The kitchen will serve each course when ready.',upsellLabel:'goes well with',servingModeTitle:'How would you like your food?',modeAllLabel:'All at once',modeAllDesc:'Everything together',modeCoursesLabel:'By course',modeCoursesDesc:'Starters first, then mains',comingNext:'Coming up next',reorderBtn:'+ Order more',billBtn:'View bill',hideBillBtn:'Hide bill',billTitle:'Your bill',guestCountTitle:'How many guests are you?',orderHash:'Order #',statusReceived:'🟡 Received',statusPreparing:'🔵 Preparing',statusReady:'🟢 Ready',statusDelivered:'⚫ Delivered',items:'items'},
+  da:{viewOrder:'Se bestilling',sendBtn:'Send bestilling til køkkenet',notePlaceholder:'Bemærkninger?',total:'I alt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er på vej. Køkkenet serverer hvert kursus når det er klart.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du have maden?',modeAllLabel:'Alt på én gang',modeAllDesc:'Alt serveres sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forretter først, derefter hovedretter',comingNext:'Kommer næste',reorderBtn:'+ Bestil mere',billBtn:'Se regning',hideBillBtn:'Skjul regning',billTitle:'Din regning',guestCountTitle:'Hvor mange gæster er I?',orderHash:'Ordre #',statusReceived:'🟡 Modtaget',statusPreparing:'🔵 Tilberedes',statusReady:'🟢 Klar',statusDelivered:'⚫ Leveret',items:'retter'},
+  de:{viewOrder:'Bestellung',sendBtn:'Bestellung senden',notePlaceholder:'Anmerkungen?',total:'Gesamt',orderTitle:'Ihre Bestellung',confirmTitle:'Bestellung gesendet!',confirmSub:'Ihre Bestellung ist auf dem Weg.',upsellLabel:'passt gut dazu',servingModeTitle:'Wie mochten Sie Ihr Essen?',modeAllLabel:'Alles auf einmal',modeAllDesc:'Alles zusammen',modeCoursesLabel:'Nach Gang',modeCoursesDesc:'Erst Vorspeise, dann Hauptgang',comingNext:'Als nachstes',reorderBtn:'+ Mehr bestellen',billBtn:'Rechnung',hideBillBtn:'Ausblenden',billTitle:'Ihre Rechnung',guestCountTitle:'Wie viele Gäste sind Sie?',orderHash:'Bestellung #',statusReceived:'🟡 Empfangen',statusPreparing:'🔵 Zubereitung',statusReady:'🟢 Bereit',statusDelivered:'⚫ Geliefert',items:'Artikel'},
+  fr:{viewOrder:'Voir la commande',sendBtn:'Envoyer la commande',notePlaceholder:'Remarques?',total:'Total',orderTitle:'Votre commande',confirmTitle:'Commande envoyee!',confirmSub:'Votre commande est en route.',upsellLabel:'va bien avec',servingModeTitle:'Comment souhaitez-vous votre repas?',modeAllLabel:'Tout ensemble',modeAllDesc:'Tout en meme temps',modeCoursesLabel:'Par plat',modeCoursesDesc:'Entree puis plat',comingNext:'A venir',reorderBtn:'+ Commander encore',billBtn:'Voir addition',hideBillBtn:'Masquer',billTitle:'Votre addition',guestCountTitle:'Combien êtes-vous?',orderHash:'Commande #',statusReceived:'🟡 Reçu',statusPreparing:'🔵 En préparation',statusReady:'🟢 Prêt',statusDelivered:'⚫ Livré',items:'articles'},
+  el:{viewOrder:'Δείτε παραγγελία',sendBtn:'Αποστολή στην κουζίνα',notePlaceholder:'Σημειώσεις;',total:'Σύνολο',orderTitle:'Η παραγγελία σας',confirmTitle:'Εστάλη!',confirmSub:'Η παραγγελία σας είναι κατά την οδό.',upsellLabel:'ταιριάζει με',servingModeTitle:'Πώς θέλετε το φαγητό σας;',modeAllLabel:'Όλα μαζί',modeAllDesc:'Όλα ταυτόχρονα',modeCoursesLabel:'Ανά σειρά',modeCoursesDesc:'Πρώτα ορεκτικά, μετά κυρίως',comingNext:'Επόμενο',reorderBtn:'+ Παραγγείλετε ξανά',billBtn:'Δείτε λογαριασμό',hideBillBtn:'Απόκρυψη',billTitle:'Λογαριασμός',guestCountTitle:'Πόσα άτομα είστε;',orderHash:'Παραγγελία #',statusReceived:'🟡 Ελήφθη',statusPreparing:'🔵 Ετοιμάζεται',statusReady:'🟢 Έτοιμο',statusDelivered:'⚫ Παραδόθηκε',items:'είδη'},
+  sv:{viewOrder:'Visa bestallning',sendBtn:'Skicka bestallning',notePlaceholder:'Anteckningar?',total:'Totalt',orderTitle:'Din bestallning',confirmTitle:'Bestallning skickad!',confirmSub:'Din bestallning ar pa vag.',upsellLabel:'passar bra till',servingModeTitle:'Hur vill du ha din mat?',modeAllLabel:'Allt pa en gang',modeAllDesc:'Allt tillsammans',modeCoursesLabel:'Per kurs',modeCoursesDesc:'Forratt forst, sedan huvudratt',comingNext:'Kommer harnaest',reorderBtn:'+ Bestall mer',billBtn:'Visa nota',hideBillBtn:'Dold',billTitle:'Din nota',guestCountTitle:'Hur manga är ni?',orderHash:'Bestallning #',statusReceived:'🟡 Mottagen',statusPreparing:'🔵 Tillagas',statusReady:'🟢 Klar',statusDelivered:'⚫ Levererad',items:'artiklar'},
+  no:{viewOrder:'Se bestilling',sendBtn:'Send bestilling',notePlaceholder:'Merknader?',total:'Totalt',orderTitle:'Din bestilling',confirmTitle:'Bestilling sendt!',confirmSub:'Din bestilling er pa vei.',upsellLabel:'passer godt til',servingModeTitle:'Hvordan vil du ha maten?',modeAllLabel:'Alt på én gang',modeAllDesc:'Alt sammen',modeCoursesLabel:'Kursvis',modeCoursesDesc:'Forrett forst, deretter hovedrett',comingNext:'Kommer neste',reorderBtn:'+ Bestill mer',billBtn:'Se regning',hideBillBtn:'Skjul',billTitle:'Din regning',guestCountTitle:'Hvor mange er dere?',orderHash:'Bestilling #',statusReceived:'🟡 Mottatt',statusPreparing:'🔵 Tilberedes',statusReady:'🟢 Klar',statusDelivered:'⚫ Levert',items:'varer'},
+  fi:{viewOrder:'Nayta tilaus',sendBtn:'Laheta tilaus keittioon',notePlaceholder:'Huomioita?',total:'Yhteensa',orderTitle:'Tilauksesi',confirmTitle:'Tilaus lahetetty!',confirmSub:'Tilauksesi on matkalla keittioon.',upsellLabel:'sopii hyvin kanssa',servingModeTitle:'Miten haluatte ruokanne?',modeAllLabel:'Kaikki kerralla',modeAllDesc:'Kaikki yhta aikaa',modeCoursesLabel:'Annoksittain',modeCoursesDesc:'Ensin alkuruoat, sitten paaruoat',comingNext:'Seuraavaksi',reorderBtn:'+ Tilaa lisaa',billBtn:'Nayta lasku',hideBillBtn:'Piilota',billTitle:'Laskusi',guestCountTitle:'Kuinka monta teitä on?',orderHash:'Tilaus #',statusReceived:'🟡 Vastaanotettu',statusPreparing:'🔵 Valmistetaan',statusReady:'🟢 Valmis',statusDelivered:'⚫ Toimitettu',items:'tuotetta'}
 };
 var CAT_TO_COURSE={'Starters':'starters','Salads':'salads','Mains':'mains','Sides':'sides','Desserts':'dessert','Drinks':'drinks'};
 var COURSE_ORDER=['Drinks','Starters','Mains','Sides','Salads','Desserts'];
@@ -251,7 +282,7 @@ var COURSE_LABELS={
   da:{Starters:'Forretter',Salads:'Salater',Mains:'Hovedretter',Sides:'Tilbehor',Desserts:'Desserter',Drinks:'Drikkevarer'},
   de:{Starters:'Vorspeisen',Salads:'Salate',Mains:'Hauptspeisen',Sides:'Beilagen',Desserts:'Desserts',Drinks:'Getranke'},
   fr:{Starters:'Entrees',Salads:'Salades',Mains:'Plats',Sides:'Accompagnements',Desserts:'Desserts',Drinks:'Boissons'},
-  el:{Starters:'\u039f\u03c1\u03b5\u03ba\u03c4\u03b9\u03ba\u03ac',Salads:'\u03a3\u03b1\u03bb\u03ac\u03c4\u03b5\u03c2',Mains:'\u039a\u03c5\u03c1\u03af\u03c9\u03c2',Sides:'\u03a3\u03c5\u03bd\u03bf\u03b4\u03b5\u03c5\u03c4\u03b9\u03ba\u03ac',Desserts:'\u0395\u03c0\u03b9\u03b4\u03cc\u03c1\u03c0\u03b9\u03b1',Drinks:'\u03a0\u03bf\u03c4\u03ac'},
+  el:{Starters:'Ορεκτικά',Salads:'Σαλάτες',Mains:'Κυρίως',Sides:'Συνοδευτικά',Desserts:'Επιδόρπια',Drinks:'Ποτά'},
   sv:{Starters:'Forreatter',Salads:'Sallader',Mains:'Huvudratter',Sides:'Tillbehor',Desserts:'Desserter',Drinks:'Drycker'},
   no:{Starters:'Forretter',Salads:'Salater',Mains:'Hovedretter',Sides:'Tilbehor',Desserts:'Desserter',Drinks:'Drikkevarer'},
   fi:{Starters:'Alkuruoat',Salads:'Salaatit',Mains:'Paaruoat',Sides:'Lisakkeet',Desserts:'Jalkiruoat',Drinks:'Juomat'}
@@ -287,6 +318,9 @@ var UPSELL_RULES=[
 var allItems=[],categories=[],currentCat=0,cart={};
 var tableToken='',lang='en',restaurantSlug='',lastAddedId=null,servingMode=null,guestCount=0;
 var billVisible=false;
+var showLiveStatus=false;
+var liveOrders=[];
+var liveStatusPollInterval=null;
 
 function ui(k){return(UI_TEXT[lang]&&UI_TEXT[lang][k])||UI_TEXT.en[k]||'';}
 
@@ -339,8 +373,9 @@ function updateUITexts(){
   document.getElementById('mode-courses-label').textContent=ui('modeCoursesLabel');
   document.getElementById('mode-courses-desc').textContent=ui('modeCoursesDesc');
   document.getElementById('reorder-btn').textContent=ui('reorderBtn');
-  document.getElementById('bill-btn').textContent=billVisible?ui('hideBillBtn'):'&#128203; '+ui('billBtn');
+  document.getElementById('bill-btn').textContent=billVisible?ui('hideBillBtn'):'📋 '+ui('billBtn');
   renderGuestButtons();
+  renderLiveStatus();
 }
 
 function setServingMode(mode){
@@ -352,6 +387,67 @@ function setServingMode(mode){
   document.getElementById('send-btn').textContent=ui('sendBtn');
   if(mode==='courses')renderCourseGroups();
   checkSendBtn();
+}
+
+/* ===== LIVE STATUS ===== */
+function renderLiveStatus(){
+  var wrap=document.getElementById('live-status-wrap');
+  if(!showLiveStatus||!liveOrders.length){
+    wrap.classList.remove('visible');
+    wrap.innerHTML='';
+    return;
+  }
+  // Filter out delivered orders that are older than a short window - don't show them forever
+  var relevantOrders=liveOrders.filter(function(o){return o.guest_status!=='delivered';});
+  if(!relevantOrders.length){wrap.classList.remove('visible');wrap.innerHTML='';return;}
+
+  wrap.classList.add('visible');
+  wrap.innerHTML=relevantOrders.map(function(o){
+    var status=o.guest_status||'received';
+    var statusLabel=ui('status'+status.charAt(0).toUpperCase()+status.slice(1));
+    var itemCount=o.item_count||0;
+    var stepsDone={received:1,preparing:2,ready:3,delivered:4};
+    var currStep=stepsDone[status]||1;
+    var progressHtml='';
+    for(var i=1;i<=4;i++){
+      var cls=i<currStep?'done':(i===currStep?'active':'');
+      progressHtml+='<div class="live-progress-step '+cls+'"></div>';
+    }
+    return '<div class="live-order-card '+status+'">'+
+      '<div class="live-order-header">'+
+        '<span class="live-order-number">'+ui('orderHash')+(o.order_number||'?')+'</span>'+
+        '<span class="live-order-total">€'+(o.total||0).toFixed(2)+'</span>'+
+      '</div>'+
+      '<div class="live-order-status-row">'+
+        '<span class="live-status-badge '+status+'">'+statusLabel+'</span>'+
+        '<span class="live-order-meta">· '+itemCount+' '+ui('items')+'</span>'+
+      '</div>'+
+      '<div class="live-progress">'+progressHtml+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function fetchLiveOrders(){
+  return fetch('/api/table-bill?tableToken='+tableToken)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      showLiveStatus=!!data.showLiveStatus;
+      liveOrders=data.orders||[];
+      renderLiveStatus();
+      return data;
+    }).catch(function(){});
+}
+
+function startLiveStatusPolling(){
+  if(liveStatusPollInterval)clearInterval(liveStatusPollInterval);
+  // Poll every 8 seconds for fresh status
+  liveStatusPollInterval=setInterval(function(){
+    if(showLiveStatus)fetchLiveOrders();
+  },8000);
+}
+
+function stopLiveStatusPolling(){
+  if(liveStatusPollInterval){clearInterval(liveStatusPollInterval);liveStatusPollInterval=null;}
 }
 
 function loadMenu(){
@@ -375,9 +471,17 @@ function showConfirmScreen(){
   document.getElementById('confirm-title').textContent=ui('confirmTitle');
   document.getElementById('confirm-sub').textContent=ui('confirmSub');
   document.getElementById('reorder-btn').textContent=ui('reorderBtn');
-  document.getElementById('bill-btn').innerHTML='&#128203; '+ui('billBtn');
+  document.getElementById('bill-btn').innerHTML='📋 '+ui('billBtn');
   var tName=tableToken.replace('tbl-0','Table ').replace('tbl-','Table ');
   document.getElementById('confirm-table').textContent=tName;
+  // Show order number on confirm screen if we have it
+  var latestOrder=liveOrders[liveOrders.length-1];
+  if(latestOrder&&latestOrder.order_number){
+    document.getElementById('confirm-order-num').style.display='inline-block';
+    document.getElementById('confirm-order-num').textContent=ui('orderHash')+latestOrder.order_number;
+  } else {
+    document.getElementById('confirm-order-num').style.display='none';
+  }
 }
 
 function loadMenuAndShow(){
@@ -403,9 +507,11 @@ function init(){
   fetch('/api/table-bill?tableToken='+tableToken)
     .then(function(r){return r.json();})
     .then(function(data){
+      showLiveStatus=!!data.showLiveStatus;
+      liveOrders=data.orders||[];
       if(data.orders&&data.orders.length>0){
         saveState();
-        loadMenu().then(function(){updateUITexts();showConfirmScreen();});
+        loadMenu().then(function(){updateUITexts();showConfirmScreen();startLiveStatusPolling();});
       } else {
         clearState();
         loadMenuAndShow();
@@ -437,7 +543,7 @@ function renderMenu(){
       :'<div class="qty-ctrl"><button onclick="removeItem(\''+item.id+'\')">&#8722;</button><span class="qty-num">'+qty+'</span><button onclick="addItem(\''+item.id+'\')" style="background:var(--ink);color:white;border:none">+</button></div>';
     var thumb=item.image_url
       ?'<img class="item-thumb" src="'+item.image_url+'" alt="'+item.name+'" onclick="openImage(\''+item.image_url+'\')" />'
-      :'<div class="item-thumb-emoji">'+(item.emoji||'&#127869;&#65039;')+'</div>';
+      :'<div class="item-thumb-emoji">'+(item.emoji||'🍽️')+'</div>';
     var allergenHtml=renderAllergens(item.allergens);
     return '<div class="menu-item">'+thumb+'<div class="item-body"><div class="item-name">'+item.name+'</div><div class="item-desc">'+(item.description||'')+'</div>'+allergenHtml+'<div class="item-foot"><div class="item-price">€'+Number(item.price).toFixed(2)+'</div>'+ctrl+'</div></div></div>';
   }).join('');
@@ -459,7 +565,7 @@ function renderCourseGroups(){
   document.getElementById('course-groups').innerHTML=groups.map(function(group){
     var total=group.items.reduce(function(s,i){return s+i.price*i.qty;},0);
     var rows=group.items.map(function(item){
-      return '<div class="course-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="course-row-name">'+item.name+'</span><span class="course-row-qty">x'+item.qty+'</span><span class="course-row-price">€'+(item.price*item.qty).toFixed(2)+'</span></div>';
+      return '<div class="course-row"><span>'+(item.emoji||'🍽️')+'</span><span class="course-row-name">'+item.name+'</span><span class="course-row-qty">x'+item.qty+'</span><span class="course-row-price">€'+(item.price*item.qty).toFixed(2)+'</span></div>';
     }).join('');
     return '<div class="course-group"><div class="course-header-row"><span class="course-name">'+(labels[group.category]||group.category)+'</span><span class="course-badge">€'+total.toFixed(2)+'</span></div><div class="course-items">'+rows+'</div></div>';
   }).join('');
@@ -489,7 +595,7 @@ function showUpsellFor(itemId){
   document.getElementById('upsell-item-name').textContent=item.name;
   bar.classList.add('visible');
   document.getElementById('upsell-chips').innerHTML=s.map(function(x){
-    return '<div class="upsell-chip" onclick="addItem(\''+x.id+'\')">'+(x.emoji||'&#127869;&#65039;')+' '+x.name+' +€'+Number(x.price).toFixed(2)+'</div>';
+    return '<div class="upsell-chip" onclick="addItem(\''+x.id+'\')">'+(x.emoji||'🍽️')+' '+x.name+' +€'+Number(x.price).toFixed(2)+'</div>';
   }).join('');
 }
 
@@ -523,12 +629,13 @@ function updateCart(){
 function showOrder(){
   document.getElementById('app-header').style.display='none';
   document.getElementById('menu-view').style.display='none';
+  document.getElementById('live-status-wrap').classList.remove('visible');
   document.getElementById('order-view').classList.add('visible');
   document.body.scrollTop=0;document.documentElement.scrollTop=0;
   var e=Object.values(cart);
   var total=e.reduce(function(s,i){return s+i.price*i.qty;},0);
   document.getElementById('order-items-list').innerHTML=e.map(function(item){
-    return '<div class="order-row"><span>'+(item.emoji||'&#127869;&#65039;')+'</span><span class="order-row-name">'+item.name+'</span><span class="order-row-qty">x'+item.qty+'</span><span class="order-row-price">€'+(item.price*item.qty).toFixed(2)+'</span></div>';
+    return '<div class="order-row"><span>'+(item.emoji||'🍽️')+'</span><span class="order-row-name">'+item.name+'</span><span class="order-row-qty">x'+item.qty+'</span><span class="order-row-price">€'+(item.price*item.qty).toFixed(2)+'</span></div>';
   }).join('');
   document.getElementById('order-total-val').textContent='€'+total.toFixed(2);
   renderGuestButtons();checkSendBtn();
@@ -539,6 +646,7 @@ function showMenu(){
   document.getElementById('app-header').style.display='block';
   document.getElementById('menu-view').style.display='block';
   document.getElementById('order-view').classList.remove('visible');
+  renderLiveStatus();
   document.body.scrollTop=0;document.documentElement.scrollTop=0;
 }
 
@@ -566,7 +674,7 @@ function toggleBill(){
         document.getElementById('bill-total-val').textContent='€'+(data.grandTotal||0).toFixed(2);
       });
   } else {
-    btn.innerHTML='&#128203; '+ui('billBtn');
+    btn.innerHTML='📋 '+ui('billBtn');
     box.style.display='none';
   }
 }
@@ -593,6 +701,7 @@ function reorder(){
     var codes=['en','da','de','el','fr','sv','no','fi'];
     document.querySelectorAll('.lang-btn').forEach(function(b,i){b.classList.toggle('active',codes[i]===lang);});
     updateUITexts();renderCats();renderMenu();updateCart();
+    renderLiveStatus(); // Show live status above menu when reordering
   });
 }
 
@@ -618,7 +727,12 @@ function sendOrder(){
       document.getElementById('confirm-title').textContent=ui('confirmTitle');
       document.getElementById('confirm-sub').textContent=ui('confirmSub');
       document.getElementById('reorder-btn').textContent=ui('reorderBtn');
-      document.getElementById('bill-btn').innerHTML='&#128203; '+ui('billBtn');
+      document.getElementById('bill-btn').innerHTML='📋 '+ui('billBtn');
+      // Show order number if Pro/Enterprise
+      if(showLiveStatus&&data.orderNumber){
+        document.getElementById('confirm-order-num').style.display='inline-block';
+        document.getElementById('confirm-order-num').textContent=ui('orderHash')+data.orderNumber;
+      }
       if(flowType==='sequential'){
         var labels=COURSE_LABELS[lang]||COURSE_LABELS.en;
         var later=groupCartByCourse().slice(1);
@@ -626,11 +740,14 @@ function sendOrder(){
           document.getElementById('coming-next-box').style.display='block';
           document.getElementById('coming-next-title').textContent=ui('comingNext');
           document.getElementById('coming-next-list').innerHTML=later.map(function(g){
-            return '<div class="coming-next-item">&#8226; '+(labels[g.category]||g.category)+'</div>';
+            return '<div class="coming-next-item">• '+(labels[g.category]||g.category)+'</div>';
           }).join('');
         }
       }
       cart={};
+      // Start polling for live status updates
+      fetchLiveOrders();
+      startLiveStatusPolling();
     }
   }).catch(function(){alert('Could not send order. Please try again.');});
 }
