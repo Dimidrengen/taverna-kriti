@@ -9,11 +9,10 @@ const supabase = createClient(
 
 // ---- Helpers for date ranges ----
 function getDateRange(period, specificMonth) {
-  // specificMonth format: "YYYY-MM" — if provided, overrides period
   if (specificMonth) {
     const [y, m] = specificMonth.split('-').map(Number)
     const from = new Date(y, m - 1, 1, 0, 0, 0, 0)
-    const to = new Date(y, m, 1, 0, 0, 0, 0) // first day of next month
+    const to = new Date(y, m, 1, 0, 0, 0, 0)
     return { from, to, label: from.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) }
   }
   const now = new Date()
@@ -52,6 +51,63 @@ function getMonthOptions() {
   return options
 }
 
+// ---- Shared period filter component ----
+function PeriodFilter({ period, specificMonth, onChangePeriod, onChangeMonth, monthOptions }) {
+  return (
+    <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
+      {[
+        {id:'week', label:'Week'},
+        {id:'month', label:'Month'},
+        {id:'quarter', label:'Quarter'},
+        {id:'year', label:'Year'},
+      ].map(p => {
+        const isActive = period === p.id && !specificMonth
+        return (
+          <button
+            key={p.id}
+            onClick={() => { onChangePeriod(p.id); onChangeMonth('') }}
+            style={{
+              padding:'5px 12px',
+              borderRadius:6,
+              fontSize:11,
+              fontWeight:600,
+              cursor:'pointer',
+              background: isActive ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+              color: isActive ? 'white' : '#aaa',
+              border: isActive ? 'none' : '1px solid #262626',
+              fontFamily:'system-ui',
+            }}
+          >
+            {p.label}
+          </button>
+        )
+      })}
+      <select
+        value={specificMonth}
+        onChange={e => onChangeMonth(e.target.value)}
+        style={{
+          padding:'5px 10px',
+          borderRadius:6,
+          fontSize:11,
+          fontWeight:600,
+          cursor:'pointer',
+          background: specificMonth ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+          color: specificMonth ? 'white' : '#aaa',
+          border: specificMonth ? 'none' : '1px solid #262626',
+          fontFamily:'system-ui',
+          outline:'none',
+          marginLeft:4,
+        }}
+      >
+        <option value="" style={{background:'#141414'}}>Specific month…</option>
+        {monthOptions.map(m => (
+          <option key={m.value} value={m.value} style={{background:'#141414'}}>{m.label}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 export default function RestaurantDetailPage() {
   const router = useRouter()
   const { slug } = router.query
@@ -63,13 +119,18 @@ export default function RestaurantDetailPage() {
   const [topItems, setTopItems] = useState([])
   const [topItemsLoading, setTopItemsLoading] = useState(false)
   const [hourlyData, setHourlyData] = useState([])
+  const [hourlyLoading, setHourlyLoading] = useState(false)
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [savingPlan, setSavingPlan] = useState(false)
 
   // Top Sellers period filter
-  const [topPeriod, setTopPeriod] = useState('month') // week | month | quarter | year
-  const [topSpecificMonth, setTopSpecificMonth] = useState('') // "YYYY-MM" or ''
+  const [topPeriod, setTopPeriod] = useState('month')
+  const [topSpecificMonth, setTopSpecificMonth] = useState('')
+
+  // Peak Hours period filter
+  const [peakPeriod, setPeakPeriod] = useState('month')
+  const [peakSpecificMonth, setPeakSpecificMonth] = useState('')
 
   const monthOptions = useMemo(() => getMonthOptions(), [])
 
@@ -87,7 +148,6 @@ export default function RestaurantDetailPage() {
     })
   }, [])
 
-  // ---- Fetch Top Items (runs whenever period changes) ----
   const fetchTopItems = useCallback(async (restaurantId) => {
     if (!restaurantId) return
     setTopItemsLoading(true)
@@ -112,6 +172,29 @@ export default function RestaurantDetailPage() {
     setTopItemsLoading(false)
   }, [topPeriod, topSpecificMonth])
 
+  const fetchHourly = useCallback(async (restaurantId) => {
+    if (!restaurantId) return
+    setHourlyLoading(true)
+    const { from, to } = getDateRange(peakPeriod, peakSpecificMonth)
+    const { data: orderEvents } = await supabase
+      .from('analytics_events')
+      .select('hour_of_day')
+      .eq('restaurant_id', restaurantId)
+      .eq('event_type', 'order_placed')
+      .gte('created_at', from.toISOString())
+      .lt('created_at', to.toISOString())
+
+    const hourMap = {}
+    for (let h = 0; h < 24; h++) hourMap[h] = 0
+    orderEvents?.forEach(e => {
+      if (typeof e.hour_of_day === 'number') {
+        hourMap[e.hour_of_day] = (hourMap[e.hour_of_day] || 0) + 1
+      }
+    })
+    setHourlyData(Object.entries(hourMap).map(([hour, count]) => ({ hour: parseInt(hour), count })))
+    setHourlyLoading(false)
+  }, [peakPeriod, peakSpecificMonth])
+
   const fetchData = useCallback(async () => {
     if (!slug) return
     const { data: rest } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
@@ -124,29 +207,17 @@ export default function RestaurantDetailPage() {
       { data: ordersData },
       { data: orderEvents },
       { data: closedEvents },
+      { data: itemEventsMtd },
     ] = await Promise.all([
       supabase.from('tables').select('*').eq('restaurant_id', rest.id).order('name'),
       supabase.from('orders').select('id, created_at, status, total, guest_count, tables(name), order_lines(name, qty, price)').in('table_id', (await supabase.from('tables').select('id').eq('restaurant_id', rest.id)).data?.map(t => t.id) || []).order('created_at', { ascending: false }).limit(20),
-      supabase.from('analytics_events').select('event_data, hour_of_day, created_at').eq('restaurant_id', rest.id).eq('event_type', 'order_placed').gte('created_at', monthStart.toISOString()),
+      supabase.from('analytics_events').select('hour_of_day').eq('restaurant_id', rest.id).eq('event_type', 'order_placed').gte('created_at', monthStart.toISOString()),
       supabase.from('analytics_events').select('event_data').eq('restaurant_id', rest.id).eq('event_type', 'table_closed').gte('created_at', monthStart.toISOString()),
+      supabase.from('analytics_events').select('event_data').eq('restaurant_id', rest.id).eq('event_type', 'item_ordered').gte('created_at', monthStart.toISOString()),
     ])
 
     if (tablesData) setTables(tablesData)
     if (ordersData) setRecentOrders(ordersData)
-
-    // Hourly distribution (always this month)
-    const hourMap = {}
-    for (let h = 0; h < 24; h++) hourMap[h] = 0
-    orderEvents?.forEach(e => { hourMap[e.hour_of_day] = (hourMap[e.hour_of_day] || 0) + 1 })
-    setHourlyData(Object.entries(hourMap).map(([hour, count]) => ({ hour: parseInt(hour), count })))
-
-    // Item events for stats (this month only — stats card shows MTD)
-    const { data: itemEventsMtd } = await supabase
-      .from('analytics_events')
-      .select('event_data')
-      .eq('restaurant_id', rest.id)
-      .eq('event_type', 'item_ordered')
-      .gte('created_at', monthStart.toISOString())
 
     const totalRevenue = closedEvents?.reduce((s, e) => s + (e.event_data?.total_amount || 0), 0) || 0
     const totalOrders = orderEvents?.length || 0
@@ -162,16 +233,19 @@ export default function RestaurantDetailPage() {
     })
     setLoading(false)
 
-    // Kick off top-items fetch for the active period
     fetchTopItems(rest.id)
-  }, [slug, fetchTopItems])
+    fetchHourly(rest.id)
+  }, [slug, fetchTopItems, fetchHourly])
 
   useEffect(() => { if (user && slug) fetchData() }, [user, slug])
 
-  // Refetch top items when period filter changes (without reloading everything)
   useEffect(() => {
     if (restaurant?.id) fetchTopItems(restaurant.id)
   }, [topPeriod, topSpecificMonth, restaurant?.id, fetchTopItems])
+
+  useEffect(() => {
+    if (restaurant?.id) fetchHourly(restaurant.id)
+  }, [peakPeriod, peakSpecificMonth, restaurant?.id, fetchHourly])
 
   const updatePlan = async (newPlan) => {
     setSavingPlan(true)
@@ -196,6 +270,8 @@ export default function RestaurantDetailPage() {
   const maxHourly = Math.max(...hourlyData.map(h => h.count), 1)
   const peakHour = hourlyData.reduce((max, h) => h.count > max.count ? h : max, {hour:0,count:0})
   const { label: topPeriodLabel } = getDateRange(topPeriod, topSpecificMonth)
+  const { label: peakPeriodLabel } = getDateRange(peakPeriod, peakSpecificMonth)
+  const totalOrdersInPeriod = hourlyData.reduce((s, h) => s + h.count, 0)
 
   return (
     <div style={s.page}>
@@ -215,7 +291,6 @@ export default function RestaurantDetailPage() {
       </header>
 
       <div style={s.content}>
-        {/* Restaurant header */}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:32,flexWrap:'wrap',gap:16}}>
           <div>
             <h1 style={s.h1}>{restaurant.name}</h1>
@@ -237,7 +312,6 @@ export default function RestaurantDetailPage() {
           </div>
         </div>
 
-        {/* Plan selector */}
         <div style={{...s.card, marginBottom:24}}>
           <div style={{fontSize:11,color:'#888',textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:12}}>Subscription Plan</div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
@@ -261,7 +335,6 @@ export default function RestaurantDetailPage() {
           </div>
         </div>
 
-        {/* Key metrics */}
         <div style={s.metricsGrid}>
           <MetricCard label="Revenue (MTD)" value={`€${(stats?.totalRevenue || 0).toFixed(0)}`} hint={`${stats?.totalOrders || 0} orders`} color="#10b981" />
           <MetricCard label="Avg Order Value" value={`€${(stats?.avgOrderValue || 0).toFixed(2)}`} hint={`${stats?.totalItems || 0} items sold`} color="#6366f1" />
@@ -269,67 +342,22 @@ export default function RestaurantDetailPage() {
           <MetricCard label="Avg Dining Time" value={`${stats?.avgDuration || 0} min`} hint={`${stats?.totalGuests || 0} guests served`} color="#ec4899" />
         </div>
 
-        {/* Two column layout */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginTop:24}}>
-          {/* ============ TOP SELLERS (with period filter) ============ */}
+          {/* TOP SELLERS */}
           <div style={s.card}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
               <h2 style={{...s.h2, marginBottom:0}}>🏆 Top Sellers</h2>
               <div style={{fontSize:11,color:'#888'}}>{topPeriodLabel}</div>
             </div>
-
-            <div style={{display:'flex',gap:4,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
-              {[
-                {id:'week', label:'Week'},
-                {id:'month', label:'Month'},
-                {id:'quarter', label:'Quarter'},
-                {id:'year', label:'Year'},
-              ].map(p => {
-                const isActive = topPeriod === p.id && !topSpecificMonth
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => { setTopPeriod(p.id); setTopSpecificMonth('') }}
-                    style={{
-                      padding:'5px 12px',
-                      borderRadius:6,
-                      fontSize:11,
-                      fontWeight:600,
-                      cursor:'pointer',
-                      background: isActive ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
-                      color: isActive ? 'white' : '#aaa',
-                      border: isActive ? 'none' : '1px solid #262626',
-                      fontFamily:'system-ui',
-                    }}
-                  >
-                    {p.label}
-                  </button>
-                )
-              })}
-              <select
-                value={topSpecificMonth}
-                onChange={e => setTopSpecificMonth(e.target.value)}
-                style={{
-                  padding:'5px 10px',
-                  borderRadius:6,
-                  fontSize:11,
-                  fontWeight:600,
-                  cursor:'pointer',
-                  background: topSpecificMonth ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
-                  color: topSpecificMonth ? 'white' : '#aaa',
-                  border: topSpecificMonth ? 'none' : '1px solid #262626',
-                  fontFamily:'system-ui',
-                  outline:'none',
-                  marginLeft:4,
-                }}
-              >
-                <option value="" style={{background:'#141414'}}>Specific month…</option>
-                {monthOptions.map(m => (
-                  <option key={m.value} value={m.value} style={{background:'#141414'}}>{m.label}</option>
-                ))}
-              </select>
+            <div style={{marginBottom:16}}>
+              <PeriodFilter
+                period={topPeriod}
+                specificMonth={topSpecificMonth}
+                onChangePeriod={setTopPeriod}
+                onChangeMonth={setTopSpecificMonth}
+                monthOptions={monthOptions}
+              />
             </div>
-
             {topItemsLoading ? (
               <p style={{color:'#666',textAlign:'center',padding:20}}>Loading…</p>
             ) : topItems.length === 0 ? (
@@ -348,11 +376,25 @@ export default function RestaurantDetailPage() {
             )}
           </div>
 
-          {/* ============ PEAK HOURS (improved) ============ */}
+          {/* PEAK HOURS */}
           <div style={s.card}>
-            <h2 style={s.h2}>⏰ Peak Hours (this month)</h2>
-            {hourlyData.every(h => h.count === 0) ? (
-              <p style={{color:'#666',textAlign:'center',padding:20}}>No data yet</p>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
+              <h2 style={{...s.h2, marginBottom:0}}>⏰ Peak Hours</h2>
+              <div style={{fontSize:11,color:'#888'}}>{peakPeriodLabel}</div>
+            </div>
+            <div style={{marginBottom:16}}>
+              <PeriodFilter
+                period={peakPeriod}
+                specificMonth={peakSpecificMonth}
+                onChangePeriod={setPeakPeriod}
+                onChangeMonth={setPeakSpecificMonth}
+                monthOptions={monthOptions}
+              />
+            </div>
+            {hourlyLoading ? (
+              <p style={{color:'#666',textAlign:'center',padding:20}}>Loading…</p>
+            ) : hourlyData.every(h => h.count === 0) ? (
+              <p style={{color:'#666',textAlign:'center',padding:20}}>No data for this period</p>
             ) : (
               <>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
@@ -360,16 +402,16 @@ export default function RestaurantDetailPage() {
                     Peak: <strong style={{color:'white'}}>{String(peakHour.hour).padStart(2,'0')}:00</strong>
                     <span style={{color:'#666'}}> · {peakHour.count} orders</span>
                   </div>
-                  <div style={{fontSize:10,color:'#666'}}>Max: {maxHourly}</div>
+                  <div style={{fontSize:10,color:'#666'}}>
+                    Total: {totalOrdersInPeriod} · Max: {maxHourly}
+                  </div>
                 </div>
 
                 <div style={{position:'relative',height:140,marginBottom:10}}>
-                  {/* Gridlines */}
                   {[0.25, 0.5, 0.75].map(frac => (
                     <div key={frac} style={{position:'absolute',left:0,right:0,top:`${(1-frac)*100}%`,borderTop:'1px dashed #222',pointerEvents:'none'}}/>
                   ))}
 
-                  {/* Bars */}
                   <div style={{display:'flex',alignItems:'flex-end',gap:2,height:'100%',position:'relative',zIndex:1}}>
                     {hourlyData.map(h => {
                       const isPeak = h.count === peakHour.count && h.count > 0
@@ -431,7 +473,6 @@ export default function RestaurantDetailPage() {
           </div>
         </div>
 
-        {/* Tables */}
         <div style={{...s.card, marginTop:24}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
             <h2 style={{...s.h2,marginBottom:0}}>🪑 Tables ({tables.length})</h2>
@@ -446,7 +487,6 @@ export default function RestaurantDetailPage() {
           </div>
         </div>
 
-        {/* Recent Orders */}
         <div style={{...s.card, marginTop:24}}>
           <h2 style={s.h2}>📦 Recent Orders ({recentOrders.length})</h2>
           {recentOrders.length === 0 ? (
@@ -474,7 +514,6 @@ export default function RestaurantDetailPage() {
           )}
         </div>
 
-        {/* Danger zone */}
         <div style={{...s.card, marginTop:24, border:'1px solid #7f1d1d', background:'#1a0a0a'}}>
           <h2 style={{...s.h2, color:'#f87171'}}>⚠️ Danger Zone</h2>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 0',borderBottom:'1px solid #2a1515'}}>
