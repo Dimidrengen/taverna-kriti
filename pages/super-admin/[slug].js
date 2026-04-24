@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import { createClient } from '@supabase/supabase-js'
 
@@ -6,6 +6,51 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
+
+// ---- Helpers for date ranges ----
+function getDateRange(period, specificMonth) {
+  // specificMonth format: "YYYY-MM" — if provided, overrides period
+  if (specificMonth) {
+    const [y, m] = specificMonth.split('-').map(Number)
+    const from = new Date(y, m - 1, 1, 0, 0, 0, 0)
+    const to = new Date(y, m, 1, 0, 0, 0, 0) // first day of next month
+    return { from, to, label: from.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) }
+  }
+  const now = new Date()
+  const to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0)
+  let from = new Date()
+  let label = ''
+  if (period === 'week') {
+    from = new Date(now); from.setDate(now.getDate() - 7); from.setHours(0,0,0,0)
+    label = 'Last 7 days'
+  } else if (period === 'month') {
+    from = new Date(now.getFullYear(), now.getMonth(), 1)
+    label = 'This month'
+  } else if (period === 'quarter') {
+    const q = Math.floor(now.getMonth() / 3)
+    from = new Date(now.getFullYear(), q * 3, 1)
+    label = `Q${q+1} ${now.getFullYear()}`
+  } else if (period === 'year') {
+    from = new Date(now.getFullYear(), 0, 1)
+    label = `${now.getFullYear()}`
+  } else {
+    from = new Date(now.getFullYear(), now.getMonth(), 1)
+    label = 'This month'
+  }
+  return { from, to, label }
+}
+
+function getMonthOptions() {
+  const options = []
+  const now = new Date()
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+    const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    options.push({ value, label })
+  }
+  return options
+}
 
 export default function RestaurantDetailPage() {
   const router = useRouter()
@@ -16,10 +61,17 @@ export default function RestaurantDetailPage() {
   const [tables, setTables] = useState([])
   const [recentOrders, setRecentOrders] = useState([])
   const [topItems, setTopItems] = useState([])
+  const [topItemsLoading, setTopItemsLoading] = useState(false)
   const [hourlyData, setHourlyData] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [savingPlan, setSavingPlan] = useState(false)
+
+  // Top Sellers period filter
+  const [topPeriod, setTopPeriod] = useState('month') // week | month | quarter | year
+  const [topSpecificMonth, setTopSpecificMonth] = useState('') // "YYYY-MM" or ''
+
+  const monthOptions = useMemo(() => getMonthOptions(), [])
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -35,6 +87,31 @@ export default function RestaurantDetailPage() {
     })
   }, [])
 
+  // ---- Fetch Top Items (runs whenever period changes) ----
+  const fetchTopItems = useCallback(async (restaurantId) => {
+    if (!restaurantId) return
+    setTopItemsLoading(true)
+    const { from, to } = getDateRange(topPeriod, topSpecificMonth)
+    const { data: itemEvents } = await supabase
+      .from('analytics_events')
+      .select('event_data')
+      .eq('restaurant_id', restaurantId)
+      .eq('event_type', 'item_ordered')
+      .gte('created_at', from.toISOString())
+      .lt('created_at', to.toISOString())
+
+    const itemMap = {}
+    itemEvents?.forEach(e => {
+      const name = e.event_data?.name
+      if (!name) return
+      if (!itemMap[name]) itemMap[name] = { name, qty: 0, revenue: 0 }
+      itemMap[name].qty += e.event_data.qty || 0
+      itemMap[name].revenue += (e.event_data.line_total || 0)
+    })
+    setTopItems(Object.values(itemMap).sort((a,b) => b.qty - a.qty).slice(0, 10))
+    setTopItemsLoading(false)
+  }, [topPeriod, topSpecificMonth])
+
   const fetchData = useCallback(async () => {
     if (!slug) return
     const { data: rest } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
@@ -45,13 +122,11 @@ export default function RestaurantDetailPage() {
     const [
       { data: tablesData },
       { data: ordersData },
-      { data: itemEvents },
       { data: orderEvents },
       { data: closedEvents },
     ] = await Promise.all([
       supabase.from('tables').select('*').eq('restaurant_id', rest.id).order('name'),
       supabase.from('orders').select('id, created_at, status, total, guest_count, tables(name), order_lines(name, qty, price)').in('table_id', (await supabase.from('tables').select('id').eq('restaurant_id', rest.id)).data?.map(t => t.id) || []).order('created_at', { ascending: false }).limit(20),
-      supabase.from('analytics_events').select('event_data, hour_of_day').eq('restaurant_id', rest.id).eq('event_type', 'item_ordered').gte('created_at', monthStart.toISOString()),
       supabase.from('analytics_events').select('event_data, hour_of_day, created_at').eq('restaurant_id', rest.id).eq('event_type', 'order_placed').gte('created_at', monthStart.toISOString()),
       supabase.from('analytics_events').select('event_data').eq('restaurant_id', rest.id).eq('event_type', 'table_closed').gte('created_at', monthStart.toISOString()),
     ])
@@ -59,27 +134,23 @@ export default function RestaurantDetailPage() {
     if (tablesData) setTables(tablesData)
     if (ordersData) setRecentOrders(ordersData)
 
-    // Top items
-    const itemMap = {}
-    itemEvents?.forEach(e => {
-      const name = e.event_data?.name
-      if (!name) return
-      if (!itemMap[name]) itemMap[name] = { name, qty: 0, revenue: 0 }
-      itemMap[name].qty += e.event_data.qty || 0
-      itemMap[name].revenue += (e.event_data.line_total || 0)
-    })
-    setTopItems(Object.values(itemMap).sort((a,b) => b.qty - a.qty).slice(0, 10))
-
-    // Hourly distribution
+    // Hourly distribution (always this month)
     const hourMap = {}
     for (let h = 0; h < 24; h++) hourMap[h] = 0
     orderEvents?.forEach(e => { hourMap[e.hour_of_day] = (hourMap[e.hour_of_day] || 0) + 1 })
     setHourlyData(Object.entries(hourMap).map(([hour, count]) => ({ hour: parseInt(hour), count })))
 
-    // Overall stats
+    // Item events for stats (this month only — stats card shows MTD)
+    const { data: itemEventsMtd } = await supabase
+      .from('analytics_events')
+      .select('event_data')
+      .eq('restaurant_id', rest.id)
+      .eq('event_type', 'item_ordered')
+      .gte('created_at', monthStart.toISOString())
+
     const totalRevenue = closedEvents?.reduce((s, e) => s + (e.event_data?.total_amount || 0), 0) || 0
     const totalOrders = orderEvents?.length || 0
-    const totalItems = itemEvents?.reduce((s, e) => s + (e.event_data?.qty || 0), 0) || 0
+    const totalItems = itemEventsMtd?.reduce((s, e) => s + (e.event_data?.qty || 0), 0) || 0
     const totalGuests = closedEvents?.reduce((s, e) => s + (e.event_data?.guest_count || 0), 0) || 0
     const avgDuration = closedEvents?.length > 0
       ? Math.round(closedEvents.reduce((s, e) => s + (e.event_data?.duration_minutes || 0), 0) / closedEvents.length)
@@ -90,9 +161,17 @@ export default function RestaurantDetailPage() {
       avgOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
     })
     setLoading(false)
-  }, [slug])
+
+    // Kick off top-items fetch for the active period
+    fetchTopItems(rest.id)
+  }, [slug, fetchTopItems])
 
   useEffect(() => { if (user && slug) fetchData() }, [user, slug])
+
+  // Refetch top items when period filter changes (without reloading everything)
+  useEffect(() => {
+    if (restaurant?.id) fetchTopItems(restaurant.id)
+  }, [topPeriod, topSpecificMonth, restaurant?.id, fetchTopItems])
 
   const updatePlan = async (newPlan) => {
     setSavingPlan(true)
@@ -116,6 +195,7 @@ export default function RestaurantDetailPage() {
 
   const maxHourly = Math.max(...hourlyData.map(h => h.count), 1)
   const peakHour = hourlyData.reduce((max, h) => h.count > max.count ? h : max, {hour:0,count:0})
+  const { label: topPeriodLabel } = getDateRange(topPeriod, topSpecificMonth)
 
   return (
     <div style={s.page}>
@@ -175,9 +255,9 @@ export default function RestaurantDetailPage() {
           </div>
           <div style={{marginTop:12,fontSize:12,color:'#666'}}>
             {restaurant.plan === 'trial' && 'Free for 30 days — auto-converts to Basic'}
-            {restaurant.plan === 'basic' && '€29/month — up to 15 tables, 100 menu items, 3 languages'}
-            {restaurant.plan === 'pro' && '€79/month — up to 50 tables, 500 menu items, 8 languages, analytics'}
-            {restaurant.plan === 'enterprise' && '€199/month — unlimited everything, custom features, API access'}
+            {restaurant.plan === 'basic' && '€100/month — up to 15 tables, 100 menu items, 3 languages'}
+            {restaurant.plan === 'pro' && '€200/month — up to 50 tables, 500 menu items, 8 languages, analytics'}
+            {restaurant.plan === 'enterprise' && '€300/month — unlimited everything, custom features, API access'}
           </div>
         </div>
 
@@ -191,11 +271,69 @@ export default function RestaurantDetailPage() {
 
         {/* Two column layout */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginTop:24}}>
-          {/* Top Sellers */}
+          {/* ============ TOP SELLERS (with period filter) ============ */}
           <div style={s.card}>
-            <h2 style={s.h2}>🏆 Top Sellers (this month)</h2>
-            {topItems.length === 0 ? (
-              <p style={{color:'#666',textAlign:'center',padding:20}}>No data yet</p>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
+              <h2 style={{...s.h2, marginBottom:0}}>🏆 Top Sellers</h2>
+              <div style={{fontSize:11,color:'#888'}}>{topPeriodLabel}</div>
+            </div>
+
+            <div style={{display:'flex',gap:4,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
+              {[
+                {id:'week', label:'Week'},
+                {id:'month', label:'Month'},
+                {id:'quarter', label:'Quarter'},
+                {id:'year', label:'Year'},
+              ].map(p => {
+                const isActive = topPeriod === p.id && !topSpecificMonth
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => { setTopPeriod(p.id); setTopSpecificMonth('') }}
+                    style={{
+                      padding:'5px 12px',
+                      borderRadius:6,
+                      fontSize:11,
+                      fontWeight:600,
+                      cursor:'pointer',
+                      background: isActive ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                      color: isActive ? 'white' : '#aaa',
+                      border: isActive ? 'none' : '1px solid #262626',
+                      fontFamily:'system-ui',
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                )
+              })}
+              <select
+                value={topSpecificMonth}
+                onChange={e => setTopSpecificMonth(e.target.value)}
+                style={{
+                  padding:'5px 10px',
+                  borderRadius:6,
+                  fontSize:11,
+                  fontWeight:600,
+                  cursor:'pointer',
+                  background: topSpecificMonth ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                  color: topSpecificMonth ? 'white' : '#aaa',
+                  border: topSpecificMonth ? 'none' : '1px solid #262626',
+                  fontFamily:'system-ui',
+                  outline:'none',
+                  marginLeft:4,
+                }}
+              >
+                <option value="" style={{background:'#141414'}}>Specific month…</option>
+                {monthOptions.map(m => (
+                  <option key={m.value} value={m.value} style={{background:'#141414'}}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {topItemsLoading ? (
+              <p style={{color:'#666',textAlign:'center',padding:20}}>Loading…</p>
+            ) : topItems.length === 0 ? (
+              <p style={{color:'#666',textAlign:'center',padding:20}}>No data for this period</p>
             ) : (
               topItems.map((item, i) => (
                 <div key={item.name} style={{display:'flex',alignItems:'center',padding:'10px 0',borderBottom: i < topItems.length - 1 ? '1px solid #262626' : 'none', gap:12}}>
@@ -210,31 +348,83 @@ export default function RestaurantDetailPage() {
             )}
           </div>
 
-          {/* Peak Hours */}
+          {/* ============ PEAK HOURS (improved) ============ */}
           <div style={s.card}>
             <h2 style={s.h2}>⏰ Peak Hours (this month)</h2>
             {hourlyData.every(h => h.count === 0) ? (
               <p style={{color:'#666',textAlign:'center',padding:20}}>No data yet</p>
             ) : (
               <>
-                <div style={{fontSize:12,color:'#666',marginBottom:12}}>
-                  Peak: {peakHour.hour}:00 — {peakHour.hour+1}:00 ({peakHour.count} orders)
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                  <div style={{fontSize:12,color:'#aaa'}}>
+                    Peak: <strong style={{color:'white'}}>{String(peakHour.hour).padStart(2,'0')}:00</strong>
+                    <span style={{color:'#666'}}> · {peakHour.count} orders</span>
+                  </div>
+                  <div style={{fontSize:10,color:'#666'}}>Max: {maxHourly}</div>
                 </div>
-                <div style={{display:'flex',alignItems:'flex-end',gap:2,height:120,marginBottom:8}}>
-                  {hourlyData.map(h => (
-                    <div key={h.hour} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-                      <div style={{
-                        width:'100%',
-                        height: `${(h.count / maxHourly) * 100}%`,
-                        minHeight: h.count > 0 ? 2 : 0,
-                        background: h.count === peakHour.count && h.count > 0 ? 'linear-gradient(180deg, #8b5cf6, #6366f1)' : '#2a2a2a',
-                        borderRadius:'3px 3px 0 0',
-                      }}/>
-                    </div>
+
+                <div style={{position:'relative',height:140,marginBottom:10}}>
+                  {/* Gridlines */}
+                  {[0.25, 0.5, 0.75].map(frac => (
+                    <div key={frac} style={{position:'absolute',left:0,right:0,top:`${(1-frac)*100}%`,borderTop:'1px dashed #222',pointerEvents:'none'}}/>
                   ))}
+
+                  {/* Bars */}
+                  <div style={{display:'flex',alignItems:'flex-end',gap:2,height:'100%',position:'relative',zIndex:1}}>
+                    {hourlyData.map(h => {
+                      const isPeak = h.count === peakHour.count && h.count > 0
+                      const heightPct = h.count > 0 ? Math.max((h.count / maxHourly) * 100, 6) : 0
+                      return (
+                        <div
+                          key={h.hour}
+                          title={`${String(h.hour).padStart(2,'0')}:00 — ${h.count} order${h.count===1?'':'s'}`}
+                          style={{
+                            flex:1,
+                            display:'flex',
+                            flexDirection:'column',
+                            alignItems:'center',
+                            justifyContent:'flex-end',
+                            height:'100%',
+                            cursor: h.count > 0 ? 'pointer' : 'default',
+                          }}
+                        >
+                          {h.count > 0 && (
+                            <div style={{
+                              fontSize:9,
+                              color: isPeak ? '#c4b5fd' : '#888',
+                              marginBottom:2,
+                              fontWeight:600,
+                              lineHeight:1,
+                            }}>
+                              {h.count}
+                            </div>
+                          )}
+                          <div style={{
+                            width:'100%',
+                            height: `${heightPct}%`,
+                            minHeight: h.count > 0 ? 6 : 0,
+                            background: h.count === 0
+                              ? 'transparent'
+                              : isPeak
+                                ? 'linear-gradient(180deg, #a78bfa, #6366f1)'
+                                : 'linear-gradient(180deg, #6366f1, #4338ca)',
+                            borderRadius:'3px 3px 0 0',
+                            opacity: h.count === 0 ? 0 : (isPeak ? 1 : 0.7),
+                            transition:'opacity 0.2s',
+                            boxShadow: isPeak ? '0 0 12px rgba(139, 92, 246, 0.4)' : 'none',
+                          }}/>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-                <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#666'}}>
-                  <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span>
+
+                <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#666',paddingTop:2,borderTop:'1px solid #262626'}}>
+                  <span>00:00</span>
+                  <span>06:00</span>
+                  <span>12:00</span>
+                  <span>18:00</span>
+                  <span>23:00</span>
                 </div>
               </>
             )}
