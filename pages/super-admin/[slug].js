@@ -1,13 +1,15 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import { createClient } from '@supabase/supabase-js'
+import ExportModal from '../../components/ExportModal'
+import { exportRestaurant } from '../../lib/xlsx-export'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
-// ---- Helpers for date ranges ----
+// ---- Helpers for date ranges (used by on-page filters, not export) ----
 function getDateRange(period, specificMonth) {
   if (specificMonth) {
     const [y, m] = specificMonth.split('-').map(Number)
@@ -51,7 +53,6 @@ function getMonthOptions() {
   return options
 }
 
-// ---- Shared period filter component ----
 function PeriodFilter({ period, specificMonth, onChangePeriod, onChangeMonth, monthOptions }) {
   return (
     <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
@@ -63,42 +64,27 @@ function PeriodFilter({ period, specificMonth, onChangePeriod, onChangeMonth, mo
       ].map(p => {
         const isActive = period === p.id && !specificMonth
         return (
-          <button
-            key={p.id}
+          <button key={p.id}
             onClick={() => { onChangePeriod(p.id); onChangeMonth('') }}
             style={{
-              padding:'5px 12px',
-              borderRadius:6,
-              fontSize:11,
-              fontWeight:600,
-              cursor:'pointer',
+              padding:'5px 12px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer',
               background: isActive ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
               color: isActive ? 'white' : '#aaa',
               border: isActive ? 'none' : '1px solid #262626',
               fontFamily:'system-ui',
-            }}
-          >
+            }}>
             {p.label}
           </button>
         )
       })}
-      <select
-        value={specificMonth}
-        onChange={e => onChangeMonth(e.target.value)}
+      <select value={specificMonth} onChange={e => onChangeMonth(e.target.value)}
         style={{
-          padding:'5px 10px',
-          borderRadius:6,
-          fontSize:11,
-          fontWeight:600,
-          cursor:'pointer',
+          padding:'5px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer',
           background: specificMonth ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
           color: specificMonth ? 'white' : '#aaa',
           border: specificMonth ? 'none' : '1px solid #262626',
-          fontFamily:'system-ui',
-          outline:'none',
-          marginLeft:4,
-        }}
-      >
+          fontFamily:'system-ui', outline:'none', marginLeft:4,
+        }}>
         <option value="" style={{background:'#141414'}}>Specific month…</option>
         {monthOptions.map(m => (
           <option key={m.value} value={m.value} style={{background:'#141414'}}>{m.label}</option>
@@ -123,12 +109,10 @@ export default function RestaurantDetailPage() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [savingPlan, setSavingPlan] = useState(false)
+  const [showExport, setShowExport] = useState(false)
 
-  // Top Sellers period filter
   const [topPeriod, setTopPeriod] = useState('month')
   const [topSpecificMonth, setTopSpecificMonth] = useState('')
-
-  // Peak Hours period filter
   const [peakPeriod, setPeakPeriod] = useState('month')
   const [peakSpecificMonth, setPeakSpecificMonth] = useState('')
 
@@ -138,10 +122,7 @@ export default function RestaurantDetailPage() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         const { data: superAdmin } = await supabase
-          .from('super_admins')
-          .select('*')
-          .eq('email', session.user.email)
-          .single()
+          .from('super_admins').select('*').eq('email', session.user.email).single()
         if (superAdmin) setUser(session.user)
       }
       setAuthLoading(false)
@@ -153,12 +134,9 @@ export default function RestaurantDetailPage() {
     setTopItemsLoading(true)
     const { from, to } = getDateRange(topPeriod, topSpecificMonth)
     const { data: itemEvents } = await supabase
-      .from('analytics_events')
-      .select('event_data')
-      .eq('restaurant_id', restaurantId)
-      .eq('event_type', 'item_ordered')
-      .gte('created_at', from.toISOString())
-      .lt('created_at', to.toISOString())
+      .from('analytics_events').select('event_data')
+      .eq('restaurant_id', restaurantId).eq('event_type', 'item_ordered')
+      .gte('created_at', from.toISOString()).lt('created_at', to.toISOString())
 
     const itemMap = {}
     itemEvents?.forEach(e => {
@@ -177,19 +155,14 @@ export default function RestaurantDetailPage() {
     setHourlyLoading(true)
     const { from, to } = getDateRange(peakPeriod, peakSpecificMonth)
     const { data: orderEvents } = await supabase
-      .from('analytics_events')
-      .select('hour_of_day')
-      .eq('restaurant_id', restaurantId)
-      .eq('event_type', 'order_placed')
-      .gte('created_at', from.toISOString())
-      .lt('created_at', to.toISOString())
+      .from('analytics_events').select('hour_of_day')
+      .eq('restaurant_id', restaurantId).eq('event_type', 'order_placed')
+      .gte('created_at', from.toISOString()).lt('created_at', to.toISOString())
 
     const hourMap = {}
     for (let h = 0; h < 24; h++) hourMap[h] = 0
     orderEvents?.forEach(e => {
-      if (typeof e.hour_of_day === 'number') {
-        hourMap[e.hour_of_day] = (hourMap[e.hour_of_day] || 0) + 1
-      }
+      if (typeof e.hour_of_day === 'number') hourMap[e.hour_of_day] = (hourMap[e.hour_of_day] || 0) + 1
     })
     setHourlyData(Object.entries(hourMap).map(([hour, count]) => ({ hour: parseInt(hour), count })))
     setHourlyLoading(false)
@@ -224,28 +197,18 @@ export default function RestaurantDetailPage() {
     const totalItems = itemEventsMtd?.reduce((s, e) => s + (e.event_data?.qty || 0), 0) || 0
     const totalGuests = closedEvents?.reduce((s, e) => s + (e.event_data?.guest_count || 0), 0) || 0
     const avgDuration = closedEvents?.length > 0
-      ? Math.round(closedEvents.reduce((s, e) => s + (e.event_data?.duration_minutes || 0), 0) / closedEvents.length)
-      : 0
+      ? Math.round(closedEvents.reduce((s, e) => s + (e.event_data?.duration_minutes || 0), 0) / closedEvents.length) : 0
 
-    setStats({
-      totalRevenue, totalOrders, totalItems, totalGuests, avgDuration,
-      avgOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
-    })
+    setStats({ totalRevenue, totalOrders, totalItems, totalGuests, avgDuration,
+      avgOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0 })
     setLoading(false)
-
     fetchTopItems(rest.id)
     fetchHourly(rest.id)
   }, [slug, fetchTopItems, fetchHourly])
 
   useEffect(() => { if (user && slug) fetchData() }, [user, slug])
-
-  useEffect(() => {
-    if (restaurant?.id) fetchTopItems(restaurant.id)
-  }, [topPeriod, topSpecificMonth, restaurant?.id, fetchTopItems])
-
-  useEffect(() => {
-    if (restaurant?.id) fetchHourly(restaurant.id)
-  }, [peakPeriod, peakSpecificMonth, restaurant?.id, fetchHourly])
+  useEffect(() => { if (restaurant?.id) fetchTopItems(restaurant.id) }, [topPeriod, topSpecificMonth, restaurant?.id, fetchTopItems])
+  useEffect(() => { if (restaurant?.id) fetchHourly(restaurant.id) }, [peakPeriod, peakSpecificMonth, restaurant?.id, fetchHourly])
 
   const updatePlan = async (newPlan) => {
     setSavingPlan(true)
@@ -253,14 +216,21 @@ export default function RestaurantDetailPage() {
     setRestaurant({ ...restaurant, plan: newPlan })
     setSavingPlan(false)
   }
-
   const toggleActive = async () => {
     const newActive = !restaurant.active
     await supabase.from('restaurants').update({ active: newActive }).eq('id', restaurant.id)
     setRestaurant({ ...restaurant, active: newActive })
   }
-
   const logout = async () => { await supabase.auth.signOut(); router.push('/super-admin') }
+
+  const handleExport = async (opts) => {
+    await exportRestaurant({
+      restaurantId: restaurant.id,
+      restaurantName: restaurant.name,
+      restaurantSlug: restaurant.slug,
+      ...opts,
+    })
+  }
 
   if (authLoading) return <div style={s.center}><p style={{color:'#666'}}>...</p></div>
   if (!user) { router.push('/super-admin'); return null }
@@ -275,6 +245,14 @@ export default function RestaurantDetailPage() {
 
   return (
     <div style={s.page}>
+      <ExportModal
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        onExport={handleExport}
+        title={`Export — ${restaurant.name}`}
+        subtitle="Download orders, items and revenue data for this restaurant"
+      />
+
       <header style={s.header}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <button onClick={() => router.push('/super-admin')} style={{background:'transparent',border:'1px solid #262626',color:'#888',padding:'6px 12px',borderRadius:7,cursor:'pointer',fontSize:13}}>← Back</button>
@@ -302,7 +280,10 @@ export default function RestaurantDetailPage() {
               <span>📧 {restaurant.owner_email || '—'}</span>
             </div>
           </div>
-          <div style={{display:'flex',gap:8}}>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            <button onClick={() => setShowExport(true)} style={{...s.btn, background:'linear-gradient(135deg, #6366f1, #8b5cf6)', border:'none'}}>
+              📊 Export
+            </button>
             <button onClick={toggleActive} style={{...s.btn, background: restaurant.active ? '#2a1515' : '#0d2f1f', color: restaurant.active ? '#f87171' : '#10b981', border: restaurant.active ? '1px solid #7f1d1d' : '1px solid #065f46'}}>
               {restaurant.active ? '⏸ Suspend' : '▶ Activate'}
             </button>
@@ -350,30 +331,21 @@ export default function RestaurantDetailPage() {
               <div style={{fontSize:11,color:'#888'}}>{topPeriodLabel}</div>
             </div>
             <div style={{marginBottom:16}}>
-              <PeriodFilter
-                period={topPeriod}
-                specificMonth={topSpecificMonth}
-                onChangePeriod={setTopPeriod}
-                onChangeMonth={setTopSpecificMonth}
-                monthOptions={monthOptions}
-              />
+              <PeriodFilter period={topPeriod} specificMonth={topSpecificMonth}
+                onChangePeriod={setTopPeriod} onChangeMonth={setTopSpecificMonth} monthOptions={monthOptions} />
             </div>
-            {topItemsLoading ? (
-              <p style={{color:'#666',textAlign:'center',padding:20}}>Loading…</p>
-            ) : topItems.length === 0 ? (
-              <p style={{color:'#666',textAlign:'center',padding:20}}>No data for this period</p>
-            ) : (
-              topItems.map((item, i) => (
-                <div key={item.name} style={{display:'flex',alignItems:'center',padding:'10px 0',borderBottom: i < topItems.length - 1 ? '1px solid #262626' : 'none', gap:12}}>
-                  <div style={{width:20,fontSize:12,color:'#666',fontWeight:600}}>{i+1}</div>
-                  <div style={{flex:1,fontSize:13,color:'white',fontWeight:500}}>{item.name}</div>
-                  <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:13,fontWeight:600,color:'#10b981'}}>{item.qty}×</div>
-                    <div style={{fontSize:11,color:'#666'}}>€{item.revenue.toFixed(2)}</div>
+            {topItemsLoading ? <p style={{color:'#666',textAlign:'center',padding:20}}>Loading…</p>
+              : topItems.length === 0 ? <p style={{color:'#666',textAlign:'center',padding:20}}>No data for this period</p>
+              : topItems.map((item, i) => (
+                  <div key={item.name} style={{display:'flex',alignItems:'center',padding:'10px 0',borderBottom: i < topItems.length - 1 ? '1px solid #262626' : 'none', gap:12}}>
+                    <div style={{width:20,fontSize:12,color:'#666',fontWeight:600}}>{i+1}</div>
+                    <div style={{flex:1,fontSize:13,color:'white',fontWeight:500}}>{item.name}</div>
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontSize:13,fontWeight:600,color:'#10b981'}}>{item.qty}×</div>
+                      <div style={{fontSize:11,color:'#666'}}>€{item.revenue.toFixed(2)}</div>
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))}
           </div>
 
           {/* PEAK HOURS */}
@@ -383,73 +355,37 @@ export default function RestaurantDetailPage() {
               <div style={{fontSize:11,color:'#888'}}>{peakPeriodLabel}</div>
             </div>
             <div style={{marginBottom:16}}>
-              <PeriodFilter
-                period={peakPeriod}
-                specificMonth={peakSpecificMonth}
-                onChangePeriod={setPeakPeriod}
-                onChangeMonth={setPeakSpecificMonth}
-                monthOptions={monthOptions}
-              />
+              <PeriodFilter period={peakPeriod} specificMonth={peakSpecificMonth}
+                onChangePeriod={setPeakPeriod} onChangeMonth={setPeakSpecificMonth} monthOptions={monthOptions} />
             </div>
-            {hourlyLoading ? (
-              <p style={{color:'#666',textAlign:'center',padding:20}}>Loading…</p>
-            ) : hourlyData.every(h => h.count === 0) ? (
-              <p style={{color:'#666',textAlign:'center',padding:20}}>No data for this period</p>
-            ) : (
+            {hourlyLoading ? <p style={{color:'#666',textAlign:'center',padding:20}}>Loading…</p>
+              : hourlyData.every(h => h.count === 0) ? <p style={{color:'#666',textAlign:'center',padding:20}}>No data for this period</p>
+              : (
               <>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
                   <div style={{fontSize:12,color:'#aaa'}}>
                     Peak: <strong style={{color:'white'}}>{String(peakHour.hour).padStart(2,'0')}:00</strong>
                     <span style={{color:'#666'}}> · {peakHour.count} orders</span>
                   </div>
-                  <div style={{fontSize:10,color:'#666'}}>
-                    Total: {totalOrdersInPeriod} · Max: {maxHourly}
-                  </div>
+                  <div style={{fontSize:10,color:'#666'}}>Total: {totalOrdersInPeriod} · Max: {maxHourly}</div>
                 </div>
-
                 <div style={{position:'relative',height:140,marginBottom:10}}>
                   {[0.25, 0.5, 0.75].map(frac => (
                     <div key={frac} style={{position:'absolute',left:0,right:0,top:`${(1-frac)*100}%`,borderTop:'1px dashed #222',pointerEvents:'none'}}/>
                   ))}
-
                   <div style={{display:'flex',alignItems:'flex-end',gap:2,height:'100%',position:'relative',zIndex:1}}>
                     {hourlyData.map(h => {
                       const isPeak = h.count === peakHour.count && h.count > 0
                       const heightPct = h.count > 0 ? Math.max((h.count / maxHourly) * 100, 6) : 0
                       return (
-                        <div
-                          key={h.hour}
-                          title={`${String(h.hour).padStart(2,'0')}:00 — ${h.count} order${h.count===1?'':'s'}`}
-                          style={{
-                            flex:1,
-                            display:'flex',
-                            flexDirection:'column',
-                            alignItems:'center',
-                            justifyContent:'flex-end',
-                            height:'100%',
-                            cursor: h.count > 0 ? 'pointer' : 'default',
-                          }}
-                        >
+                        <div key={h.hour} title={`${String(h.hour).padStart(2,'0')}:00 — ${h.count} order${h.count===1?'':'s'}`}
+                          style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',height:'100%',cursor: h.count > 0 ? 'pointer' : 'default'}}>
                           {h.count > 0 && (
-                            <div style={{
-                              fontSize:9,
-                              color: isPeak ? '#c4b5fd' : '#888',
-                              marginBottom:2,
-                              fontWeight:600,
-                              lineHeight:1,
-                            }}>
-                              {h.count}
-                            </div>
+                            <div style={{fontSize:9,color: isPeak ? '#c4b5fd' : '#888',marginBottom:2,fontWeight:600,lineHeight:1}}>{h.count}</div>
                           )}
                           <div style={{
-                            width:'100%',
-                            height: `${heightPct}%`,
-                            minHeight: h.count > 0 ? 6 : 0,
-                            background: h.count === 0
-                              ? 'transparent'
-                              : isPeak
-                                ? 'linear-gradient(180deg, #a78bfa, #6366f1)'
-                                : 'linear-gradient(180deg, #6366f1, #4338ca)',
+                            width:'100%', height: `${heightPct}%`, minHeight: h.count > 0 ? 6 : 0,
+                            background: h.count === 0 ? 'transparent' : isPeak ? 'linear-gradient(180deg, #a78bfa, #6366f1)' : 'linear-gradient(180deg, #6366f1, #4338ca)',
                             borderRadius:'3px 3px 0 0',
                             opacity: h.count === 0 ? 0 : (isPeak ? 1 : 0.7),
                             transition:'opacity 0.2s',
@@ -460,13 +396,8 @@ export default function RestaurantDetailPage() {
                     })}
                   </div>
                 </div>
-
                 <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#666',paddingTop:2,borderTop:'1px solid #262626'}}>
-                  <span>00:00</span>
-                  <span>06:00</span>
-                  <span>12:00</span>
-                  <span>18:00</span>
-                  <span>23:00</span>
+                  <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
                 </div>
               </>
             )}
@@ -489,10 +420,8 @@ export default function RestaurantDetailPage() {
 
         <div style={{...s.card, marginTop:24}}>
           <h2 style={s.h2}>📦 Recent Orders ({recentOrders.length})</h2>
-          {recentOrders.length === 0 ? (
-            <p style={{color:'#666',textAlign:'center',padding:20}}>No orders yet</p>
-          ) : (
-            recentOrders.map((o, i) => {
+          {recentOrders.length === 0 ? <p style={{color:'#666',textAlign:'center',padding:20}}>No orders yet</p>
+            : recentOrders.map((o, i) => {
               const total = (o.order_lines || []).reduce((s,l) => s + l.price * l.qty, 0)
               const itemCount = (o.order_lines || []).reduce((s,l) => s + l.qty, 0)
               return (
@@ -510,8 +439,7 @@ export default function RestaurantDetailPage() {
                   <div style={{textAlign:'right',fontSize:14,fontWeight:600,color:'#10b981'}}>€{total.toFixed(2)}</div>
                 </div>
               )
-            })
-          )}
+            })}
         </div>
 
         <div style={{...s.card, marginTop:24, border:'1px solid #7f1d1d', background:'#1a0a0a'}}>

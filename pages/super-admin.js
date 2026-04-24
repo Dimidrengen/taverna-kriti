@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import ExportModal from '../components/ExportModal'
+import { exportPlatform } from '../lib/xlsx-export'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -19,10 +21,7 @@ function LoginScreen({ onLogin }) {
     if (error || !data.user) { setError('Wrong email or password'); setLoading(false); return }
 
     const { data: superAdmin } = await supabase
-      .from('super_admins')
-      .select('*')
-      .eq('email', data.user.email)
-      .single()
+      .from('super_admins').select('*').eq('email', data.user.email).single()
 
     if (!superAdmin) {
       await supabase.auth.signOut()
@@ -124,7 +123,6 @@ function CreateRestaurantModal({ onClose, onCreated }) {
             </div>
           )}
 
-          {/* Step 1: Basic info */}
           {step === 1 && (
             <div>
               <h3 style={{fontSize:15,color:'white',marginBottom:16}}>Restaurant Info</h3>
@@ -140,7 +138,6 @@ function CreateRestaurantModal({ onClose, onCreated }) {
             </div>
           )}
 
-          {/* Step 2: Plan & tables */}
           {step === 2 && (
             <div>
               <h3 style={{fontSize:15,color:'white',marginBottom:16}}>Plan & Setup</h3>
@@ -148,9 +145,9 @@ function CreateRestaurantModal({ onClose, onCreated }) {
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:20}}>
                 {[
                   {id:'trial', name:'Trial', price:'Free 30 days', limit:'15 tables'},
-                  {id:'basic', name:'Basic', price:'€29/mo', limit:'15 tables'},
-                  {id:'pro', name:'Pro', price:'€79/mo', limit:'50 tables'},
-                  {id:'enterprise', name:'Enterprise', price:'€199/mo', limit:'Unlimited'},
+                  {id:'basic', name:'Basic', price:'€100/mo', limit:'15 tables'},
+                  {id:'pro', name:'Pro', price:'€200/mo', limit:'50 tables'},
+                  {id:'enterprise', name:'Enterprise', price:'€300/mo', limit:'Unlimited'},
                 ].map(p => (
                   <button key={p.id} onClick={() => update('plan', p.id)}
                     style={{
@@ -176,7 +173,6 @@ function CreateRestaurantModal({ onClose, onCreated }) {
             </div>
           )}
 
-          {/* Step 3: Review */}
           {step === 3 && (
             <div>
               <h3 style={{fontSize:15,color:'white',marginBottom:16}}>Review & Create</h3>
@@ -201,7 +197,6 @@ function CreateRestaurantModal({ onClose, onCreated }) {
             </div>
           )}
 
-          {/* Step 4: Success */}
           {step === 4 && result && (
             <div>
               <div style={{textAlign:'center',marginBottom:24}}>
@@ -229,7 +224,6 @@ function CreateRestaurantModal({ onClose, onCreated }) {
             </div>
           )}
 
-          {/* Navigation */}
           <div style={{display:'flex',justifyContent:'space-between',marginTop:24,gap:8}}>
             {step === 4 ? (
               <button onClick={() => { onCreated(); onClose() }} style={{flex:1,padding:12,background:'linear-gradient(135deg, #6366f1, #8b5cf6)',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>Done</button>
@@ -298,15 +292,13 @@ export default function SuperAdminPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  const [showExport, setShowExport] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         const { data: superAdmin } = await supabase
-          .from('super_admins')
-          .select('*')
-          .eq('email', session.user.email)
-          .single()
+          .from('super_admins').select('*').eq('email', session.user.email).single()
         if (superAdmin) setUser(session.user)
       }
       setAuthLoading(false)
@@ -327,9 +319,18 @@ export default function SuperAdminPage() {
 
   const logout = async () => { await supabase.auth.signOut(); setUser(null) }
 
-  if (authLoading) return <div style={s.center}><p style={{color:'#666'}}>...</p></div>
+  const handleExport = async (opts) => {
+    // Fetch full restaurant list from source of truth (restaurants table)
+    const { data: allRestaurants } = await supabase.from('restaurants').select('id, name, slug, plan, city, country')
+    if (!allRestaurants || allRestaurants.length === 0) {
+      throw new Error('No restaurants to export')
+    }
+    await exportPlatform({ restaurants: allRestaurants, ...opts })
+  }
+
+  if (authLoading) return <div style={st.center}><p style={{color:'#666'}}>...</p></div>
   if (!user) return <LoginScreen onLogin={setUser} />
-  if (loading) return <div style={s.center}><p style={{color:'#666'}}>Loading...</p></div>
+  if (loading) return <div style={st.center}><p style={{color:'#666'}}>Loading...</p></div>
 
   const filteredRestaurants = restaurants.filter(r =>
     !search || r.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -338,10 +339,17 @@ export default function SuperAdminPage() {
   )
 
   return (
-    <div style={s.page}>
+    <div style={st.page}>
       {showCreate && <CreateRestaurantModal onClose={() => setShowCreate(false)} onCreated={fetchData} />}
+      <ExportModal
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        onExport={handleExport}
+        title="Export — All Restaurants"
+        subtitle={`Download combined data for ${restaurants.length} restaurant${restaurants.length === 1 ? '' : 's'}`}
+      />
 
-      <header style={s.header}>
+      <header style={st.header}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <span style={{fontSize:20}}>⚡</span>
           <div>
@@ -363,10 +371,15 @@ export default function SuperAdminPage() {
       </header>
 
       {tab === 'dashboard' && (
-        <div style={s.content}>
-          <h1 style={s.h1}>Platform Overview</h1>
+        <div style={st.content}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap',gap:12}}>
+            <h1 style={{...st.h1, marginBottom:0}}>Platform Overview</h1>
+            <button onClick={() => setShowExport(true)} style={{...st.primaryBtn}}>
+              📊 Export All
+            </button>
+          </div>
 
-          <div style={s.metricsGrid}>
+          <div style={st.metricsGrid}>
             <MetricCard label="MRR" value={`€${(metrics?.mrr || 0).toFixed(0)}`} hint="Monthly Recurring Revenue" color="#6366f1" />
             <MetricCard label="Active Restaurants" value={metrics?.active_restaurants || 0} hint={`${metrics?.total_restaurants || 0} total`} color="#10b981" />
             <MetricCard label="Orders Today" value={metrics?.orders_today || 0} hint={`${metrics?.orders_this_month || 0} this month`} color="#f59e0b" />
@@ -374,8 +387,8 @@ export default function SuperAdminPage() {
           </div>
 
           <div style={{marginTop:32}}>
-            <h2 style={s.h2}>Top Restaurants (by revenue this month)</h2>
-            <div style={s.card}>
+            <h2 style={st.h2}>Top Restaurants (by revenue this month)</h2>
+            <div style={st.card}>
               {restaurants.slice(0, 10).sort((a,b) => b.revenue_this_month - a.revenue_this_month).map((r, i) => (
                 <div key={r.id} style={{display:'flex',alignItems:'center',padding:'14px 0',borderBottom: i < 9 ? '1px solid #262626' : 'none', gap:12}}>
                   <div style={{width:24,fontSize:13,color:'#666',fontWeight:600}}>{i+1}</div>
@@ -396,10 +409,13 @@ export default function SuperAdminPage() {
       )}
 
       {tab === 'restaurants' && (
-        <div style={s.content}>
+        <div style={st.content}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,gap:16,flexWrap:'wrap'}}>
-            <h1 style={{...s.h1, marginBottom:0}}>Restaurants</h1>
-            <button style={s.primaryBtn} onClick={() => setShowCreate(true)}>+ New restaurant</button>
+            <h1 style={{...st.h1, marginBottom:0}}>Restaurants</h1>
+            <div style={{display:'flex',gap:8}}>
+              <button style={{...st.primaryBtn, background:'#262626', border:'1px solid #333'}} onClick={() => setShowExport(true)}>📊 Export All</button>
+              <button style={st.primaryBtn} onClick={() => setShowCreate(true)}>+ New restaurant</button>
+            </div>
           </div>
 
           <input
@@ -410,7 +426,7 @@ export default function SuperAdminPage() {
             style={{width:'100%',padding:'12px 16px',background:'#141414',border:'1px solid #262626',borderRadius:10,fontSize:14,color:'white',outline:'none',marginBottom:16,fontFamily:'system-ui'}}
           />
 
-          <div style={s.card}>
+          <div style={st.card}>
             <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 100px 120px 120px 80px',gap:12,padding:'12px 4px',borderBottom:'1px solid #262626',fontSize:11,color:'#666',textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>
               <div>Restaurant</div>
               <div>Owner</div>
@@ -456,7 +472,7 @@ export default function SuperAdminPage() {
 
 function MetricCard({ label, value, hint, color }) {
   return (
-    <div style={s.card}>
+    <div style={st.card}>
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
         <span style={{width:8,height:8,borderRadius:'50%',background:color,display:'inline-block'}}/>
         <div style={{fontSize:11,color:'#888',textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>{label}</div>
@@ -480,7 +496,7 @@ function getPlanStyle(plan) {
   }
 }
 
-const s = {
+const st = {
   page:        {minHeight:'100vh',background:'#0a0a0a',fontFamily:'system-ui,sans-serif',color:'white'},
   header:      {display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 24px',borderBottom:'1px solid #1a1a1a',position:'sticky',top:0,background:'#0a0a0a',zIndex:10,gap:16,flexWrap:'wrap'},
   content:     {maxWidth:1200,margin:'0 auto',padding:'32px 24px'},
