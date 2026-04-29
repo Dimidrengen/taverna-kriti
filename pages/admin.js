@@ -36,10 +36,12 @@ function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [resetSending, setResetSending] = useState(false)
+  const [resetMsg, setResetMsg] = useState('')
 
   const login = async (e) => {
     e.preventDefault()
-    setLoading(true); setError('')
+    setLoading(true); setError(''); setResetMsg('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
     if (!data.user.email.startsWith('admin@')) { await supabase.auth.signOut(); setError('Ikke admin'); setLoading(false); return }
@@ -50,6 +52,22 @@ function LoginScreen({ onLogin }) {
     if (!restaurant.active) { await supabase.auth.signOut(); setError('Deaktiveret'); setLoading(false); return }
     onLogin(data.user, restaurant)
     setLoading(false)
+  }
+
+  const handleForgotPassword = async () => {
+    setError(''); setResetMsg('')
+    if (!email) { setError('Indtast din admin-email først'); return }
+    if (!email.startsWith('admin@')) {
+      setError('Glemt adgangskode er kun for admin. Kitchen/bar: kontakt din administrator.')
+      return
+    }
+    setResetSending(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setResetSending(false)
+    if (error) { setError(error.message); return }
+    setResetMsg('Hvis kontoen findes, er der sendt en email med reset-link. Tjek din indbakke (og spam).')
   }
 
   return (
@@ -64,17 +82,29 @@ function LoginScreen({ onLogin }) {
           <div style={{marginBottom:16}}>
             <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none'}} />
+              style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',boxSizing:'border-box'}} />
           </div>
           <div style={{marginBottom:24}}>
             <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>Adgangskode</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-              style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none'}} />
+              style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',boxSizing:'border-box'}} />
           </div>
           {error && <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#dc2626',marginBottom:16}}>{error}</div>}
+          {resetMsg && <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#15803D',marginBottom:16}}>{resetMsg}</div>}
           <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:'#C2692A',color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
             {loading ? 'Logger ind...' : 'Log ind'}
           </button>
+
+          <div style={{textAlign:'center',marginTop:16}}>
+            <button type="button" onClick={handleForgotPassword} disabled={resetSending}
+              style={{background:'transparent',border:'none',color:'#78716C',fontSize:13,cursor:'pointer',textDecoration:'underline',fontFamily:'system-ui'}}>
+              {resetSending ? 'Sender...' : 'Glemt adgangskode?'}
+            </button>
+          </div>
+
+          <div style={{marginTop:20,padding:'10px 12px',background:'#FAFAF7',border:'1px solid #e5e5e5',borderRadius:8,fontSize:11,color:'#78716C',lineHeight:1.5,textAlign:'center'}}>
+            Kitchen og bar: kontakt din administrator for at få nulstillet adgangskoden.
+          </div>
         </form>
       </div>
     </div>
@@ -194,6 +224,7 @@ export default function AdminPage() {
   const [passwords, setPasswords] = useState({ admin:'', kitchen:'', bar:'' })
   const [pwMessage, setPwMessage] = useState({})
   const [pwSaving, setPwSaving] = useState({})
+  const [tempPasswords, setTempPasswords] = useState({})
 
   const [liveStatusSaving, setLiveStatusSaving] = useState(false)
   const [liveStatusMsg, setLiveStatusMsg] = useState('')
@@ -296,7 +327,6 @@ export default function AdminPage() {
     const { data: restaurantTables } = await supabase.from('tables').select('id').eq('restaurant_id', restaurant.id)
     const tableIds = restaurantTables.map(t => t.id)
     await supabase.from('orders').update({ status:'archived' }).eq('status','done').gte('created_at', today.toISOString()).in('table_id', tableIds)
-    // NEW: Reset order counter for this restaurant
     await supabase.from('restaurant_order_counters').update({ last_number: 0, updated_at: new Date().toISOString() }).eq('restaurant_id', restaurant.id)
     setRevenue([]); setResetting(false); setShowResetConfirm(false)
   }
@@ -355,6 +385,24 @@ export default function AdminPage() {
     }
     setPwSaving(p => ({ ...p, [role]: false }))
     setTimeout(() => setPwMessage(p => { const n={...p}; delete n[role]; return n }), 3000)
+  }
+
+  const resetToTemp = async (role) => {
+    if (!confirm(`Generer ny midlertidig adgangskode for ${role}? Den nuværende adgangskode bliver ugyldig med det samme.`)) return
+    setPwSaving(p => ({ ...p, [role]: true }))
+    // Generate readable temp password: 3 letters + 4 digits, e.g. "abc4729"
+    const letters = 'abcdefghjkmnpqrstuvwxyz'
+    const digits = '23456789'
+    const tempPw = Array.from({length:3}, () => letters[Math.floor(Math.random()*letters.length)]).join('')
+                 + Array.from({length:4}, () => digits[Math.floor(Math.random()*digits.length)]).join('')
+    const result = await callAdminAPI({ action: 'change_password', role, newPassword: tempPw })
+    if (result.success) {
+      setTempPasswords(p => ({ ...p, [role]: tempPw }))
+      setPwMessage(p => { const n={...p}; delete n[role]; return n })
+    } else {
+      setPwMessage(p => ({ ...p, [role]: { type:'error', text:result.error } }))
+    }
+    setPwSaving(p => ({ ...p, [role]: false }))
   }
 
   const toggleLiveStatus = async () => {
@@ -643,7 +691,6 @@ export default function AdminPage() {
         <div style={s.content}>
           <h2 style={s.sectionTitle}>{t.settings}</h2>
 
-          {/* Live order status for guests - Pro/Enterprise only */}
           <div style={{...s.card, marginBottom:20}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
               <div style={{flex:1,minWidth:250}}>
@@ -680,14 +727,38 @@ export default function AdminPage() {
               <div key={role} style={{marginBottom:16,padding:16,background:'#f5f5f0',borderRadius:10}}>
                 <div style={{fontSize:13,fontWeight:600,color:'#1C1917',marginBottom:4,textTransform:'uppercase',letterSpacing:'0.05em'}}>{role}</div>
                 <div style={{fontSize:12,color:'#78716C',marginBottom:10,fontFamily:'monospace'}}>{role}@{restaurant.slug}.com</div>
-                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
                   <input type="password" value={passwords[role]} onChange={e => setPasswords(p => ({...p, [role]:e.target.value}))}
                     placeholder={t.newPassword} style={{...s.input, flex:1, minWidth:200}} />
                   <button onClick={() => changePassword(role)} disabled={pwSaving[role] || !passwords[role]} style={{...s.saveBtn, opacity:!passwords[role]?0.5:1}}>
                     {pwSaving[role] ? '...' : t.save}
                   </button>
+                  <button onClick={() => resetToTemp(role)} disabled={pwSaving[role]}
+                    style={{padding:'8px 14px',background:'#FEF3C7',color:'#92400E',border:'1px solid #FCD34D',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'system-ui',whiteSpace:'nowrap'}}>
+                    🔄 Reset
+                  </button>
                 </div>
-                {pwMessage[role] && (
+                {tempPasswords[role] && (
+                  <div style={{marginTop:10,padding:12,background:'#FEF3C7',border:'1px solid #FCD34D',borderRadius:8}}>
+                    <div style={{fontSize:11,fontWeight:600,color:'#92400E',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>
+                      Midlertidig adgangskode — kopier nu, vises kun én gang!
+                    </div>
+                    <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+                      <code style={{flex:1,minWidth:120,padding:'8px 10px',background:'white',border:'1px solid #FCD34D',borderRadius:6,fontSize:14,fontWeight:600,color:'#1C1917',fontFamily:'monospace',userSelect:'all'}}>
+                        {tempPasswords[role]}
+                      </code>
+                      <button onClick={() => { navigator.clipboard.writeText(tempPasswords[role]); }}
+                        style={{padding:'8px 12px',background:'#1C1917',color:'white',border:'none',borderRadius:6,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
+                        📋 Kopier
+                      </button>
+                      <button onClick={() => setTempPasswords(p => { const n={...p}; delete n[role]; return n })}
+                        style={{padding:'8px 12px',background:'transparent',color:'#78716C',border:'1px solid #e5e5e5',borderRadius:6,fontSize:12,cursor:'pointer',fontFamily:'system-ui'}}>
+                        Skjul
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {pwMessage[role] && !tempPasswords[role] && (
                   <div style={{marginTop:8,fontSize:12,color:pwMessage[role].type==='success'?'#10b981':'#dc2626'}}>
                     {pwMessage[role].text}
                   </div>
