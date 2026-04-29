@@ -15,10 +15,59 @@ function extractSlugFromEmail(email) {
   return match ? match[2] : null
 }
 
+// ===== Login screen translations (separate small dictionary) =====
+const LOGIN_LANGS = {
+  en: {
+    title: 'Admin', subtitle: 'TableFlow',
+    email: 'Email', password: 'Password',
+    login: 'Log in', loggingIn: 'Logging in...',
+    forgot: 'Forgot password?', sending: 'Sending...',
+    hint: 'Kitchen and bar: contact your administrator to reset your password.',
+    err_credentials: 'Wrong email or password',
+    err_notAdmin: 'Not admin',
+    err_invalidEmail: 'Invalid email',
+    err_notFound: 'Restaurant not found',
+    err_deactivated: 'Restaurant deactivated',
+    err_enterEmail: 'Enter your admin email first',
+    err_adminOnly: 'Forgot password is only for admin. Kitchen/bar: contact your administrator.',
+    resetSent: 'If the account exists, a reset link has been sent. Check your inbox (and spam).',
+  },
+  da: {
+    title: 'Admin', subtitle: 'TableFlow',
+    email: 'Email', password: 'Adgangskode',
+    login: 'Log ind', loggingIn: 'Logger ind...',
+    forgot: 'Glemt adgangskode?', sending: 'Sender...',
+    hint: 'Kitchen og bar: kontakt din administrator for at få nulstillet adgangskoden.',
+    err_credentials: 'Forkert email eller adgangskode',
+    err_notAdmin: 'Ikke admin',
+    err_invalidEmail: 'Ugyldig email',
+    err_notFound: 'Restaurant ikke fundet',
+    err_deactivated: 'Restaurant deaktiveret',
+    err_enterEmail: 'Indtast din admin-email først',
+    err_adminOnly: 'Glemt adgangskode er kun for admin. Kitchen/bar: kontakt din administrator.',
+    resetSent: 'Hvis kontoen findes, er der sendt en email med reset-link. Tjek din indbakke (og spam).',
+  },
+  el: {
+    title: 'Διαχειριστής', subtitle: 'TableFlow',
+    email: 'Email', password: 'Κωδικός',
+    login: 'Σύνδεση', loggingIn: 'Σύνδεση...',
+    forgot: 'Ξέχασες τον κωδικό;', sending: 'Αποστολή...',
+    hint: 'Κουζίνα και μπαρ: επικοινωνήστε με τον διαχειριστή σας για να επαναφέρετε τον κωδικό σας.',
+    err_credentials: 'Λάθος email ή κωδικός',
+    err_notAdmin: 'Δεν είσαι admin',
+    err_invalidEmail: 'Μη έγκυρο email',
+    err_notFound: 'Το εστιατόριο δεν βρέθηκε',
+    err_deactivated: 'Το εστιατόριο είναι απενεργοποιημένο',
+    err_enterEmail: 'Εισάγετε το email του admin πρώτα',
+    err_adminOnly: 'Η επαναφορά κωδικού είναι μόνο για admin. Κουζίνα/μπαρ: επικοινωνήστε με τον διαχειριστή σας.',
+    resetSent: 'Εάν ο λογαριασμός υπάρχει, στάλθηκε σύνδεσμος επαναφοράς. Ελέγξτε τα εισερχόμενα (και τα spam).',
+  },
+}
+
 const LANGS = {
-  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', settings:'⚙️ Indstillinger', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker? Dette nulstiller også ordrenumre.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...', logout:'Log ud', noItems:'Ingen menupunkter endnu', tableName:'Bord navn', addTable:'+ Tilføj bord', printAllQR:'🖨 Print alle QR', viewQR:'📱 QR-kode', rename:'Omdøb', deactivate:'⏸ Deaktiver', activate:'▶ Aktiver', deleteTable:'🗑 Slet', confirmDelete:'Er du sikker på du vil slette dette bord?', tablesUsed:'borde brugt', upgradePlan:'Opgrader plan for at tilføje flere borde', password:'Adgangskode', changePassword:'Skift adgangskode', newPassword:'Ny adgangskode', passwordMin:'Min. 8 tegn', passwordChanged:'Adgangskode opdateret!', planInfo:'Plan information', currentPlan:'Nuværende plan', liveStatus:'Live ordre status for gæster', liveStatusDesc:'Gæster kan se live status af deres ordre (Modtaget → Tilberedes → Klar → Leveret) og ordrenummer', liveStatusUpgrade:'⭐ Opgrader til Pro eller Enterprise for at aktivere denne feature', liveStatusSaved:'Indstilling gemt' },
-  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', settings:'⚙️ Settings', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:'Are you sure? This also resets order numbers.', resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data', uploadImage:'Upload image', removeImage:'Remove', uploading:'Uploading...', logout:'Log out', noItems:'No menu items yet', tableName:'Table name', addTable:'+ Add table', printAllQR:'🖨 Print all QR', viewQR:'📱 QR code', rename:'Rename', deactivate:'⏸ Deactivate', activate:'▶ Activate', deleteTable:'🗑 Delete', confirmDelete:'Delete this table?', tablesUsed:'tables used', upgradePlan:'Upgrade plan to add more tables', password:'Password', changePassword:'Change password', newPassword:'New password', passwordMin:'Min. 8 chars', passwordChanged:'Password updated!', planInfo:'Plan information', currentPlan:'Current plan', liveStatus:'Live order status for guests', liveStatusDesc:'Guests can see live order status (Received → Preparing → Ready → Delivered) and order number', liveStatusUpgrade:'⭐ Upgrade to Pro or Enterprise to enable this feature', liveStatusSaved:'Setting saved' },
-  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', settings:'⚙️ Ρυθμίσεις', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'...', cancel:'Ακύρωση', active:'✓', inactive:'✗', edit:'✏️', todayRevenue:'Έσοδα', totalToday:'Σύνολο', closedTables:'κλειστά', noClosedTables:'Κανένα', openTables:'Ανοιχτά', noOpenTables:'Κανένα', loading:'Φόρτωση...', resetRevenue:'Επαναφορά', resetConfirm:'Σίγουρα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'...', stats:'📈 Στατιστικά', today:'Σήμερα', thisWeek:'Εβδομάδα', thisMonth:'Μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Σύνολο', avgPerSeating:'Μέσος', noStats:'Κανένα', uploadImage:'Upload', removeImage:'Αφαίρεση', uploading:'...', logout:'Αποσύνδεση', noItems:'Κανένα', tableName:'Όνομα', addTable:'+ Προσθήκη', printAllQR:'🖨 QR', viewQR:'📱 QR', rename:'Μετονομασία', deactivate:'⏸', activate:'▶', deleteTable:'🗑', confirmDelete:'Διαγραφή;', tablesUsed:'τραπέζια', upgradePlan:'Αναβάθμιση', password:'Κωδικός', changePassword:'Αλλαγή', newPassword:'Νέος', passwordMin:'Min 8', passwordChanged:'OK!', planInfo:'Plan', currentPlan:'Plan', liveStatus:'Live status παραγγελιών', liveStatusDesc:'Οι πελάτες βλέπουν live status', liveStatusUpgrade:'⭐ Αναβάθμιση σε Pro/Enterprise', liveStatusSaved:'Αποθηκεύτηκε' },
+  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', settings:'⚙️ Indstillinger', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker? Dette nulstiller også ordrenumre.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...', logout:'Log ud', noItems:'Ingen menupunkter endnu', tableName:'Bord navn', addTable:'+ Tilføj bord', printAllQR:'🖨 Print alle QR', viewQR:'📱 QR-kode', rename:'Omdøb', deactivate:'⏸ Deaktiver', activate:'▶ Aktiver', deleteTable:'🗑 Slet', confirmDelete:'Er du sikker på du vil slette dette bord?', tablesUsed:'borde brugt', upgradePlan:'Opgrader plan for at tilføje flere borde', password:'Adgangskode', changePassword:'Skift adgangskode', newPassword:'Ny adgangskode', passwordMin:'Min. 8 tegn', passwordChanged:'Adgangskode opdateret!', planInfo:'Plan information', currentPlan:'Nuværende plan', liveStatus:'Live ordre status for gæster', liveStatusDesc:'Gæster kan se live status af deres ordre (Modtaget → Tilberedes → Klar → Leveret) og ordrenummer', liveStatusUpgrade:'⭐ Opgrader til Pro eller Enterprise for at aktivere denne feature', liveStatusSaved:'Indstilling gemt', resetPwBtn:'Reset', tempPwTitle:'Midlertidig adgangskode — kopier nu, vises kun én gang!', copy:'Kopier', hide:'Skjul', resetPwConfirm:'Generer ny midlertidig adgangskode for {role}? Den nuværende adgangskode bliver ugyldig med det samme.' },
+  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', settings:'⚙️ Settings', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:'Are you sure? This also resets order numbers.', resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data', uploadImage:'Upload image', removeImage:'Remove', uploading:'Uploading...', logout:'Log out', noItems:'No menu items yet', tableName:'Table name', addTable:'+ Add table', printAllQR:'🖨 Print all QR', viewQR:'📱 QR code', rename:'Rename', deactivate:'⏸ Deactivate', activate:'▶ Activate', deleteTable:'🗑 Delete', confirmDelete:'Delete this table?', tablesUsed:'tables used', upgradePlan:'Upgrade plan to add more tables', password:'Password', changePassword:'Change password', newPassword:'New password', passwordMin:'Min. 8 chars', passwordChanged:'Password updated!', planInfo:'Plan information', currentPlan:'Current plan', liveStatus:'Live order status for guests', liveStatusDesc:'Guests can see live order status (Received → Preparing → Ready → Delivered) and order number', liveStatusUpgrade:'⭐ Upgrade to Pro or Enterprise to enable this feature', liveStatusSaved:'Setting saved', resetPwBtn:'Reset', tempPwTitle:'Temporary password — copy now, shown only once!', copy:'Copy', hide:'Hide', resetPwConfirm:'Generate new temporary password for {role}? The current password becomes invalid immediately.' },
+  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', settings:'⚙️ Ρυθμίσεις', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'...', cancel:'Ακύρωση', active:'✓', inactive:'✗', edit:'✏️', todayRevenue:'Έσοδα', totalToday:'Σύνολο', closedTables:'κλειστά', noClosedTables:'Κανένα', openTables:'Ανοιχτά', noOpenTables:'Κανένα', loading:'Φόρτωση...', resetRevenue:'Επαναφορά', resetConfirm:'Σίγουρα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'...', stats:'📈 Στατιστικά', today:'Σήμερα', thisWeek:'Εβδομάδα', thisMonth:'Μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Σύνολο', avgPerSeating:'Μέσος', noStats:'Κανένα', uploadImage:'Upload', removeImage:'Αφαίρεση', uploading:'...', logout:'Αποσύνδεση', noItems:'Κανένα', tableName:'Όνομα', addTable:'+ Προσθήκη', printAllQR:'🖨 QR', viewQR:'📱 QR', rename:'Μετονομασία', deactivate:'⏸', activate:'▶', deleteTable:'🗑', confirmDelete:'Διαγραφή;', tablesUsed:'τραπέζια', upgradePlan:'Αναβάθμιση', password:'Κωδικός', changePassword:'Αλλαγή', newPassword:'Νέος', passwordMin:'Min 8', passwordChanged:'OK!', planInfo:'Plan', currentPlan:'Plan', liveStatus:'Live status παραγγελιών', liveStatusDesc:'Οι πελάτες βλέπουν live status', liveStatusUpgrade:'⭐ Αναβάθμιση σε Pro/Enterprise', liveStatusSaved:'Αποθηκεύτηκε', resetPwBtn:'Επαναφορά', tempPwTitle:'Προσωρινός κωδικός — αντιγράψτε τώρα!', copy:'Αντιγραφή', hide:'Απόκρυψη', resetPwConfirm:'Δημιουργία νέου προσωρινού κωδικού για {role};' },
 }
 
 const EMOJI_OPTIONS = {
@@ -32,6 +81,22 @@ const EMOJI_OPTIONS = {
 const ALL_EMOJIS = [...new Set(Object.values(EMOJI_OPTIONS).flat())]
 
 function LoginScreen({ onLogin }) {
+  // Default English + restore saved language preference
+  const [loginLang, setLoginLang] = useState('en')
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tf_login_lang')
+      if (saved && LOGIN_LANGS[saved]) setLoginLang(saved)
+    } catch {}
+  }, [])
+
+  const changeLang = (l) => {
+    setLoginLang(l)
+    try { localStorage.setItem('tf_login_lang', l) } catch {}
+  }
+
+  const lt = LOGIN_LANGS[loginLang]
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -43,22 +108,22 @@ function LoginScreen({ onLogin }) {
     e.preventDefault()
     setLoading(true); setError(''); setResetMsg('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
-    if (!data.user.email.startsWith('admin@')) { await supabase.auth.signOut(); setError('Ikke admin'); setLoading(false); return }
+    if (error || !data.user) { setError(lt.err_credentials); setLoading(false); return }
+    if (!data.user.email.startsWith('admin@')) { await supabase.auth.signOut(); setError(lt.err_notAdmin); setLoading(false); return }
     const slug = extractSlugFromEmail(data.user.email)
-    if (!slug) { await supabase.auth.signOut(); setError('Ugyldig email'); setLoading(false); return }
+    if (!slug) { await supabase.auth.signOut(); setError(lt.err_invalidEmail); setLoading(false); return }
     const { data: restaurant } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
-    if (!restaurant) { await supabase.auth.signOut(); setError('Ikke fundet'); setLoading(false); return }
-    if (!restaurant.active) { await supabase.auth.signOut(); setError('Deaktiveret'); setLoading(false); return }
+    if (!restaurant) { await supabase.auth.signOut(); setError(lt.err_notFound); setLoading(false); return }
+    if (!restaurant.active) { await supabase.auth.signOut(); setError(lt.err_deactivated); setLoading(false); return }
     onLogin(data.user, restaurant)
     setLoading(false)
   }
 
   const handleForgotPassword = async () => {
     setError(''); setResetMsg('')
-    if (!email) { setError('Indtast din admin-email først'); return }
+    if (!email) { setError(lt.err_enterEmail); return }
     if (!email.startsWith('admin@')) {
-      setError('Glemt adgangskode er kun for admin. Kitchen/bar: kontakt din administrator.')
+      setError(lt.err_adminOnly)
       return
     }
     setResetSending(true)
@@ -67,43 +132,60 @@ function LoginScreen({ onLogin }) {
     })
     setResetSending(false)
     if (error) { setError(error.message); return }
-    setResetMsg('Hvis kontoen findes, er der sendt en email med reset-link. Tjek din indbakke (og spam).')
+    setResetMsg(lt.resetSent)
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'#F5F5F0',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
-      <div style={{background:'white',borderRadius:16,border:'1px solid #e5e5e5',padding:40,width:'100%',maxWidth:380}}>
+    <div style={{minHeight:'100vh',background:'#F5F5F0',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif',padding:20}}>
+      <div style={{background:'white',borderRadius:16,border:'1px solid #e5e5e5',padding:40,width:'100%',maxWidth:380,position:'relative'}}>
+
+        {/* Language switcher */}
+        <div style={{display:'flex',justifyContent:'center',gap:6,marginBottom:24}}>
+          {['en','da','el'].map(l => (
+            <button key={l} type="button" onClick={() => changeLang(l)}
+              style={{
+                padding:'4px 12px',borderRadius:20,fontSize:12,fontWeight:600,cursor:'pointer',
+                background: loginLang===l ? '#C2692A' : 'transparent',
+                color: loginLang===l ? 'white' : '#888',
+                border: loginLang===l ? 'none' : '1px solid #ddd',
+                fontFamily:'system-ui',
+              }}>
+              {l.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{fontSize:40,marginBottom:12}}>⚙️</div>
-          <div style={{fontSize:22,fontWeight:700,color:'#1C1917'}}>Admin</div>
-          <div style={{fontSize:14,color:'#78716C',marginTop:4}}>TableFlow</div>
+          <div style={{fontSize:22,fontWeight:700,color:'#1C1917'}}>{lt.title}</div>
+          <div style={{fontSize:14,color:'#78716C',marginTop:4}}>{lt.subtitle}</div>
         </div>
         <form onSubmit={login}>
           <div style={{marginBottom:16}}>
-            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>Email</label>
+            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>{lt.email}</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
               style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',boxSizing:'border-box'}} />
           </div>
           <div style={{marginBottom:24}}>
-            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>Adgangskode</label>
+            <label style={{fontSize:13,color:'#78716C',display:'block',marginBottom:6}}>{lt.password}</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
               style={{width:'100%',padding:'10px 14px',border:'1px solid #e5e5e5',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',boxSizing:'border-box'}} />
           </div>
           {error && <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#dc2626',marginBottom:16}}>{error}</div>}
           {resetMsg && <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#15803D',marginBottom:16}}>{resetMsg}</div>}
           <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:'#C2692A',color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-            {loading ? 'Logger ind...' : 'Log ind'}
+            {loading ? lt.loggingIn : lt.login}
           </button>
 
           <div style={{textAlign:'center',marginTop:16}}>
             <button type="button" onClick={handleForgotPassword} disabled={resetSending}
               style={{background:'transparent',border:'none',color:'#78716C',fontSize:13,cursor:'pointer',textDecoration:'underline',fontFamily:'system-ui'}}>
-              {resetSending ? 'Sender...' : 'Glemt adgangskode?'}
+              {resetSending ? lt.sending : lt.forgot}
             </button>
           </div>
 
           <div style={{marginTop:20,padding:'10px 12px',background:'#FAFAF7',border:'1px solid #e5e5e5',borderRadius:8,fontSize:11,color:'#78716C',lineHeight:1.5,textAlign:'center'}}>
-            Kitchen og bar: kontakt din administrator for at få nulstillet adgangskoden.
+            {lt.hint}
           </div>
         </form>
       </div>
@@ -388,9 +470,9 @@ export default function AdminPage() {
   }
 
   const resetToTemp = async (role) => {
-    if (!confirm(`Generer ny midlertidig adgangskode for ${role}? Den nuværende adgangskode bliver ugyldig med det samme.`)) return
+    const confirmMsg = (t.resetPwConfirm || 'Generate new temporary password for {role}?').replace('{role}', role)
+    if (!confirm(confirmMsg)) return
     setPwSaving(p => ({ ...p, [role]: true }))
-    // Generate readable temp password: 3 letters + 4 digits, e.g. "abc4729"
     const letters = 'abcdefghjkmnpqrstuvwxyz'
     const digits = '23456789'
     const tempPw = Array.from({length:3}, () => letters[Math.floor(Math.random()*letters.length)]).join('')
@@ -735,13 +817,13 @@ export default function AdminPage() {
                   </button>
                   <button onClick={() => resetToTemp(role)} disabled={pwSaving[role]}
                     style={{padding:'8px 14px',background:'#FEF3C7',color:'#92400E',border:'1px solid #FCD34D',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'system-ui',whiteSpace:'nowrap'}}>
-                    🔄 Reset
+                    🔄 {t.resetPwBtn}
                   </button>
                 </div>
                 {tempPasswords[role] && (
                   <div style={{marginTop:10,padding:12,background:'#FEF3C7',border:'1px solid #FCD34D',borderRadius:8}}>
                     <div style={{fontSize:11,fontWeight:600,color:'#92400E',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>
-                      Midlertidig adgangskode — kopier nu, vises kun én gang!
+                      {t.tempPwTitle}
                     </div>
                     <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
                       <code style={{flex:1,minWidth:120,padding:'8px 10px',background:'white',border:'1px solid #FCD34D',borderRadius:6,fontSize:14,fontWeight:600,color:'#1C1917',fontFamily:'monospace',userSelect:'all'}}>
@@ -749,11 +831,11 @@ export default function AdminPage() {
                       </code>
                       <button onClick={() => { navigator.clipboard.writeText(tempPasswords[role]); }}
                         style={{padding:'8px 12px',background:'#1C1917',color:'white',border:'none',borderRadius:6,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-                        📋 Kopier
+                        📋 {t.copy}
                       </button>
                       <button onClick={() => setTempPasswords(p => { const n={...p}; delete n[role]; return n })}
                         style={{padding:'8px 12px',background:'transparent',color:'#78716C',border:'1px solid #e5e5e5',borderRadius:6,fontSize:12,cursor:'pointer',fontFamily:'system-ui'}}>
-                        Skjul
+                        {t.hide}
                       </button>
                     </div>
                   </div>
