@@ -44,12 +44,12 @@ const LANGS = {
 }
 
 const EMOJI_OPTIONS = {
-  Starters: ['🫒','🧆','🥙','🫔','🥗','🐟','🦑','🍋','🧅','🫕','🥚','🧀','🥬','🌿'],
-  Salads:   ['🥗','🍅','🥒','🫑','🧅','🫒','🌿','🥬','🍋'],
-  Mains:    ['🍖','🥩','🐑','🫕','🍲','🐟','🦐','🦑','🍗','🥘','🫔','🌊'],
-  Sides:    ['🍟','🥔','🫘','🥖','🫓','🧄','🧅','🌽','🥦'],
-  Desserts: ['🍯','🥐','🍮','🍰','🧁','🍩','🍪','🍫','🫐','🍓'],
-  Drinks:   ['🍺','🍻','🍷','🥂','🍸','🍹','☕','🫖','🥤','💧','🧃','🍵','🥛'],
+  Starters: ['🫒','🧆','🥙','🫔','🥗','🥒','🫕','🧀','🥬','🌿','🌱','🍅','🥚','🧅','🧄','🍋','🐟','🦐','🦑','🐙','🦞','🦀','🐚','🍤','🦪','🥖','🫓','🍞','🥯','🧇','🥑','🌶️','🥕','🥜','🌰'],
+  Salads: ['🥗','🍅','🥒','🫑','🧅','🫒','🌿','🥬','🍋','🥑','🥕','🌽','🌱','🥚','🧀','🥜','🌰','🍇','🍎','🥥','🍊','🥦','🍓'],
+  Mains: ['🍖','🥩','🍗','🥓','🌭','🍔','🌮','🌯','🥙','🫔','🍕','🐟','🐠','🐡','🦐','🦞','🦀','🦑','🐙','🍤','🦪','🐚','🌊','🫕','🍲','🥘','🍝','🍜','🍱','🍛','🍣','🍙','🍚','🥟','🥡','🍢','🐑','🐂','🐔','🦆','🐖','🥚','🍳','🌶️','🍆'],
+  Sides: ['🍟','🥔','🫘','🥖','🫓','🧄','🧅','🌽','🥦','🥕','🍞','🥯','🍚','🍙','🥗','🥒','🍅','🥑','🌶️','🍆','🥬','🌿','🧀','🍳','🥚','🍝','🥟'],
+  Desserts: ['🍯','🥐','🍮','🍰','🧁','🍩','🍪','🍫','🥮','🥧','🎂','🍦','🍨','🍧','🥶','🫐','🍓','🍒','🍑','🥝','🍇','🍉','🍌','🍍','🥭','🍊','🍋','🍎','🍏','🍐','🥥','🌰','🧉','🍬','🍭','🍡','🍢','🍘'],
+  Drinks: ['🍺','🍻','🍷','🥂','🍾','🍸','🍹','🥃','🍶','🧉','☕','🫖','🍵','🥤','🧃','🧋','🥛','🍼','🥥','💧','🧊','🍊','🍋','🍓','🥝','🍍','🥭','🍉','🍇','🍑'],
 }
 const ALL_EMOJIS = [...new Set(Object.values(EMOJI_OPTIONS).flat())]
 
@@ -167,7 +167,7 @@ function EmojiPicker({ value, onChange, category }) {
         <span style={{fontSize:12,color:'#78716C',marginLeft:'auto'}}>▾</span>
       </button>
       {open && (
-        <div style={{position:'absolute',top:'calc(100% + 4px)',left:0,zIndex:100,background:'white',border:'1px solid #e5e5e5',borderRadius:12,padding:10,display:'flex',flexWrap:'wrap',gap:4,width:220,boxShadow:'0 4px 16px rgba(0,0,0,0.10)'}}>
+        <div style={{position:'absolute',top:'calc(100% + 4px)',left:0,zIndex:100,background:'white',border:'1px solid #e5e5e5',borderRadius:12,padding:10,display:'grid',gridTemplateColumns:'repeat(6, 1fr)',gap:4,width:280,maxHeight:300,overflowY:'auto',boxShadow:'0 4px 16px rgba(0,0,0,0.10)'}}>
           {emojis.map(e => (
             <button key={e} type="button" onClick={() => { onChange(e); setOpen(false) }} style={{width:36,height:36,fontSize:20,border:'none',borderRadius:8,cursor:'pointer',background:value===e?'#F4E3D7':'transparent',outline:value===e?'2px solid #C2692A':'none'}}>{e}</button>
           ))}
@@ -262,9 +262,7 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
           }
           setTranslations(map)
         }
-      } catch (err) {
-        setError(err.message)
-      }
+      } catch (err) { setError(err.message) }
       setLoading(false)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -282,10 +280,7 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
       const res = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({
-          itemId: item.id, name: item.name, description: item.description || '',
-          targetLangs: targetLangs.map(l => l.code), save: false,
-        }),
+        body: JSON.stringify({ itemId: item.id, name: item.name, description: item.description || '', targetLangs: targetLangs.map(l => l.code), save: false }),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.error || t.translateError)
@@ -305,10 +300,7 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
       const res = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({
-          itemId: item.id, name: item.name, description: item.description || '',
-          targetLangs: [lang], save: false,
-        }),
+        body: JSON.stringify({ itemId: item.id, name: item.name, description: item.description || '', targetLangs: [lang], save: false }),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.error || t.translateError)
@@ -345,35 +337,25 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
         <div style={{padding:'20px 24px',borderBottom:'1px solid #e5e5e5',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div>
             <div style={{fontSize:18,fontWeight:700,color:'#1C1917'}}>{title}</div>
-            <div style={{fontSize:12,color:'#78716C',marginTop:4}}>
-              {t.sourceLanguageLabel}: {sourceInfo.flag} {sourceInfo.name}
-            </div>
+            <div style={{fontSize:12,color:'#78716C',marginTop:4}}>{t.sourceLanguageLabel}: {sourceInfo.flag} {sourceInfo.name}</div>
           </div>
           <button onClick={onClose} style={{background:'transparent',border:'none',fontSize:24,cursor:'pointer',color:'#78716C'}}>×</button>
         </div>
-
         <div style={{padding:24}}>
           <div style={{padding:16,background:'#F4E3D7',border:'1px solid #C2692A33',borderRadius:10,marginBottom:16}}>
-            <div style={{fontSize:11,fontWeight:700,color:'#92400E',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8}}>
-              {sourceInfo.flag} {sourceInfo.name} (kilde / source)
-            </div>
+            <div style={{fontSize:11,fontWeight:700,color:'#92400E',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8}}>{sourceInfo.flag} {sourceInfo.name} (kilde / source)</div>
             <div style={{fontSize:15,fontWeight:600,color:'#1C1917'}}>{item.name}</div>
             {item.description && <div style={{fontSize:13,color:'#57534E',marginTop:4}}>{item.description}</div>}
           </div>
-
           <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
             <button onClick={autoTranslateAll} disabled={autoTranslating || loading}
               style={{padding:'10px 16px',background:'#1C1917',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui',opacity: autoTranslating||loading ? 0.5 : 1}}>
               {autoTranslating ? t.autoTranslating : t.autoTranslate}
             </button>
-            <div style={{flex:1,minWidth:200,padding:'8px 12px',background:'#FAFAF7',border:'1px solid #e5e5e5',borderRadius:8,fontSize:11,color:'#78716C',lineHeight:1.4}}>
-              {t.translateInfo}
-            </div>
+            <div style={{flex:1,minWidth:200,padding:'8px 12px',background:'#FAFAF7',border:'1px solid #e5e5e5',borderRadius:8,fontSize:11,color:'#78716C',lineHeight:1.4}}>{t.translateInfo}</div>
           </div>
-
           {error && <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#dc2626',marginBottom:12}}>⚠️ {error}</div>}
           {success && <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#15803D',marginBottom:12}}>✓ {success}</div>}
-
           {loading ? (
             <p style={{textAlign:'center',color:'#aaa',padding:24}}>{t.loading}</p>
           ) : (
@@ -384,19 +366,15 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
                 return (
                   <div key={lang.code} style={{padding:14,background:'#FAFAF7',border:'1px solid #e5e5e5',borderRadius:10,marginBottom:10}}>
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-                      <div style={{fontSize:13,fontWeight:600,color:'#1C1917'}}>
-                        {lang.flag} {lang.name}
-                      </div>
+                      <div style={{fontSize:13,fontWeight:600,color:'#1C1917'}}>{lang.flag} {lang.name}</div>
                       <button onClick={() => autoTranslateOne(lang.code)} disabled={isLoading || autoTranslating}
                         style={{padding:'5px 10px',background:'#FEF3C7',color:'#92400E',border:'1px solid #FCD34D',borderRadius:6,fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'system-ui',opacity: isLoading||autoTranslating ? 0.5 : 1}}>
                         {isLoading ? '...' : t.autoFillThis}
                       </button>
                     </div>
-                    <input type="text" value={tr.name} onChange={e => updateField(lang.code, 'name', e.target.value)}
-                      placeholder={`${t.name} (${lang.name})`}
+                    <input type="text" value={tr.name} onChange={e => updateField(lang.code, 'name', e.target.value)} placeholder={`${t.name} (${lang.name})`}
                       style={{width:'100%',padding:'8px 12px',border:'1px solid #e5e5e5',borderRadius:6,fontSize:14,fontFamily:'system-ui',outline:'none',marginBottom:6,boxSizing:'border-box'}} />
-                    <textarea value={tr.description} onChange={e => updateField(lang.code, 'description', e.target.value)}
-                      placeholder={`${t.description} (${lang.name})`} rows={2}
+                    <textarea value={tr.description} onChange={e => updateField(lang.code, 'description', e.target.value)} placeholder={`${t.description} (${lang.name})`} rows={2}
                       style={{width:'100%',padding:'8px 12px',border:'1px solid #e5e5e5',borderRadius:6,fontSize:13,fontFamily:'system-ui',outline:'none',resize:'none',boxSizing:'border-box'}} />
                   </div>
                 )
@@ -404,7 +382,6 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
             </div>
           )}
         </div>
-
         <div style={{padding:'16px 24px',borderTop:'1px solid #e5e5e5',display:'flex',justifyContent:'flex-end',gap:8}}>
           <button onClick={onClose} style={{padding:'10px 16px',background:'transparent',color:'#78716C',border:'1px solid #e5e5e5',borderRadius:8,fontSize:14,cursor:'pointer',fontFamily:'system-ui'}}>{t.cancel}</button>
           <button onClick={save} disabled={saving || loading}
@@ -665,22 +642,10 @@ export default function AdminPage() {
     <div style={s.page}>
       {qrTable && <QrModal table={qrTable} restaurant={restaurant} onClose={() => setQrTable(null)} t={t} />}
       {translateItem && (
-        <TranslateModal
-          item={translateItem}
-          sourceLang={sourceLang}
-          onClose={() => setTranslateItem(null)}
-          onSaved={() => fetchData()}
-          t={t}
-        />
+        <TranslateModal item={translateItem} sourceLang={sourceLang} onClose={() => setTranslateItem(null)} onSaved={() => fetchData()} t={t} />
       )}
       {showBulkTranslate && (
-        <BulkTranslateModal
-          items={items}
-          sourceLang={sourceLang}
-          lang={lang}
-          onClose={() => setShowBulkTranslate(false)}
-          onCompleted={() => fetchData()}
-        />
+        <BulkTranslateModal items={items} sourceLang={sourceLang} lang={lang} onClose={() => setShowBulkTranslate(false)} onCompleted={() => fetchData()} />
       )}
 
       <header style={s.header}>
@@ -966,17 +931,8 @@ export default function AdminPage() {
               </div>
               <div style={{display:'flex',alignItems:'center',gap:12}}>
                 <button onClick={toggleLiveStatus} disabled={!canUseLiveStatus || liveStatusSaving}
-                  style={{
-                    width:56,height:32,borderRadius:16,border:'none',cursor:canUseLiveStatus?'pointer':'not-allowed',
-                    background: restaurant.show_live_status ? '#10b981' : '#e5e5e5',
-                    opacity: canUseLiveStatus ? 1 : 0.5,
-                    position:'relative',transition:'background 0.2s',
-                  }}>
-                  <div style={{
-                    width:26,height:26,borderRadius:'50%',background:'white',position:'absolute',top:3,
-                    left: restaurant.show_live_status ? 27 : 3,
-                    transition:'left 0.2s',boxShadow:'0 2px 4px rgba(0,0,0,0.2)',
-                  }}/>
+                  style={{width:56,height:32,borderRadius:16,border:'none',cursor:canUseLiveStatus?'pointer':'not-allowed',background: restaurant.show_live_status ? '#10b981' : '#e5e5e5',opacity: canUseLiveStatus ? 1 : 0.5,position:'relative',transition:'background 0.2s'}}>
+                  <div style={{width:26,height:26,borderRadius:'50%',background:'white',position:'absolute',top:3,left: restaurant.show_live_status ? 27 : 3,transition:'left 0.2s',boxShadow:'0 2px 4px rgba(0,0,0,0.2)'}}/>
                 </button>
               </div>
             </div>
@@ -1001,28 +957,18 @@ export default function AdminPage() {
                 </div>
                 {tempPasswords[role] && (
                   <div style={{marginTop:10,padding:12,background:'#FEF3C7',border:'1px solid #FCD34D',borderRadius:8}}>
-                    <div style={{fontSize:11,fontWeight:600,color:'#92400E',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>
-                      {t.tempPwTitle}
-                    </div>
+                    <div style={{fontSize:11,fontWeight:600,color:'#92400E',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>{t.tempPwTitle}</div>
                     <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-                      <code style={{flex:1,minWidth:120,padding:'8px 10px',background:'white',border:'1px solid #FCD34D',borderRadius:6,fontSize:14,fontWeight:600,color:'#1C1917',fontFamily:'monospace',userSelect:'all'}}>
-                        {tempPasswords[role]}
-                      </code>
+                      <code style={{flex:1,minWidth:120,padding:'8px 10px',background:'white',border:'1px solid #FCD34D',borderRadius:6,fontSize:14,fontWeight:600,color:'#1C1917',fontFamily:'monospace',userSelect:'all'}}>{tempPasswords[role]}</code>
                       <button onClick={() => { navigator.clipboard.writeText(tempPasswords[role]); }}
-                        style={{padding:'8px 12px',background:'#1C1917',color:'white',border:'none',borderRadius:6,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-                        📋 {t.copy}
-                      </button>
+                        style={{padding:'8px 12px',background:'#1C1917',color:'white',border:'none',borderRadius:6,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>📋 {t.copy}</button>
                       <button onClick={() => setTempPasswords(p => { const n={...p}; delete n[role]; return n })}
-                        style={{padding:'8px 12px',background:'transparent',color:'#78716C',border:'1px solid #e5e5e5',borderRadius:6,fontSize:12,cursor:'pointer',fontFamily:'system-ui'}}>
-                        {t.hide}
-                      </button>
+                        style={{padding:'8px 12px',background:'transparent',color:'#78716C',border:'1px solid #e5e5e5',borderRadius:6,fontSize:12,cursor:'pointer',fontFamily:'system-ui'}}>{t.hide}</button>
                     </div>
                   </div>
                 )}
                 {pwMessage[role] && !tempPasswords[role] && (
-                  <div style={{marginTop:8,fontSize:12,color:pwMessage[role].type==='success'?'#10b981':'#dc2626'}}>
-                    {pwMessage[role].text}
-                  </div>
+                  <div style={{marginTop:8,fontSize:12,color:pwMessage[role].type==='success'?'#10b981':'#dc2626'}}>{pwMessage[role].text}</div>
                 )}
               </div>
             ))}
