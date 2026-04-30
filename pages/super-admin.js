@@ -8,6 +8,17 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+const SOURCE_LANG_OPTIONS = [
+  { code: 'en', flag: '🇬🇧', name: 'English' },
+  { code: 'da', flag: '🇩🇰', name: 'Danish' },
+  { code: 'de', flag: '🇩🇪', name: 'German' },
+  { code: 'el', flag: '🇬🇷', name: 'Greek' },
+  { code: 'fr', flag: '🇫🇷', name: 'French' },
+  { code: 'sv', flag: '🇸🇪', name: 'Swedish' },
+  { code: 'no', flag: '🇳🇴', name: 'Norwegian' },
+  { code: 'fi', flag: '🇫🇮', name: 'Finnish' },
+]
+
 function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -71,6 +82,7 @@ function CreateRestaurantModal({ onClose, onCreated }) {
     address: '', city: '', country: 'Greece',
     plan: 'trial', tableCount: 10,
     currency: 'EUR', timezone: 'Europe/Athens',
+    sourceLanguage: 'en',
   })
 
   const update = (key, value) => setForm(f => ({ ...f, [key]: value }))
@@ -100,6 +112,9 @@ function CreateRestaurantModal({ onClose, onCreated }) {
     navigator.clipboard.writeText(text)
     alert('Credentials copied to clipboard!')
   }
+
+  const sourceLangLabel = SOURCE_LANG_OPTIONS.find(l => l.code === form.sourceLanguage)
+  const sourceLabel = sourceLangLabel ? `${sourceLangLabel.flag} ${sourceLangLabel.name}` : form.sourceLanguage
 
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100,padding:20}}>
@@ -170,6 +185,32 @@ function CreateRestaurantModal({ onClose, onCreated }) {
                 <Field label="Currency" value={form.currency} onChange={v => update('currency', v)} placeholder="EUR" />
                 <Field label="Timezone" value={form.timezone} onChange={v => update('timezone', v)} placeholder="Europe/Athens" />
               </div>
+
+              {/* Source Language Picker */}
+              <div style={{marginTop:20}}>
+                <label style={{fontSize:12,color:'#888',display:'block',marginBottom:6}}>
+                  Menu Source Language <span style={{color:'#f87171'}}>*</span>
+                </label>
+                <div style={{fontSize:11,color:'#666',marginBottom:10,lineHeight:1.5}}>
+                  The language the owner will write menu items in. Auto-translation to other 7 languages happens from this base.
+                  <br/><strong style={{color:'#fbbf24'}}>⚠️ Cannot be changed after creation by admin — only by you (super-admin) via direct DB.</strong>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(4, 1fr)',gap:6}}>
+                  {SOURCE_LANG_OPTIONS.map(l => (
+                    <button key={l.code} onClick={() => update('sourceLanguage', l.code)}
+                      style={{
+                        padding:'10px 8px', borderRadius:8, cursor:'pointer',
+                        background: form.sourceLanguage === l.code ? '#1a1a2e' : '#0a0a0a',
+                        border: form.sourceLanguage === l.code ? '1.5px solid #6366f1' : '1px solid #262626',
+                        color:'white', fontFamily:'system-ui', fontSize:12,
+                        display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+                      }}>
+                      <span style={{fontSize:18}}>{l.flag}</span>
+                      <span>{l.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -183,6 +224,7 @@ function CreateRestaurantModal({ onClose, onCreated }) {
                 <Row label="Plan" value={form.plan.toUpperCase()} />
                 <Row label="Tables" value={form.tableCount} />
                 <Row label="Currency" value={form.currency} />
+                <Row label="Source language" value={sourceLabel} />
               </div>
               <div style={{background:'#1a1a2e',border:'1px solid #3730a3',borderRadius:10,padding:14,fontSize:12,color:'#a5b4fc'}}>
                 <strong>What happens when you click Create:</strong>
@@ -190,6 +232,7 @@ function CreateRestaurantModal({ onClose, onCreated }) {
                   <li>Restaurant is created with slug auto-generated from name</li>
                   <li>{form.tableCount} tables with unique QR tokens are created</li>
                   <li>Admin, kitchen, and bar users are created with auto-generated passwords</li>
+                  <li>Owner will write menu items in {sourceLabel}; auto-translation to 7 other languages available</li>
                   <li>You'll see the login credentials on the next screen — copy them immediately</li>
                 </ul>
               </div>
@@ -320,7 +363,6 @@ export default function SuperAdminPage() {
   const logout = async () => { await supabase.auth.signOut(); setUser(null) }
 
   const handleExport = async (opts) => {
-    // Fetch full restaurant list from source of truth (restaurants table)
     const { data: allRestaurants } = await supabase.from('restaurants').select('id, name, slug, plan, city, country')
     if (!allRestaurants || allRestaurants.length === 0) {
       throw new Error('No restaurants to export')

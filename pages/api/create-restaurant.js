@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const PLAN_PRICES = { trial: 0, basic: 100, pro: 200, enterprise: 300 }
 const PLAN_TABLE_LIMITS = { trial: 15, basic: 15, pro: 50, enterprise: 9999 }
+const VALID_LANGS = ['en', 'da', 'de', 'el', 'fr', 'sv', 'no', 'fi']
 
 function generatePassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
@@ -40,11 +41,14 @@ export default async function handler(req, res) {
     const {
       name, ownerName, ownerEmail, phone, address, city, country,
       plan = 'trial', tableCount = 10, currency = 'EUR', timezone = 'Europe/Athens',
+      sourceLanguage = 'en',
     } = req.body
 
     if (!name || !ownerEmail) return res.status(400).json({ error: 'Missing required fields' })
 
-    // Check table count vs plan limit
+    // Validate source language
+    const srcLang = VALID_LANGS.includes(sourceLanguage) ? sourceLanguage : 'en'
+
     const limit = PLAN_TABLE_LIMITS[plan] || 15
     if (tableCount > limit) {
       return res.status(400).json({ error: `${plan} plan allows max ${limit} tables. You requested ${tableCount}.` })
@@ -59,6 +63,7 @@ export default async function handler(req, res) {
       .insert({
         name, slug, owner_email: ownerEmail, owner_name: ownerName,
         phone, address, city, country, plan, currency, timezone, active: true,
+        source_language: srcLang,
       })
       .select().single()
     if (restError) return res.status(500).json({ error: 'Could not create restaurant: ' + restError.message })

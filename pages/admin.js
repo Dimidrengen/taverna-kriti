@@ -10,64 +10,37 @@ const PLAN_TABLE_LIMITS = { trial: 15, basic: 15, pro: 50, enterprise: 9999 }
 const PLAN_PRICES = { trial: 0, basic: 100, pro: 200, enterprise: 300 }
 const LIVE_STATUS_PLANS = ['pro', 'enterprise']
 
+// All supported languages with display info
+const ALL_LANGS_INFO = [
+  { code: 'en', flag: '🇬🇧', name: 'English' },
+  { code: 'da', flag: '🇩🇰', name: 'Dansk' },
+  { code: 'de', flag: '🇩🇪', name: 'Deutsch' },
+  { code: 'el', flag: '🇬🇷', name: 'Ελληνικά' },
+  { code: 'fr', flag: '🇫🇷', name: 'Français' },
+  { code: 'sv', flag: '🇸🇪', name: 'Svenska' },
+  { code: 'no', flag: '🇳🇴', name: 'Norsk' },
+  { code: 'fi', flag: '🇫🇮', name: 'Suomi' },
+]
+
+function getLangInfo(code) {
+  return ALL_LANGS_INFO.find(l => l.code === code) || { code, flag: '🌐', name: code.toUpperCase() }
+}
+
 function extractSlugFromEmail(email) {
   const match = email.match(/^(admin|kitchen|bar)@(.+)\.com$/i)
   return match ? match[2] : null
 }
 
-// ===== Login screen translations (separate small dictionary) =====
 const LOGIN_LANGS = {
-  en: {
-    title: 'Admin', subtitle: 'TableFlow',
-    email: 'Email', password: 'Password',
-    login: 'Log in', loggingIn: 'Logging in...',
-    forgot: 'Forgot password?', sending: 'Sending...',
-    hint: 'Kitchen and bar: contact your administrator to reset your password.',
-    err_credentials: 'Wrong email or password',
-    err_notAdmin: 'Not admin',
-    err_invalidEmail: 'Invalid email',
-    err_notFound: 'Restaurant not found',
-    err_deactivated: 'Restaurant deactivated',
-    err_enterEmail: 'Enter your admin email first',
-    err_adminOnly: 'Forgot password is only for admin. Kitchen/bar: contact your administrator.',
-    resetSent: 'If the account exists, a reset link has been sent. Check your inbox (and spam).',
-  },
-  da: {
-    title: 'Admin', subtitle: 'TableFlow',
-    email: 'Email', password: 'Adgangskode',
-    login: 'Log ind', loggingIn: 'Logger ind...',
-    forgot: 'Glemt adgangskode?', sending: 'Sender...',
-    hint: 'Kitchen og bar: kontakt din administrator for at få nulstillet adgangskoden.',
-    err_credentials: 'Forkert email eller adgangskode',
-    err_notAdmin: 'Ikke admin',
-    err_invalidEmail: 'Ugyldig email',
-    err_notFound: 'Restaurant ikke fundet',
-    err_deactivated: 'Restaurant deaktiveret',
-    err_enterEmail: 'Indtast din admin-email først',
-    err_adminOnly: 'Glemt adgangskode er kun for admin. Kitchen/bar: kontakt din administrator.',
-    resetSent: 'Hvis kontoen findes, er der sendt en email med reset-link. Tjek din indbakke (og spam).',
-  },
-  el: {
-    title: 'Διαχειριστής', subtitle: 'TableFlow',
-    email: 'Email', password: 'Κωδικός',
-    login: 'Σύνδεση', loggingIn: 'Σύνδεση...',
-    forgot: 'Ξέχασες τον κωδικό;', sending: 'Αποστολή...',
-    hint: 'Κουζίνα και μπαρ: επικοινωνήστε με τον διαχειριστή σας για να επαναφέρετε τον κωδικό σας.',
-    err_credentials: 'Λάθος email ή κωδικός',
-    err_notAdmin: 'Δεν είσαι admin',
-    err_invalidEmail: 'Μη έγκυρο email',
-    err_notFound: 'Το εστιατόριο δεν βρέθηκε',
-    err_deactivated: 'Το εστιατόριο είναι απενεργοποιημένο',
-    err_enterEmail: 'Εισάγετε το email του admin πρώτα',
-    err_adminOnly: 'Η επαναφορά κωδικού είναι μόνο για admin. Κουζίνα/μπαρ: επικοινωνήστε με τον διαχειριστή σας.',
-    resetSent: 'Εάν ο λογαριασμός υπάρχει, στάλθηκε σύνδεσμος επαναφοράς. Ελέγξτε τα εισερχόμενα (και τα spam).',
-  },
+  en: { title: 'Admin', subtitle: 'TableFlow', email: 'Email', password: 'Password', login: 'Log in', loggingIn: 'Logging in...', forgot: 'Forgot password?', sending: 'Sending...', hint: 'Kitchen and bar: contact your administrator to reset your password.', err_credentials: 'Wrong email or password', err_notAdmin: 'Not admin', err_invalidEmail: 'Invalid email', err_notFound: 'Restaurant not found', err_deactivated: 'Restaurant deactivated', err_enterEmail: 'Enter your admin email first', err_adminOnly: 'Forgot password is only for admin. Kitchen/bar: contact your administrator.', resetSent: 'If the account exists, a reset link has been sent. Check your inbox (and spam).' },
+  da: { title: 'Admin', subtitle: 'TableFlow', email: 'Email', password: 'Adgangskode', login: 'Log ind', loggingIn: 'Logger ind...', forgot: 'Glemt adgangskode?', sending: 'Sender...', hint: 'Kitchen og bar: kontakt din administrator for at få nulstillet adgangskoden.', err_credentials: 'Forkert email eller adgangskode', err_notAdmin: 'Ikke admin', err_invalidEmail: 'Ugyldig email', err_notFound: 'Restaurant ikke fundet', err_deactivated: 'Restaurant deaktiveret', err_enterEmail: 'Indtast din admin-email først', err_adminOnly: 'Glemt adgangskode er kun for admin. Kitchen/bar: kontakt din administrator.', resetSent: 'Hvis kontoen findes, er der sendt en email med reset-link. Tjek din indbakke (og spam).' },
+  el: { title: 'Διαχειριστής', subtitle: 'TableFlow', email: 'Email', password: 'Κωδικός', login: 'Σύνδεση', loggingIn: 'Σύνδεση...', forgot: 'Ξέχασες τον κωδικό;', sending: 'Αποστολή...', hint: 'Κουζίνα και μπαρ: επικοινωνήστε με τον διαχειριστή σας.', err_credentials: 'Λάθος email ή κωδικός', err_notAdmin: 'Δεν είσαι admin', err_invalidEmail: 'Μη έγκυρο email', err_notFound: 'Το εστιατόριο δεν βρέθηκε', err_deactivated: 'Το εστιατόριο είναι απενεργοποιημένο', err_enterEmail: 'Εισάγετε το email του admin πρώτα', err_adminOnly: 'Η επαναφορά κωδικού είναι μόνο για admin.', resetSent: 'Εάν ο λογαριασμός υπάρχει, στάλθηκε σύνδεσμος επαναφοράς.' },
 }
 
 const LANGS = {
-  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', settings:'⚙️ Indstillinger', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker? Dette nulstiller også ordrenumre.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...', logout:'Log ud', noItems:'Ingen menupunkter endnu', tableName:'Bord navn', addTable:'+ Tilføj bord', printAllQR:'🖨 Print alle QR', viewQR:'📱 QR-kode', rename:'Omdøb', deactivate:'⏸ Deaktiver', activate:'▶ Aktiver', deleteTable:'🗑 Slet', confirmDelete:'Er du sikker på du vil slette dette bord?', tablesUsed:'borde brugt', upgradePlan:'Opgrader plan for at tilføje flere borde', password:'Adgangskode', changePassword:'Skift adgangskode', newPassword:'Ny adgangskode', passwordMin:'Min. 8 tegn', passwordChanged:'Adgangskode opdateret!', planInfo:'Plan information', currentPlan:'Nuværende plan', liveStatus:'Live ordre status for gæster', liveStatusDesc:'Gæster kan se live status af deres ordre (Modtaget → Tilberedes → Klar → Leveret) og ordrenummer', liveStatusUpgrade:'⭐ Opgrader til Pro eller Enterprise for at aktivere denne feature', liveStatusSaved:'Indstilling gemt', resetPwBtn:'Reset', tempPwTitle:'Midlertidig adgangskode — kopier nu, vises kun én gang!', copy:'Kopier', hide:'Skjul', resetPwConfirm:'Generer ny midlertidig adgangskode for {role}? Den nuværende adgangskode bliver ugyldig med det samme.' },
-  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', settings:'⚙️ Settings', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:'Are you sure? This also resets order numbers.', resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data', uploadImage:'Upload image', removeImage:'Remove', uploading:'Uploading...', logout:'Log out', noItems:'No menu items yet', tableName:'Table name', addTable:'+ Add table', printAllQR:'🖨 Print all QR', viewQR:'📱 QR code', rename:'Rename', deactivate:'⏸ Deactivate', activate:'▶ Activate', deleteTable:'🗑 Delete', confirmDelete:'Delete this table?', tablesUsed:'tables used', upgradePlan:'Upgrade plan to add more tables', password:'Password', changePassword:'Change password', newPassword:'New password', passwordMin:'Min. 8 chars', passwordChanged:'Password updated!', planInfo:'Plan information', currentPlan:'Current plan', liveStatus:'Live order status for guests', liveStatusDesc:'Guests can see live order status (Received → Preparing → Ready → Delivered) and order number', liveStatusUpgrade:'⭐ Upgrade to Pro or Enterprise to enable this feature', liveStatusSaved:'Setting saved', resetPwBtn:'Reset', tempPwTitle:'Temporary password — copy now, shown only once!', copy:'Copy', hide:'Hide', resetPwConfirm:'Generate new temporary password for {role}? The current password becomes invalid immediately.' },
-  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', settings:'⚙️ Ρυθμίσεις', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'...', cancel:'Ακύρωση', active:'✓', inactive:'✗', edit:'✏️', todayRevenue:'Έσοδα', totalToday:'Σύνολο', closedTables:'κλειστά', noClosedTables:'Κανένα', openTables:'Ανοιχτά', noOpenTables:'Κανένα', loading:'Φόρτωση...', resetRevenue:'Επαναφορά', resetConfirm:'Σίγουρα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'...', stats:'📈 Στατιστικά', today:'Σήμερα', thisWeek:'Εβδομάδα', thisMonth:'Μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Σύνολο', avgPerSeating:'Μέσος', noStats:'Κανένα', uploadImage:'Upload', removeImage:'Αφαίρεση', uploading:'...', logout:'Αποσύνδεση', noItems:'Κανένα', tableName:'Όνομα', addTable:'+ Προσθήκη', printAllQR:'🖨 QR', viewQR:'📱 QR', rename:'Μετονομασία', deactivate:'⏸', activate:'▶', deleteTable:'🗑', confirmDelete:'Διαγραφή;', tablesUsed:'τραπέζια', upgradePlan:'Αναβάθμιση', password:'Κωδικός', changePassword:'Αλλαγή', newPassword:'Νέος', passwordMin:'Min 8', passwordChanged:'OK!', planInfo:'Plan', currentPlan:'Plan', liveStatus:'Live status παραγγελιών', liveStatusDesc:'Οι πελάτες βλέπουν live status', liveStatusUpgrade:'⭐ Αναβάθμιση σε Pro/Enterprise', liveStatusSaved:'Αποθηκεύτηκε', resetPwBtn:'Επαναφορά', tempPwTitle:'Προσωρινός κωδικός — αντιγράψτε τώρα!', copy:'Αντιγραφή', hide:'Απόκρυψη', resetPwConfirm:'Δημιουργία νέου προσωρινού κωδικού για {role};' },
+  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', settings:'⚙️ Indstillinger', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', translate:'🌍 Oversæt', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker? Dette nulstiller også ordrenumre.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...', logout:'Log ud', noItems:'Ingen menupunkter endnu', tableName:'Bord navn', addTable:'+ Tilføj bord', printAllQR:'🖨 Print alle QR', viewQR:'📱 QR-kode', rename:'Omdøb', deactivate:'⏸ Deaktiver', activate:'▶ Aktiver', deleteTable:'🗑 Slet', confirmDelete:'Er du sikker på du vil slette dette bord?', tablesUsed:'borde brugt', upgradePlan:'Opgrader plan for at tilføje flere borde', password:'Adgangskode', changePassword:'Skift adgangskode', newPassword:'Ny adgangskode', passwordMin:'Min. 8 tegn', passwordChanged:'Adgangskode opdateret!', planInfo:'Plan information', currentPlan:'Nuværende plan', liveStatus:'Live ordre status for gæster', liveStatusDesc:'Gæster kan se live status af deres ordre (Modtaget → Tilberedes → Klar → Leveret) og ordrenummer', liveStatusUpgrade:'⭐ Opgrader til Pro eller Enterprise for at aktivere denne feature', liveStatusSaved:'Indstilling gemt', resetPwBtn:'Reset', tempPwTitle:'Midlertidig adgangskode — kopier nu, vises kun én gang!', copy:'Kopier', hide:'Skjul', resetPwConfirm:'Generer ny midlertidig adgangskode for {role}?', sourceLangHint:'Du tilføjer retter på {lang}. Klik 🌍 på en ret for at oversætte til andre sprog.', translateTitle:'Oversæt: {name}', autoTranslate:'🤖 Auto-oversæt alle', autoTranslating:'Oversætter...', saveTranslations:'Gem oversættelser', sourceLanguageLabel:'Kilde-sprog (skrives af admin)', translationFor:'Oversættelse for', autoFillThis:'🤖 Auto-fyld', translateInfo:'Tomt felt = brug auto-oversæt eller original tekst som fallback', translationsSaved:'Oversættelser gemt!', translateError:'Oversættelse fejlede' },
+  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', settings:'⚙️ Settings', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', translate:'🌍 Translate', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:'Are you sure? This also resets order numbers.', resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data', uploadImage:'Upload image', removeImage:'Remove', uploading:'Uploading...', logout:'Log out', noItems:'No menu items yet', tableName:'Table name', addTable:'+ Add table', printAllQR:'🖨 Print all QR', viewQR:'📱 QR code', rename:'Rename', deactivate:'⏸ Deactivate', activate:'▶ Activate', deleteTable:'🗑 Delete', confirmDelete:'Delete this table?', tablesUsed:'tables used', upgradePlan:'Upgrade plan to add more tables', password:'Password', changePassword:'Change password', newPassword:'New password', passwordMin:'Min. 8 chars', passwordChanged:'Password updated!', planInfo:'Plan information', currentPlan:'Current plan', liveStatus:'Live order status for guests', liveStatusDesc:'Guests can see live order status (Received → Preparing → Ready → Delivered) and order number', liveStatusUpgrade:'⭐ Upgrade to Pro or Enterprise to enable this feature', liveStatusSaved:'Setting saved', resetPwBtn:'Reset', tempPwTitle:'Temporary password — copy now, shown only once!', copy:'Copy', hide:'Hide', resetPwConfirm:'Generate new temporary password for {role}?', sourceLangHint:'You\'re adding dishes in {lang}. Click 🌍 on a dish to translate to other languages.', translateTitle:'Translate: {name}', autoTranslate:'🤖 Auto-translate all', autoTranslating:'Translating...', saveTranslations:'Save translations', sourceLanguageLabel:'Source language (written by admin)', translationFor:'Translation for', autoFillThis:'🤖 Auto-fill', translateInfo:'Empty field = use auto-translate or original text as fallback', translationsSaved:'Translations saved!', translateError:'Translation failed' },
+  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', settings:'⚙️ Ρυθμίσεις', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'...', cancel:'Ακύρωση', active:'✓', inactive:'✗', edit:'✏️', translate:'🌍 Μετάφραση', todayRevenue:'Έσοδα', totalToday:'Σύνολο', closedTables:'κλειστά', noClosedTables:'Κανένα', openTables:'Ανοιχτά', noOpenTables:'Κανένα', loading:'Φόρτωση...', resetRevenue:'Επαναφορά', resetConfirm:'Σίγουρα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'...', stats:'📈 Στατιστικά', today:'Σήμερα', thisWeek:'Εβδομάδα', thisMonth:'Μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Σύνολο', avgPerSeating:'Μέσος', noStats:'Κανένα', uploadImage:'Upload', removeImage:'Αφαίρεση', uploading:'...', logout:'Αποσύνδεση', noItems:'Κανένα', tableName:'Όνομα', addTable:'+ Προσθήκη', printAllQR:'🖨 QR', viewQR:'📱 QR', rename:'Μετονομασία', deactivate:'⏸', activate:'▶', deleteTable:'🗑', confirmDelete:'Διαγραφή;', tablesUsed:'τραπέζια', upgradePlan:'Αναβάθμιση', password:'Κωδικός', changePassword:'Αλλαγή', newPassword:'Νέος', passwordMin:'Min 8', passwordChanged:'OK!', planInfo:'Plan', currentPlan:'Plan', liveStatus:'Live status παραγγελιών', liveStatusDesc:'Live status', liveStatusUpgrade:'⭐ Pro/Enterprise', liveStatusSaved:'OK', resetPwBtn:'Επαναφορά', tempPwTitle:'Προσωρινός κωδικός', copy:'Αντιγραφή', hide:'Απόκρυψη', resetPwConfirm:'Νέος κωδικός για {role};', sourceLangHint:'Προσθέτετε πιάτα στα {lang}. Κάντε κλικ 🌍 για μετάφραση.', translateTitle:'Μετάφραση: {name}', autoTranslate:'🤖 Αυτόματη μετάφραση', autoTranslating:'Μετάφραση...', saveTranslations:'Αποθήκευση', sourceLanguageLabel:'Γλώσσα πηγής', translationFor:'Μετάφραση για', autoFillThis:'🤖 Αυτόματη', translateInfo:'Άδειο = χρήση αυτόματης μετάφρασης', translationsSaved:'Αποθηκεύτηκε!', translateError:'Σφάλμα' },
 }
 
 const EMOJI_OPTIONS = {
@@ -81,7 +54,6 @@ const EMOJI_OPTIONS = {
 const ALL_EMOJIS = [...new Set(Object.values(EMOJI_OPTIONS).flat())]
 
 function LoginScreen({ onLogin }) {
-  // Default English + restore saved language preference
   const [loginLang, setLoginLang] = useState('en')
 
   useEffect(() => {
@@ -122,10 +94,7 @@ function LoginScreen({ onLogin }) {
   const handleForgotPassword = async () => {
     setError(''); setResetMsg('')
     if (!email) { setError(lt.err_enterEmail); return }
-    if (!email.startsWith('admin@')) {
-      setError(lt.err_adminOnly)
-      return
-    }
+    if (!email.startsWith('admin@')) { setError(lt.err_adminOnly); return }
     setResetSending(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
@@ -137,24 +106,15 @@ function LoginScreen({ onLogin }) {
 
   return (
     <div style={{minHeight:'100vh',background:'#F5F5F0',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif',padding:20}}>
-      <div style={{background:'white',borderRadius:16,border:'1px solid #e5e5e5',padding:40,width:'100%',maxWidth:380,position:'relative'}}>
-
-        {/* Language switcher */}
+      <div style={{background:'white',borderRadius:16,border:'1px solid #e5e5e5',padding:40,width:'100%',maxWidth:380}}>
         <div style={{display:'flex',justifyContent:'center',gap:6,marginBottom:24}}>
           {['en','da','el'].map(l => (
             <button key={l} type="button" onClick={() => changeLang(l)}
-              style={{
-                padding:'4px 12px',borderRadius:20,fontSize:12,fontWeight:600,cursor:'pointer',
-                background: loginLang===l ? '#C2692A' : 'transparent',
-                color: loginLang===l ? 'white' : '#888',
-                border: loginLang===l ? 'none' : '1px solid #ddd',
-                fontFamily:'system-ui',
-              }}>
+              style={{padding:'4px 12px',borderRadius:20,fontSize:12,fontWeight:600,cursor:'pointer',background:loginLang===l?'#C2692A':'transparent',color:loginLang===l?'white':'#888',border:loginLang===l?'none':'1px solid #ddd',fontFamily:'system-ui'}}>
               {l.toUpperCase()}
             </button>
           ))}
         </div>
-
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{fontSize:40,marginBottom:12}}>⚙️</div>
           <div style={{fontSize:22,fontWeight:700,color:'#1C1917'}}>{lt.title}</div>
@@ -176,14 +136,12 @@ function LoginScreen({ onLogin }) {
           <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:'#C2692A',color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
             {loading ? lt.loggingIn : lt.login}
           </button>
-
           <div style={{textAlign:'center',marginTop:16}}>
             <button type="button" onClick={handleForgotPassword} disabled={resetSending}
               style={{background:'transparent',border:'none',color:'#78716C',fontSize:13,cursor:'pointer',textDecoration:'underline',fontFamily:'system-ui'}}>
               {resetSending ? lt.sending : lt.forgot}
             </button>
           </div>
-
           <div style={{marginTop:20,padding:'10px 12px',background:'#FAFAF7',border:'1px solid #e5e5e5',borderRadius:8,fontSize:11,color:'#78716C',lineHeight:1.5,textAlign:'center'}}>
             {lt.hint}
           </div>
@@ -276,6 +234,217 @@ function QrModal({ table, restaurant, onClose, t }) {
   )
 }
 
+// === TRANSLATION MODAL ===
+function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
+  const [loading, setLoading] = useState(true)
+  const [autoTranslating, setAutoTranslating] = useState(false)
+  const [perFieldLoading, setPerFieldLoading] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [translations, setTranslations] = useState({})
+
+  // Target languages = all languages except source
+  const targetLangs = ALL_LANGS_INFO.filter(l => l.code !== sourceLang)
+  const sourceInfo = getLangInfo(sourceLang)
+
+  // Load existing translations on open
+  useEffect(() => {
+    (async () => {
+      setLoading(true)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch(`/api/get-translations?itemId=${item.id}`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
+        })
+        const data = await res.json()
+        if (data.success) {
+          // Initialize empty entries for missing langs
+          const map = {}
+          for (const lang of targetLangs) {
+            map[lang.code] = data.translations[lang.code] || { name: '', description: '' }
+          }
+          setTranslations(map)
+        }
+      } catch (err) {
+        setError(err.message)
+      }
+      setLoading(false)
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.id])
+
+  const updateField = (lang, field, value) => {
+    setTranslations(prev => ({
+      ...prev,
+      [lang]: { ...prev[lang], [field]: value },
+    }))
+    setSuccess('')
+  }
+
+  const autoTranslateAll = async () => {
+    setAutoTranslating(true); setError(''); setSuccess('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          itemId: item.id,
+          name: item.name,
+          description: item.description || '',
+          targetLangs: targetLangs.map(l => l.code),
+          save: false,
+        }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || t.translateError)
+      const newMap = { ...translations }
+      for (const [lang, tr] of Object.entries(data.translations)) {
+        if (tr && !tr.error) {
+          newMap[lang] = { name: tr.name || '', description: tr.description || '' }
+        }
+      }
+      setTranslations(newMap)
+    } catch (err) {
+      setError(err.message)
+    }
+    setAutoTranslating(false)
+  }
+
+  const autoTranslateOne = async (lang) => {
+    setPerFieldLoading(p => ({ ...p, [lang]: true })); setError('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          itemId: item.id,
+          name: item.name,
+          description: item.description || '',
+          targetLangs: [lang],
+          save: false,
+        }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || t.translateError)
+      const tr = data.translations[lang]
+      if (tr && !tr.error) {
+        setTranslations(prev => ({
+          ...prev,
+          [lang]: { name: tr.name || '', description: tr.description || '' },
+        }))
+      }
+    } catch (err) {
+      setError(err.message)
+    }
+    setPerFieldLoading(p => ({ ...p, [lang]: false }))
+  }
+
+  const save = async () => {
+    setSaving(true); setError(''); setSuccess('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/save-translations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ itemId: item.id, translations }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || 'Save failed')
+      setSuccess(t.translationsSaved)
+      setTimeout(() => { onSaved && onSaved(); onClose() }, 800)
+    } catch (err) {
+      setError(err.message)
+    }
+    setSaving(false)
+  }
+
+  const title = (t.translateTitle || 'Translate: {name}').replace('{name}', item.name)
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'flex-start',justifyContent:'center',zIndex:200,padding:20,overflowY:'auto'}} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{background:'white',borderRadius:16,maxWidth:700,width:'100%',marginTop:20,marginBottom:20}}>
+        {/* Header */}
+        <div style={{padding:'20px 24px',borderBottom:'1px solid #e5e5e5',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <div style={{fontSize:18,fontWeight:700,color:'#1C1917'}}>{title}</div>
+            <div style={{fontSize:12,color:'#78716C',marginTop:4}}>
+              {t.sourceLanguageLabel}: {sourceInfo.flag} {sourceInfo.name}
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:'transparent',border:'none',fontSize:24,cursor:'pointer',color:'#78716C'}}>×</button>
+        </div>
+
+        <div style={{padding:24}}>
+          {/* Source preview */}
+          <div style={{padding:16,background:'#F4E3D7',border:'1px solid #C2692A33',borderRadius:10,marginBottom:16}}>
+            <div style={{fontSize:11,fontWeight:700,color:'#92400E',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8}}>
+              {sourceInfo.flag} {sourceInfo.name} (kilde / source)
+            </div>
+            <div style={{fontSize:15,fontWeight:600,color:'#1C1917'}}>{item.name}</div>
+            {item.description && <div style={{fontSize:13,color:'#57534E',marginTop:4}}>{item.description}</div>}
+          </div>
+
+          {/* Auto-translate all button */}
+          <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+            <button onClick={autoTranslateAll} disabled={autoTranslating || loading}
+              style={{padding:'10px 16px',background:'#1C1917',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui',opacity: autoTranslating||loading ? 0.5 : 1}}>
+              {autoTranslating ? t.autoTranslating : t.autoTranslate}
+            </button>
+            <div style={{flex:1,minWidth:200,padding:'8px 12px',background:'#FAFAF7',border:'1px solid #e5e5e5',borderRadius:8,fontSize:11,color:'#78716C',lineHeight:1.4}}>
+              {t.translateInfo}
+            </div>
+          </div>
+
+          {error && <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#dc2626',marginBottom:12}}>⚠️ {error}</div>}
+          {success && <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#15803D',marginBottom:12}}>✓ {success}</div>}
+
+          {loading ? (
+            <p style={{textAlign:'center',color:'#aaa',padding:24}}>{t.loading}</p>
+          ) : (
+            <div>
+              {targetLangs.map(lang => {
+                const tr = translations[lang.code] || { name: '', description: '' }
+                const isLoading = perFieldLoading[lang.code]
+                return (
+                  <div key={lang.code} style={{padding:14,background:'#FAFAF7',border:'1px solid #e5e5e5',borderRadius:10,marginBottom:10}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+                      <div style={{fontSize:13,fontWeight:600,color:'#1C1917'}}>
+                        {lang.flag} {lang.name}
+                      </div>
+                      <button onClick={() => autoTranslateOne(lang.code)} disabled={isLoading || autoTranslating}
+                        style={{padding:'5px 10px',background:'#FEF3C7',color:'#92400E',border:'1px solid #FCD34D',borderRadius:6,fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'system-ui',opacity: isLoading||autoTranslating ? 0.5 : 1}}>
+                        {isLoading ? '...' : t.autoFillThis}
+                      </button>
+                    </div>
+                    <input type="text" value={tr.name} onChange={e => updateField(lang.code, 'name', e.target.value)}
+                      placeholder={`${t.name} (${lang.name})`}
+                      style={{width:'100%',padding:'8px 12px',border:'1px solid #e5e5e5',borderRadius:6,fontSize:14,fontFamily:'system-ui',outline:'none',marginBottom:6,boxSizing:'border-box'}} />
+                    <textarea value={tr.description} onChange={e => updateField(lang.code, 'description', e.target.value)}
+                      placeholder={`${t.description} (${lang.name})`} rows={2}
+                      style={{width:'100%',padding:'8px 12px',border:'1px solid #e5e5e5',borderRadius:6,fontSize:13,fontFamily:'system-ui',outline:'none',resize:'none',boxSizing:'border-box'}} />
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{padding:'16px 24px',borderTop:'1px solid #e5e5e5',display:'flex',justifyContent:'flex-end',gap:8}}>
+          <button onClick={onClose} style={{padding:'10px 16px',background:'transparent',color:'#78716C',border:'1px solid #e5e5e5',borderRadius:8,fontSize:14,cursor:'pointer',fontFamily:'system-ui'}}>{t.cancel}</button>
+          <button onClick={save} disabled={saving || loading}
+            style={{padding:'10px 20px',background:'#C2692A',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui',opacity: saving||loading ? 0.5 : 1}}>
+            {saving ? t.saving : t.saveTranslations}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminPage() {
   const [user, setUser] = useState(null)
   const [restaurant, setRestaurant] = useState(null)
@@ -298,6 +467,7 @@ export default function AdminPage() {
   const [statsLoading, setStatsLoading] = useState(false)
 
   const [qrTable, setQrTable] = useState(null)
+  const [translateItem, setTranslateItem] = useState(null)
   const [newTableName, setNewTableName] = useState('')
   const [addingTable, setAddingTable] = useState(false)
   const [editingTable, setEditingTable] = useState(null)
@@ -470,7 +640,7 @@ export default function AdminPage() {
   }
 
   const resetToTemp = async (role) => {
-    const confirmMsg = (t.resetPwConfirm || 'Generate new temporary password for {role}?').replace('{role}', role)
+    const confirmMsg = (t.resetPwConfirm || 'Generate new temp password for {role}?').replace('{role}', role)
     if (!confirm(confirmMsg)) return
     setPwSaving(p => ({ ...p, [role]: true }))
     const letters = 'abcdefghjkmnpqrstuvwxyz'
@@ -514,10 +684,22 @@ export default function AdminPage() {
   const tablesUsedPct = Math.min(100, (activeTables.length / tableLimit) * 100)
   const atLimit = activeTables.length >= tableLimit && restaurant.plan !== 'enterprise'
   const canUseLiveStatus = LIVE_STATUS_PLANS.includes(restaurant.plan)
+  const sourceLang = restaurant.source_language || 'en'
+  const sourceLangInfo = getLangInfo(sourceLang)
+  const sourceLangHint = (t.sourceLangHint || '').replace('{lang}', `${sourceLangInfo.flag} ${sourceLangInfo.name}`)
 
   return (
     <div style={s.page}>
       {qrTable && <QrModal table={qrTable} restaurant={restaurant} onClose={() => setQrTable(null)} t={t} />}
+      {translateItem && (
+        <TranslateModal
+          item={translateItem}
+          sourceLang={sourceLang}
+          onClose={() => setTranslateItem(null)}
+          onSaved={() => fetchData()}
+          t={t}
+        />
+      )}
 
       <header style={s.header}>
         <span style={s.title}>⚙️ {restaurant.name} — Admin</span>
@@ -538,6 +720,12 @@ export default function AdminPage() {
 
       {tab === 'menu' && (
         <div style={s.content}>
+          {/* Source language hint */}
+          <div style={{padding:'10px 14px',background:'linear-gradient(90deg, #F4E3D7, #FAFAF7)',border:'1px solid #C2692A33',borderRadius:10,marginBottom:16,fontSize:13,color:'#92400E',display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:18}}>💡</span>
+            <span>{sourceLangHint}</span>
+          </div>
+
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
             <h2 style={s.sectionTitle}>{t.menuItems}</h2>
             <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{t.addItem}</button>
@@ -600,17 +788,18 @@ export default function AdminPage() {
                         </div>
                       </div>
                     ) : (
-                      <div style={{display:'flex',alignItems:'center',gap:12}}>
+                      <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
                         {item.image_url
                           ? <img src={item.image_url} alt={item.name} style={{width:44,height:44,borderRadius:10,objectFit:'cover',flexShrink:0,border:'1px solid #e5e5e5'}} />
                           : <span style={{fontSize:24,width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f0',borderRadius:10,flexShrink:0}}>{item.emoji||'🍽'}</span>
                         }
-                        <div style={{flex:1}}>
+                        <div style={{flex:1, minWidth:120}}>
                           <div style={{fontWeight:600,fontSize:15}}>{item.name}</div>
                           <div style={{fontSize:12,color:'#78716C'}}>{item.description}</div>
                         </div>
                         <div style={{fontWeight:700,fontSize:15,minWidth:50}}>€{Number(item.price).toFixed(2)}</div>
                         <button onClick={() => toggleAvailable(item)} style={{...s.iconBtn, background:item.available?'#EBF5EF':'#FEE2E2', color:item.available?'#2D7A4F':'#dc2626'}}>{item.available ? t.active : t.inactive}</button>
+                        <button onClick={() => setTranslateItem(item)} style={{...s.iconBtn, background:'#EFF6FF', color:'#1E40AF', border:'1px solid #BFDBFE'}}>{t.translate}</button>
                         <button onClick={() => setEditing({...item})} style={s.iconBtn}>{t.edit}</button>
                       </div>
                     )}
@@ -854,6 +1043,7 @@ export default function AdminPage() {
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
               <div><div style={{fontSize:12,color:'#78716C'}}>{t.currentPlan}</div><div style={{fontSize:20,fontWeight:700,marginTop:2,textTransform:'capitalize'}}>{restaurant.plan}</div></div>
               <div><div style={{fontSize:12,color:'#78716C'}}>Tables</div><div style={{fontSize:20,fontWeight:700,marginTop:2}}>{activeTables.length} / {restaurant.plan === 'enterprise' ? '∞' : tableLimit}</div></div>
+              <div><div style={{fontSize:12,color:'#78716C'}}>Menu source language</div><div style={{fontSize:20,fontWeight:700,marginTop:2}}>{sourceLangInfo.flag} {sourceLangInfo.name}</div></div>
             </div>
           </div>
         </div>
