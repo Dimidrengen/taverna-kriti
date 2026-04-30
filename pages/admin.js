@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import BulkTranslateModal from '../components/BulkTranslateModal'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -10,7 +11,6 @@ const PLAN_TABLE_LIMITS = { trial: 15, basic: 15, pro: 50, enterprise: 9999 }
 const PLAN_PRICES = { trial: 0, basic: 100, pro: 200, enterprise: 300 }
 const LIVE_STATUS_PLANS = ['pro', 'enterprise']
 
-// All supported languages with display info
 const ALL_LANGS_INFO = [
   { code: 'en', flag: '🇬🇧', name: 'English' },
   { code: 'da', flag: '🇩🇰', name: 'Dansk' },
@@ -38,9 +38,9 @@ const LOGIN_LANGS = {
 }
 
 const LANGS = {
-  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', settings:'⚙️ Indstillinger', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', translate:'🌍 Oversæt', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker? Dette nulstiller også ordrenumre.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...', logout:'Log ud', noItems:'Ingen menupunkter endnu', tableName:'Bord navn', addTable:'+ Tilføj bord', printAllQR:'🖨 Print alle QR', viewQR:'📱 QR-kode', rename:'Omdøb', deactivate:'⏸ Deaktiver', activate:'▶ Aktiver', deleteTable:'🗑 Slet', confirmDelete:'Er du sikker på du vil slette dette bord?', tablesUsed:'borde brugt', upgradePlan:'Opgrader plan for at tilføje flere borde', password:'Adgangskode', changePassword:'Skift adgangskode', newPassword:'Ny adgangskode', passwordMin:'Min. 8 tegn', passwordChanged:'Adgangskode opdateret!', planInfo:'Plan information', currentPlan:'Nuværende plan', liveStatus:'Live ordre status for gæster', liveStatusDesc:'Gæster kan se live status af deres ordre (Modtaget → Tilberedes → Klar → Leveret) og ordrenummer', liveStatusUpgrade:'⭐ Opgrader til Pro eller Enterprise for at aktivere denne feature', liveStatusSaved:'Indstilling gemt', resetPwBtn:'Reset', tempPwTitle:'Midlertidig adgangskode — kopier nu, vises kun én gang!', copy:'Kopier', hide:'Skjul', resetPwConfirm:'Generer ny midlertidig adgangskode for {role}?', sourceLangHint:'Du tilføjer retter på {lang}. Klik 🌍 på en ret for at oversætte til andre sprog.', translateTitle:'Oversæt: {name}', autoTranslate:'🤖 Auto-oversæt alle', autoTranslating:'Oversætter...', saveTranslations:'Gem oversættelser', sourceLanguageLabel:'Kilde-sprog (skrives af admin)', translationFor:'Oversættelse for', autoFillThis:'🤖 Auto-fyld', translateInfo:'Tomt felt = brug auto-oversæt eller original tekst som fallback', translationsSaved:'Oversættelser gemt!', translateError:'Oversættelse fejlede' },
-  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', settings:'⚙️ Settings', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', translate:'🌍 Translate', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:'Are you sure? This also resets order numbers.', resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data', uploadImage:'Upload image', removeImage:'Remove', uploading:'Uploading...', logout:'Log out', noItems:'No menu items yet', tableName:'Table name', addTable:'+ Add table', printAllQR:'🖨 Print all QR', viewQR:'📱 QR code', rename:'Rename', deactivate:'⏸ Deactivate', activate:'▶ Activate', deleteTable:'🗑 Delete', confirmDelete:'Delete this table?', tablesUsed:'tables used', upgradePlan:'Upgrade plan to add more tables', password:'Password', changePassword:'Change password', newPassword:'New password', passwordMin:'Min. 8 chars', passwordChanged:'Password updated!', planInfo:'Plan information', currentPlan:'Current plan', liveStatus:'Live order status for guests', liveStatusDesc:'Guests can see live order status (Received → Preparing → Ready → Delivered) and order number', liveStatusUpgrade:'⭐ Upgrade to Pro or Enterprise to enable this feature', liveStatusSaved:'Setting saved', resetPwBtn:'Reset', tempPwTitle:'Temporary password — copy now, shown only once!', copy:'Copy', hide:'Hide', resetPwConfirm:'Generate new temporary password for {role}?', sourceLangHint:'You\'re adding dishes in {lang}. Click 🌍 on a dish to translate to other languages.', translateTitle:'Translate: {name}', autoTranslate:'🤖 Auto-translate all', autoTranslating:'Translating...', saveTranslations:'Save translations', sourceLanguageLabel:'Source language (written by admin)', translationFor:'Translation for', autoFillThis:'🤖 Auto-fill', translateInfo:'Empty field = use auto-translate or original text as fallback', translationsSaved:'Translations saved!', translateError:'Translation failed' },
-  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', settings:'⚙️ Ρυθμίσεις', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'...', cancel:'Ακύρωση', active:'✓', inactive:'✗', edit:'✏️', translate:'🌍 Μετάφραση', todayRevenue:'Έσοδα', totalToday:'Σύνολο', closedTables:'κλειστά', noClosedTables:'Κανένα', openTables:'Ανοιχτά', noOpenTables:'Κανένα', loading:'Φόρτωση...', resetRevenue:'Επαναφορά', resetConfirm:'Σίγουρα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'...', stats:'📈 Στατιστικά', today:'Σήμερα', thisWeek:'Εβδομάδα', thisMonth:'Μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Σύνολο', avgPerSeating:'Μέσος', noStats:'Κανένα', uploadImage:'Upload', removeImage:'Αφαίρεση', uploading:'...', logout:'Αποσύνδεση', noItems:'Κανένα', tableName:'Όνομα', addTable:'+ Προσθήκη', printAllQR:'🖨 QR', viewQR:'📱 QR', rename:'Μετονομασία', deactivate:'⏸', activate:'▶', deleteTable:'🗑', confirmDelete:'Διαγραφή;', tablesUsed:'τραπέζια', upgradePlan:'Αναβάθμιση', password:'Κωδικός', changePassword:'Αλλαγή', newPassword:'Νέος', passwordMin:'Min 8', passwordChanged:'OK!', planInfo:'Plan', currentPlan:'Plan', liveStatus:'Live status παραγγελιών', liveStatusDesc:'Live status', liveStatusUpgrade:'⭐ Pro/Enterprise', liveStatusSaved:'OK', resetPwBtn:'Επαναφορά', tempPwTitle:'Προσωρινός κωδικός', copy:'Αντιγραφή', hide:'Απόκρυψη', resetPwConfirm:'Νέος κωδικός για {role};', sourceLangHint:'Προσθέτετε πιάτα στα {lang}. Κάντε κλικ 🌍 για μετάφραση.', translateTitle:'Μετάφραση: {name}', autoTranslate:'🤖 Αυτόματη μετάφραση', autoTranslating:'Μετάφραση...', saveTranslations:'Αποθήκευση', sourceLanguageLabel:'Γλώσσα πηγής', translationFor:'Μετάφραση για', autoFillThis:'🤖 Αυτόματη', translateInfo:'Άδειο = χρήση αυτόματης μετάφρασης', translationsSaved:'Αποθηκεύτηκε!', translateError:'Σφάλμα' },
+  da: { menu:'🍽 Menu', revenue:'📊 Omsætning', tables:'🪑 Borde', settings:'⚙️ Indstillinger', menuItems:'Menupunkter', addItem:'+ Tilføj ret', newItem:'Ny ret', name:'Navn', description:'Beskrivelse', price:'Pris (€)', kitchen:'Køkken', bar:'Bar', save:'Gem', saving:'Gemmer...', cancel:'Annuller', active:'✓ Aktiv', inactive:'✗ Inaktiv', edit:'✏️ Rediger', translate:'🌍 Oversæt', bulkTranslate:'🌐 Oversæt hele menuen', todayRevenue:'Dagens omsætning', totalToday:'Total i dag', closedTables:'lukkede borde', noClosedTables:'Ingen lukkede borde i dag endnu', openTables:'Åbne borde', noOpenTables:'Ingen åbne borde', loading:'Indlæser...', resetRevenue:'Nulstil omsætning', resetConfirm:'Er du sikker? Dette nulstiller også ordrenumre.', resetYes:'Ja, nulstil', resetNo:'Annuller', resetting:'Nulstiller...', stats:'📈 Statistik', today:'I dag', thisWeek:'Denne uge', thisMonth:'Denne måned', allTime:'Alt', table:'Bord', seatings:'Seatings', totalRevenue:'Total omsætning', avgPerSeating:'Gns. per seating', noStats:'Ingen data', uploadImage:'Upload billede', removeImage:'Fjern billede', uploading:'Uploader...', logout:'Log ud', noItems:'Ingen menupunkter endnu', tableName:'Bord navn', addTable:'+ Tilføj bord', printAllQR:'🖨 Print alle QR', viewQR:'📱 QR-kode', rename:'Omdøb', deactivate:'⏸ Deaktiver', activate:'▶ Aktiver', deleteTable:'🗑 Slet', confirmDelete:'Er du sikker på du vil slette dette bord?', tablesUsed:'borde brugt', upgradePlan:'Opgrader plan for at tilføje flere borde', password:'Adgangskode', changePassword:'Skift adgangskode', newPassword:'Ny adgangskode', passwordMin:'Min. 8 tegn', passwordChanged:'Adgangskode opdateret!', planInfo:'Plan information', currentPlan:'Nuværende plan', liveStatus:'Live ordre status for gæster', liveStatusDesc:'Gæster kan se live status af deres ordre (Modtaget → Tilberedes → Klar → Leveret) og ordrenummer', liveStatusUpgrade:'⭐ Opgrader til Pro eller Enterprise for at aktivere denne feature', liveStatusSaved:'Indstilling gemt', resetPwBtn:'Reset', tempPwTitle:'Midlertidig adgangskode — kopier nu, vises kun én gang!', copy:'Kopier', hide:'Skjul', resetPwConfirm:'Generer ny midlertidig adgangskode for {role}?', sourceLangHint:'Du tilføjer retter på {lang}. Klik 🌍 på en ret for at oversætte til andre sprog.', translateTitle:'Oversæt: {name}', autoTranslate:'🤖 Auto-oversæt alle', autoTranslating:'Oversætter...', saveTranslations:'Gem oversættelser', sourceLanguageLabel:'Kilde-sprog (skrives af admin)', translationFor:'Oversættelse for', autoFillThis:'🤖 Auto-fyld', translateInfo:'Tomt felt = brug auto-oversæt eller original tekst som fallback', translationsSaved:'Oversættelser gemt!', translateError:'Oversættelse fejlede' },
+  en: { menu:'🍽 Menu', revenue:'📊 Revenue', tables:'🪑 Tables', settings:'⚙️ Settings', menuItems:'Menu items', addItem:'+ Add item', newItem:'New item', name:'Name', description:'Description', price:'Price (€)', kitchen:'Kitchen', bar:'Bar', save:'Save', saving:'Saving...', cancel:'Cancel', active:'✓ Active', inactive:'✗ Inactive', edit:'✏️ Edit', translate:'🌍 Translate', bulkTranslate:'🌐 Translate menu', todayRevenue:"Today's revenue", totalToday:'Total today', closedTables:'closed tables', noClosedTables:'No closed tables today', openTables:'Open tables', noOpenTables:'No open tables', loading:'Loading...', resetRevenue:'Reset revenue', resetConfirm:'Are you sure? This also resets order numbers.', resetYes:'Yes, reset', resetNo:'Cancel', resetting:'Resetting...', stats:'📈 Statistics', today:'Today', thisWeek:'This week', thisMonth:'This month', allTime:'All time', table:'Table', seatings:'Seatings', totalRevenue:'Total revenue', avgPerSeating:'Avg. per seating', noStats:'No data', uploadImage:'Upload image', removeImage:'Remove', uploading:'Uploading...', logout:'Log out', noItems:'No menu items yet', tableName:'Table name', addTable:'+ Add table', printAllQR:'🖨 Print all QR', viewQR:'📱 QR code', rename:'Rename', deactivate:'⏸ Deactivate', activate:'▶ Activate', deleteTable:'🗑 Delete', confirmDelete:'Delete this table?', tablesUsed:'tables used', upgradePlan:'Upgrade plan to add more tables', password:'Password', changePassword:'Change password', newPassword:'New password', passwordMin:'Min. 8 chars', passwordChanged:'Password updated!', planInfo:'Plan information', currentPlan:'Current plan', liveStatus:'Live order status for guests', liveStatusDesc:'Guests can see live order status (Received → Preparing → Ready → Delivered) and order number', liveStatusUpgrade:'⭐ Upgrade to Pro or Enterprise to enable this feature', liveStatusSaved:'Setting saved', resetPwBtn:'Reset', tempPwTitle:'Temporary password — copy now, shown only once!', copy:'Copy', hide:'Hide', resetPwConfirm:'Generate new temporary password for {role}?', sourceLangHint:'You\'re adding dishes in {lang}. Click 🌍 on a dish to translate to other languages.', translateTitle:'Translate: {name}', autoTranslate:'🤖 Auto-translate all', autoTranslating:'Translating...', saveTranslations:'Save translations', sourceLanguageLabel:'Source language (written by admin)', translationFor:'Translation for', autoFillThis:'🤖 Auto-fill', translateInfo:'Empty field = use auto-translate or original text as fallback', translationsSaved:'Translations saved!', translateError:'Translation failed' },
+  el: { menu:'🍽 Μενού', revenue:'📊 Έσοδα', tables:'🪑 Τραπέζια', settings:'⚙️ Ρυθμίσεις', menuItems:'Στοιχεία μενού', addItem:'+ Προσθήκη', newItem:'Νέο πιάτο', name:'Όνομα', description:'Περιγραφή', price:'Τιμή (€)', kitchen:'Κουζίνα', bar:'Μπαρ', save:'Αποθήκευση', saving:'...', cancel:'Ακύρωση', active:'✓', inactive:'✗', edit:'✏️', translate:'🌍 Μετάφραση', bulkTranslate:'🌐 Μετάφραση μενού', todayRevenue:'Έσοδα', totalToday:'Σύνολο', closedTables:'κλειστά', noClosedTables:'Κανένα', openTables:'Ανοιχτά', noOpenTables:'Κανένα', loading:'Φόρτωση...', resetRevenue:'Επαναφορά', resetConfirm:'Σίγουρα;', resetYes:'Ναι', resetNo:'Ακύρωση', resetting:'...', stats:'📈 Στατιστικά', today:'Σήμερα', thisWeek:'Εβδομάδα', thisMonth:'Μήνα', allTime:'Όλα', table:'Τραπέζι', seatings:'Seatings', totalRevenue:'Σύνολο', avgPerSeating:'Μέσος', noStats:'Κανένα', uploadImage:'Upload', removeImage:'Αφαίρεση', uploading:'...', logout:'Αποσύνδεση', noItems:'Κανένα', tableName:'Όνομα', addTable:'+ Προσθήκη', printAllQR:'🖨 QR', viewQR:'📱 QR', rename:'Μετονομασία', deactivate:'⏸', activate:'▶', deleteTable:'🗑', confirmDelete:'Διαγραφή;', tablesUsed:'τραπέζια', upgradePlan:'Αναβάθμιση', password:'Κωδικός', changePassword:'Αλλαγή', newPassword:'Νέος', passwordMin:'Min 8', passwordChanged:'OK!', planInfo:'Plan', currentPlan:'Plan', liveStatus:'Live status παραγγελιών', liveStatusDesc:'Live status', liveStatusUpgrade:'⭐ Pro/Enterprise', liveStatusSaved:'OK', resetPwBtn:'Επαναφορά', tempPwTitle:'Προσωρινός κωδικός', copy:'Αντιγραφή', hide:'Απόκρυψη', resetPwConfirm:'Νέος κωδικός για {role};', sourceLangHint:'Προσθέτετε πιάτα στα {lang}. Κάντε κλικ 🌍 για μετάφραση.', translateTitle:'Μετάφραση: {name}', autoTranslate:'🤖 Αυτόματη μετάφραση', autoTranslating:'Μετάφραση...', saveTranslations:'Αποθήκευση', sourceLanguageLabel:'Γλώσσα πηγής', translationFor:'Μετάφραση για', autoFillThis:'🤖 Αυτόματη', translateInfo:'Άδειο = χρήση αυτόματης μετάφρασης', translationsSaved:'Αποθηκεύτηκε!', translateError:'Σφάλμα' },
 }
 
 const EMOJI_OPTIONS = {
@@ -234,7 +234,6 @@ function QrModal({ table, restaurant, onClose, t }) {
   )
 }
 
-// === TRANSLATION MODAL ===
 function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
   const [loading, setLoading] = useState(true)
   const [autoTranslating, setAutoTranslating] = useState(false)
@@ -244,11 +243,9 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
   const [success, setSuccess] = useState('')
   const [translations, setTranslations] = useState({})
 
-  // Target languages = all languages except source
   const targetLangs = ALL_LANGS_INFO.filter(l => l.code !== sourceLang)
   const sourceInfo = getLangInfo(sourceLang)
 
-  // Load existing translations on open
   useEffect(() => {
     (async () => {
       setLoading(true)
@@ -259,7 +256,6 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
         })
         const data = await res.json()
         if (data.success) {
-          // Initialize empty entries for missing langs
           const map = {}
           for (const lang of targetLangs) {
             map[lang.code] = data.translations[lang.code] || { name: '', description: '' }
@@ -275,10 +271,7 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
   }, [item.id])
 
   const updateField = (lang, field, value) => {
-    setTranslations(prev => ({
-      ...prev,
-      [lang]: { ...prev[lang], [field]: value },
-    }))
+    setTranslations(prev => ({ ...prev, [lang]: { ...prev[lang], [field]: value } }))
     setSuccess('')
   }
 
@@ -290,25 +283,18 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
         body: JSON.stringify({
-          itemId: item.id,
-          name: item.name,
-          description: item.description || '',
-          targetLangs: targetLangs.map(l => l.code),
-          save: false,
+          itemId: item.id, name: item.name, description: item.description || '',
+          targetLangs: targetLangs.map(l => l.code), save: false,
         }),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.error || t.translateError)
       const newMap = { ...translations }
       for (const [lang, tr] of Object.entries(data.translations)) {
-        if (tr && !tr.error) {
-          newMap[lang] = { name: tr.name || '', description: tr.description || '' }
-        }
+        if (tr && !tr.error) newMap[lang] = { name: tr.name || '', description: tr.description || '' }
       }
       setTranslations(newMap)
-    } catch (err) {
-      setError(err.message)
-    }
+    } catch (err) { setError(err.message) }
     setAutoTranslating(false)
   }
 
@@ -320,25 +306,17 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
         body: JSON.stringify({
-          itemId: item.id,
-          name: item.name,
-          description: item.description || '',
-          targetLangs: [lang],
-          save: false,
+          itemId: item.id, name: item.name, description: item.description || '',
+          targetLangs: [lang], save: false,
         }),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.error || t.translateError)
       const tr = data.translations[lang]
       if (tr && !tr.error) {
-        setTranslations(prev => ({
-          ...prev,
-          [lang]: { name: tr.name || '', description: tr.description || '' },
-        }))
+        setTranslations(prev => ({ ...prev, [lang]: { name: tr.name || '', description: tr.description || '' } }))
       }
-    } catch (err) {
-      setError(err.message)
-    }
+    } catch (err) { setError(err.message) }
     setPerFieldLoading(p => ({ ...p, [lang]: false }))
   }
 
@@ -355,9 +333,7 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
       if (!data.success) throw new Error(data.error || 'Save failed')
       setSuccess(t.translationsSaved)
       setTimeout(() => { onSaved && onSaved(); onClose() }, 800)
-    } catch (err) {
-      setError(err.message)
-    }
+    } catch (err) { setError(err.message) }
     setSaving(false)
   }
 
@@ -366,7 +342,6 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'flex-start',justifyContent:'center',zIndex:200,padding:20,overflowY:'auto'}} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{background:'white',borderRadius:16,maxWidth:700,width:'100%',marginTop:20,marginBottom:20}}>
-        {/* Header */}
         <div style={{padding:'20px 24px',borderBottom:'1px solid #e5e5e5',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div>
             <div style={{fontSize:18,fontWeight:700,color:'#1C1917'}}>{title}</div>
@@ -378,7 +353,6 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
         </div>
 
         <div style={{padding:24}}>
-          {/* Source preview */}
           <div style={{padding:16,background:'#F4E3D7',border:'1px solid #C2692A33',borderRadius:10,marginBottom:16}}>
             <div style={{fontSize:11,fontWeight:700,color:'#92400E',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8}}>
               {sourceInfo.flag} {sourceInfo.name} (kilde / source)
@@ -387,7 +361,6 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
             {item.description && <div style={{fontSize:13,color:'#57534E',marginTop:4}}>{item.description}</div>}
           </div>
 
-          {/* Auto-translate all button */}
           <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
             <button onClick={autoTranslateAll} disabled={autoTranslating || loading}
               style={{padding:'10px 16px',background:'#1C1917',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui',opacity: autoTranslating||loading ? 0.5 : 1}}>
@@ -432,7 +405,6 @@ function TranslateModal({ item, sourceLang, onClose, onSaved, t }) {
           )}
         </div>
 
-        {/* Footer */}
         <div style={{padding:'16px 24px',borderTop:'1px solid #e5e5e5',display:'flex',justifyContent:'flex-end',gap:8}}>
           <button onClick={onClose} style={{padding:'10px 16px',background:'transparent',color:'#78716C',border:'1px solid #e5e5e5',borderRadius:8,fontSize:14,cursor:'pointer',fontFamily:'system-ui'}}>{t.cancel}</button>
           <button onClick={save} disabled={saving || loading}
@@ -468,6 +440,7 @@ export default function AdminPage() {
 
   const [qrTable, setQrTable] = useState(null)
   const [translateItem, setTranslateItem] = useState(null)
+  const [showBulkTranslate, setShowBulkTranslate] = useState(false)
   const [newTableName, setNewTableName] = useState('')
   const [addingTable, setAddingTable] = useState(false)
   const [editingTable, setEditingTable] = useState(null)
@@ -700,6 +673,15 @@ export default function AdminPage() {
           t={t}
         />
       )}
+      {showBulkTranslate && (
+        <BulkTranslateModal
+          items={items}
+          sourceLang={sourceLang}
+          lang={lang}
+          onClose={() => setShowBulkTranslate(false)}
+          onCompleted={() => fetchData()}
+        />
+      )}
 
       <header style={s.header}>
         <span style={s.title}>⚙️ {restaurant.name} — Admin</span>
@@ -720,16 +702,24 @@ export default function AdminPage() {
 
       {tab === 'menu' && (
         <div style={s.content}>
-          {/* Source language hint */}
           <div style={{padding:'10px 14px',background:'linear-gradient(90deg, #F4E3D7, #FAFAF7)',border:'1px solid #C2692A33',borderRadius:10,marginBottom:16,fontSize:13,color:'#92400E',display:'flex',alignItems:'center',gap:8}}>
             <span style={{fontSize:18}}>💡</span>
             <span>{sourceLangHint}</span>
           </div>
 
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
-            <h2 style={s.sectionTitle}>{t.menuItems}</h2>
-            <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{t.addItem}</button>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:8}}>
+            <h2 style={{...s.sectionTitle,marginBottom:0}}>{t.menuItems}</h2>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              {items.length > 0 && (
+                <button onClick={() => setShowBulkTranslate(true)}
+                  style={{padding:'8px 16px',background:'#1E40AF',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
+                  {t.bulkTranslate}
+                </button>
+              )}
+              <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{t.addItem}</button>
+            </div>
           </div>
+
           {showAdd && (
             <div style={{...s.card, marginBottom:20}}>
               <h3 style={{fontSize:16,fontWeight:600,marginBottom:16,color:'#1C1917'}}>{t.newItem}</h3>
