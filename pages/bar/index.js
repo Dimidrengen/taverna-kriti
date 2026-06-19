@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -12,14 +12,9 @@ function extractSlugFromEmail(email) {
 }
 
 const LANGS = {
-  el: { title:'Μπαρ', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'✓ Έτοιμο', sending:'Στέλνεται…', drinks:'Ποτά', closeTable:'Κλείσιμο & Πληρωμή', closing:'Κλείνει…', bill:'Λογαριασμός', total:'Σύνολο', allTables:'Όλα τα τραπέζια', activeDrinks:'Ενεργά ποτά', tableWord:'Τραπέζι', logout:'Αποσύνδεση', deliver:'📦 Παραδόθηκε', delivered:'✓ Παραδόθηκε', delivering:'...', order:'Παραγγελία', statusReceived:'🟡 Ελήφθη', statusPreparing:'🔵 Ετοιμάζεται', statusReady:'🟢 Έτοιμο', statusDelivered:'⚫ Παραδόθηκε' },
-  en: { title:'Bar', noOrders:'No active orders', done:'✓ Done', sending:'Sending…', drinks:'Drinks', closeTable:'Close & Payment', closing:'Closing…', bill:'Bill', total:'Total', allTables:'All tables', activeDrinks:'Active drinks', tableWord:'Table', logout:'Log out', deliver:'📦 Deliver', delivered:'✓ Delivered', delivering:'...', order:'Order', statusReceived:'🟡 Received', statusPreparing:'🔵 Preparing', statusReady:'🟢 Ready', statusDelivered:'⚫ Delivered' },
-  da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'✓ Færdig', sending:'Sender…', drinks:'Drikkevarer', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total', allTables:'Alle borde', activeDrinks:'Aktive drikkevarer', tableWord:'Bord', logout:'Log ud', deliver:'📦 Leveret', delivered:'✓ Leveret', delivering:'...', order:'Ordre', statusReceived:'🟡 Modtaget', statusPreparing:'🔵 Tilberedes', statusReady:'🟢 Klar', statusDelivered:'⚫ Leveret' },
-}
-
-function getStatusLabel(status, t) {
-  const map = { received:t.statusReceived, preparing:t.statusPreparing, ready:t.statusReady, delivered:t.statusDelivered }
-  return map[status] || status
+  el: { title:'Μπαρ', noOrders:'Δεν υπάρχουν ενεργές παραγγελίες', done:'Έτοιμο', sending:'Στέλνεται…', drinks:'Ποτά', closeTable:'Κλείσιμο & Πληρωμή', closing:'Κλείνει…', bill:'Λογαριασμός', total:'Σύνολο', allTables:'Τραπέζια', activeDrinks:'Ποτά', delivery:'Παράδοση', tableWord:'Τραπέζι', logout:'Έξοδος', deliver:'Παραδόθηκε', delivered:'✓ Παραδόθηκε', delivering:'...', order:'Παραγγελία', statusReady:'Έτοιμο', noDeliv:'Τίποτα έτοιμο', hide:'Απόκρυψη', sound:'Ήχος', email:'Email', password:'Κωδικός', login:'Σύνδεση', loggingIn:'Σύνδεση...', loginErr:'Λάθος κωδικός', notBar:'Δεν είναι μπαρ', invalidEmail:'Μη έγκυρο email', notFound:'Δεν βρέθηκε', confirmClose:'Κλείσιμο' },
+  en: { title:'Bar', noOrders:'No active orders', done:'Done', sending:'Sending…', drinks:'Drinks', closeTable:'Close & Pay', closing:'Closing…', bill:'Bill', total:'Total', allTables:'Tables', activeDrinks:'Drinks', delivery:'Delivery', tableWord:'Table', logout:'Log out', deliver:'Deliver', delivered:'✓ Delivered', delivering:'...', order:'Order', statusReady:'Ready', noDeliv:'Nothing ready for delivery', hide:'Hide', sound:'Sound', email:'Email', password:'Password', login:'Log in', loggingIn:'Logging in...', loginErr:'Wrong email or password', notBar:'Not bar', invalidEmail:'Invalid email', notFound:'Not found', confirmClose:'Close' },
+  da: { title:'Bar', noOrders:'Ingen aktive ordrer', done:'Færdig', sending:'Sender…', drinks:'Drikkevarer', closeTable:'Luk & Betal', closing:'Lukker…', bill:'Regning', total:'Total', allTables:'Borde', activeDrinks:'Drikkevarer', delivery:'Levering', tableWord:'Bord', logout:'Log ud', deliver:'Lever', delivered:'✓ Leveret', delivering:'...', order:'Ordre', statusReady:'Klar', noDeliv:'Intet klar til levering', hide:'Skjul', sound:'Lyd', email:'Email', password:'Adgangskode', login:'Log ind', loggingIn:'Logger ind...', loginErr:'Forkert email eller adgangskode', notBar:'Ikke bar', invalidEmail:'Ugyldig email', notFound:'Ikke fundet', confirmClose:'Luk' },
 }
 
 function getTableLabel(name, tableWord) {
@@ -49,7 +44,146 @@ function groupDrinkOrders(rows, translations) {
   return Object.values(map)
 }
 
-function LoginScreen({ onLogin }) {
+let _audioCtx = null
+function playOrderDing() {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    if (_audioCtx.state === 'suspended') _audioCtx.resume()
+    const now = _audioCtx.currentTime
+    const osc1 = _audioCtx.createOscillator(); osc1.frequency.value = 880; osc1.type = 'sine'
+    const osc2 = _audioCtx.createOscillator(); osc2.frequency.value = 1318.5; osc2.type = 'sine'
+    const gain = _audioCtx.createGain()
+    gain.gain.setValueAtTime(0, now)
+    gain.gain.linearRampToValueAtTime(0.22, now + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7)
+    osc1.connect(gain); osc2.connect(gain); gain.connect(_audioCtx.destination)
+    osc1.start(now); osc2.start(now + 0.08)
+    osc1.stop(now + 0.7); osc2.stop(now + 0.8)
+  } catch(e) {}
+}
+
+const BAR_ACCENT = '#1E5F8C'
+const BAR_ACCENT_SOFT = '#2A7AAD'
+
+const STYLES = `
+.bp-page { min-height: 100dvh; background: #FAF5EE; color: #1C1410; font-family: 'Inter', system-ui, sans-serif; padding-bottom: 40px; -webkit-font-smoothing: antialiased; }
+.bp-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #E8DFD2; position: sticky; top: 0; background: rgba(250,245,238,0.94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10; flex-wrap: wrap; }
+.bp-brand { flex: 1; min-width: 180px; }
+.bp-brand-name { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 22px; font-weight: 600; line-height: 1.1; color: #1C1410; letter-spacing: -0.01em; }
+.bp-brand-page { font-size: 10px; color: #8B7D6E; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600; margin-top: 3px; }
+.bp-langrow { display: flex; gap: 4px; }
+.bp-lang { padding: 5px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; cursor: pointer; background: transparent; color: #8B7D6E; border: 1px solid #E8DFD2; letter-spacing: 0.1em; transition: all 0.15s; font-family: inherit; }
+.bp-lang.active { background: ${BAR_ACCENT}; border-color: ${BAR_ACCENT}; color: white; }
+.bp-iconbtn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #E8DFD2; background: transparent; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; color: #1C1410; transition: all 0.15s; }
+.bp-iconbtn:hover { background: #F3EBDB; }
+.bp-iconbtn.muted { opacity: 0.4; }
+.bp-logout { padding: 6px 14px; background: transparent; border: 1px solid #E8DFD2; border-radius: 100px; font-size: 12px; cursor: pointer; color: #8B7D6E; letter-spacing: 0.06em; font-family: inherit; transition: all 0.15s; }
+.bp-logout:hover { background: #F3EBDB; color: #1C1410; }
+.bp-tabs { display: flex; gap: 0; border-bottom: 1px solid #E8DFD2; padding: 0 20px; overflow-x: auto; background: #FAF5EE; position: sticky; top: 73px; z-index: 9; scrollbar-width: none; }
+.bp-tabs::-webkit-scrollbar { display: none; }
+.bp-tab { padding: 14px 18px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; border: none; color: #8B7D6E; border-bottom: 2px solid transparent; white-space: nowrap; font-family: inherit; letter-spacing: 0.04em; transition: all 0.18s; display: flex; align-items: center; gap: 8px; }
+.bp-tab:hover { color: #1C1410; }
+.bp-tab.active { color: #1C1410; font-weight: 600; }
+.bp-tab.active.t-drinks { border-bottom-color: ${BAR_ACCENT}; }
+.bp-tab.active.t-delivery { border-bottom-color: #16A34A; }
+.bp-tab.active.t-tables { border-bottom-color: #C2692A; }
+.bp-tab-count { font-size: 10px; padding: 2px 7px; border-radius: 100px; background: #E8DFD2; color: #1C1410; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.bp-tab.active.t-drinks .bp-tab-count { background: ${BAR_ACCENT}; color: white; }
+.bp-tab.active.t-delivery .bp-tab-count { background: #16A34A; color: white; }
+.bp-tab.active.t-tables .bp-tab-count { background: #C2692A; color: white; }
+.bp-grid { display: grid; grid-template-columns: 1fr; gap: 14px; padding: 16px 20px; }
+.bp-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100dvh - 130px); padding: 40px; }
+.bp-empty-icon { font-size: 56px; opacity: 0.4; margin-bottom: 18px; }
+.bp-empty-text { color: #8B7D6E; font-size: 16px; font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; }
+.bp-card { background: #FFFFFF; border-radius: 14px; border: 1px solid #E8DFD2; overflow: hidden; box-shadow: 0 1px 3px rgba(28,20,16,0.04); }
+.bp-card.ready { border-left: 4px solid #16A34A; background: #F4FBF6; box-shadow: 0 4px 18px rgba(22,163,74,0.15); }
+.bp-card.late { border-left: 4px solid #DC2626; }
+.bp-card-head { padding: 14px 18px; border-bottom: 1px solid #F0E9DC; display: flex; gap: 12px; align-items: center; }
+.bp-table-label { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 24px; font-weight: 600; color: #1C1410; flex: 1; letter-spacing: -0.01em; line-height: 1.1; }
+.bp-order-row { padding: 8px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F0E9DC; }
+.bp-order-num { font-size: 10px; color: ${BAR_ACCENT}; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; }
+.bp-time { font-size: 14px; font-weight: 500; color: #1C1410; font-variant-numeric: tabular-nums; }
+.bp-age { font-size: 12px; color: #8B7D6E; font-variant-numeric: tabular-nums; }
+.bp-age.late { color: #DC2626; font-weight: 600; }
+.bp-note { padding: 10px 18px; background: #FEF7E6; border-bottom: 1px solid #F0E9DC; font-size: 13px; color: #92400E; display: flex; gap: 8px; font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; }
+.bp-section-head { display: flex; align-items: center; padding: 12px 18px 4px; gap: 8px; }
+.bp-section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.bp-section-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; }
+.bp-lines { padding: 0 18px 12px; display: flex; flex-direction: column; gap: 8px; }
+.bp-line { display: flex; gap: 10px; align-items: center; padding: 2px 0; transition: opacity 0.2s; }
+.bp-line.served { opacity: 0.4; }
+.bp-line-qty { font-size: 14px; color: #8B7D6E; min-width: 28px; font-variant-numeric: tabular-nums; font-weight: 500; }
+.bp-line-name { flex: 1; font-size: 15px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; color: #1C1410; line-height: 1.3; }
+.bp-line.served .bp-line-name { text-decoration: line-through; }
+.bp-check { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid #E8DFD2; background: transparent; cursor: pointer; font-size: 14px; flex-shrink: 0; color: transparent; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+.bp-check:hover { border-color: #16A34A; }
+.bp-check.checked { background: #16A34A; border-color: #16A34A; color: white; }
+.bp-card-actions { padding: 0 18px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+.bp-btn { flex: 1; min-width: 120px; padding: 11px; background: transparent; border: 1.5px solid; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; font-family: inherit; transition: all 0.18s; }
+.bp-btn:disabled { opacity: 0.5; cursor: wait; }
+.bp-btn-done { border-color: ${BAR_ACCENT}; color: ${BAR_ACCENT}; }
+.bp-btn-done:hover { background: ${BAR_ACCENT}; color: white; }
+.bp-btn-deliver { width: 100%; padding: 14px; background: #16A34A; border: none; border-radius: 100px; font-size: 12px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: white; cursor: pointer; font-family: inherit; transition: all 0.18s; box-shadow: 0 4px 14px rgba(22,163,74,0.25); }
+.bp-btn-deliver:hover { background: #15803D; }
+.bp-btn-deliver:disabled { opacity: 0.5; cursor: wait; }
+.bp-btn-bill { border-color: #E8DFD2; color: #8B7D6E; }
+.bp-btn-bill:hover { background: #F3EBDB; color: #1C1410; }
+.bp-btn-close { border-color: #DC2626; color: #DC2626; }
+.bp-btn-close:hover { background: #DC2626; color: white; }
+.bp-bill-box { padding: 14px 18px; background: #FAF5EE; border-bottom: 1px solid #F0E9DC; }
+.bp-bill-title { font-size: 10px; color: #8B7D6E; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.18em; font-weight: 700; }
+.bp-bill-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; color: #1C1410; font-family: 'Cormorant Garamond', Georgia, serif; }
+.bp-bill-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 12px; margin-top: 12px; border-top: 1px solid #E8DFD2; }
+.bp-bill-total-label { font-size: 10px; color: #8B7D6E; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; }
+.bp-bill-total-val { font-size: 24px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; color: #1C1410; font-variant-numeric: tabular-nums; }
+.bp-ready-meta { font-size: 12px; color: #16A34A; font-weight: 600; letter-spacing: 0.05em; margin-top: 4px; }
+
+@media (min-width: 600px) {
+  .bp-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; padding: 20px 24px; }
+  .bp-brand-name { font-size: 24px; }
+  .bp-table-label { font-size: 28px; }
+  .bp-line-name { font-size: 17px; }
+  .bp-line-qty { font-size: 15px; min-width: 32px; }
+  .bp-time { font-size: 15px; }
+}
+@media (min-width: 1024px) {
+  .bp-grid { grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 18px; padding: 24px 28px; }
+  .bp-brand-name { font-size: 28px; }
+  .bp-table-label { font-size: 36px; }
+  .bp-line-name { font-size: 19px; }
+  .bp-line-qty { font-size: 16px; min-width: 36px; font-weight: 600; }
+  .bp-check { width: 38px; height: 38px; font-size: 16px; }
+  .bp-section-name { font-size: 13px; }
+  .bp-order-num { font-size: 11px; }
+  .bp-time { font-size: 17px; }
+  .bp-age { font-size: 14px; }
+  .bp-btn { padding: 13px; font-size: 12px; }
+  .bp-btn-deliver { padding: 16px; font-size: 13px; }
+  .bp-tab { padding: 16px 22px; font-size: 14px; }
+  .bp-bill-total-val { font-size: 28px; }
+}
+@media (min-width: 1440px) {
+  .bp-grid { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }
+  .bp-table-label { font-size: 40px; }
+  .bp-line-name { font-size: 21px; }
+}
+
+.bp-login-page { min-height: 100dvh; background: #FAF5EE; display: flex; align-items: center; justify-content: center; padding: 20px; font-family: 'Inter', system-ui, sans-serif; }
+.bp-login-card { background: white; border-radius: 16px; border: 1px solid #E8DFD2; padding: 40px 32px; width: 100%; max-width: 380px; }
+.bp-login-head { text-align: center; margin-bottom: 32px; }
+.bp-login-icon { font-size: 36px; margin-bottom: 14px; }
+.bp-login-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; font-weight: 600; color: #1C1410; }
+.bp-login-sub { font-size: 11px; color: #8B7D6E; margin-top: 6px; letter-spacing: 0.2em; text-transform: uppercase; }
+.bp-input-label { font-size: 10px; color: #8B7D6E; display: block; margin-bottom: 6px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; }
+.bp-input { width: 100%; padding: 12px 14px; border: 1px solid #E8DFD2; border-radius: 10px; font-size: 15px; font-family: inherit; outline: none; background: #FAF5EE; color: #1C1410; box-sizing: border-box; transition: border-color 0.15s; }
+.bp-input:focus { border-color: ${BAR_ACCENT}; }
+.bp-err { background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #DC2626; margin-bottom: 16px; }
+.bp-btn-login { width: 100%; padding: 14px; background: ${BAR_ACCENT}; color: white; border: none; border-radius: 100px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.15em; text-transform: uppercase; transition: all 0.18s; }
+.bp-btn-login:hover { background: ${BAR_ACCENT_SOFT}; }
+.bp-btn-login:disabled { opacity: 0.6; cursor: wait; }
+`
+
+function LoginScreen({ onLogin, t }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -59,38 +193,36 @@ function LoginScreen({ onLogin }) {
     e.preventDefault()
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error || !data.user) { setError('Forkert email eller adgangskode'); setLoading(false); return }
-    if (!data.user.email.startsWith('bar@')) { await supabase.auth.signOut(); setError('Ikke bar'); setLoading(false); return }
+    if (error || !data.user) { setError(t.loginErr); setLoading(false); return }
+    if (!data.user.email.startsWith('bar@')) { await supabase.auth.signOut(); setError(t.notBar); setLoading(false); return }
     const slug = extractSlugFromEmail(data.user.email)
-    if (!slug) { await supabase.auth.signOut(); setError('Ugyldig email'); setLoading(false); return }
+    if (!slug) { await supabase.auth.signOut(); setError(t.invalidEmail); setLoading(false); return }
     const { data: restaurant } = await supabase.from('restaurants').select('*').eq('slug', slug).single()
-    if (!restaurant || !restaurant.active) { await supabase.auth.signOut(); setError('Ikke fundet eller deaktiveret'); setLoading(false); return }
+    if (!restaurant || !restaurant.active) { await supabase.auth.signOut(); setError(t.notFound); setLoading(false); return }
     onLogin(data.user, restaurant)
     setLoading(false)
   }
 
   return (
-    <div style={{minHeight:'100dvh',background:'#0d0d0d',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
-      <div style={{background:'#1a1a1a',borderRadius:16,border:'1px solid #2a2a2a',padding:40,width:'100%',maxWidth:380}}>
-        <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{fontSize:40,marginBottom:12}}>🍹</div>
-          <div style={{fontSize:22,fontWeight:700,color:'#f1f1f1'}}>Bar</div>
-          <div style={{fontSize:14,color:'#6b7280',marginTop:4}}>TableFlow</div>
+    <div className="bp-login-page">
+      <div className="bp-login-card">
+        <div className="bp-login-head">
+          <div className="bp-login-icon">🍹</div>
+          <div className="bp-login-title">{t.title}</div>
+          <div className="bp-login-sub">TableFlow</div>
         </div>
         <form onSubmit={login}>
           <div style={{marginBottom:16}}>
-            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              style={{width:'100%',padding:'10px 14px',border:'1px solid #333',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',background:'#0d0d0d',color:'#f1f1f1'}} />
+            <label className="bp-input-label">{t.email}</label>
+            <input type="email" className="bp-input" value={email} onChange={e => setEmail(e.target.value)} required />
           </div>
-          <div style={{marginBottom:24}}>
-            <label style={{fontSize:13,color:'#6b7280',display:'block',marginBottom:6}}>Adgangskode</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-              style={{width:'100%',padding:'10px 14px',border:'1px solid #333',borderRadius:10,fontSize:15,fontFamily:'system-ui',outline:'none',background:'#0d0d0d',color:'#f1f1f1'}} />
+          <div style={{marginBottom:20}}>
+            <label className="bp-input-label">{t.password}</label>
+            <input type="password" className="bp-input" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
-          {error && <div style={{background:'#3a1a1a',border:'1px solid #7f1d1d',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#f87171',marginBottom:16}}>{error}</div>}
-          <button type="submit" disabled={loading} style={{width:'100%',padding:'12px',background:'#0ea5e9',color:'#000',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-            {loading ? 'Logger ind...' : 'Log ind'}
+          {error && <div className="bp-err">{error}</div>}
+          <button type="submit" disabled={loading} className="bp-btn-login">
+            {loading ? t.loggingIn : t.login}
           </button>
         </form>
       </div>
@@ -115,7 +247,27 @@ export default function BarPage() {
   const [lang, setLang] = useState('el')
   const [translations, setTrans] = useState({})
   const [tick, setTick] = useState(0)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const prevDrinkIds = useRef(new Set())
+  const prevReadyIds = useRef(new Set())
+  const isFirstFetch = useRef(true)
   const t = LANGS[lang]
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tf_bar_sound')
+      if (saved === '0') setSoundEnabled(false)
+    } catch(e) {}
+  }, [])
+
+  const toggleSound = () => {
+    setSoundEnabled(s => {
+      const nv = !s
+      try { localStorage.setItem('tf_bar_sound', nv ? '1' : '0') } catch(e) {}
+      if (nv) playOrderDing()
+      return nv
+    })
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -145,6 +297,7 @@ export default function BarPage() {
   const fetchOrders = useCallback(async () => {
     if (!restaurant) return
     const { data: viewData } = await supabase.from('bar_open_orders').select('*').eq('restaurant_id', restaurant.id)
+    let newDrinkOrders = []
     if (viewData) {
       const orderIds = [...new Set(viewData.map(r => r.order_id))]
       if (orderIds.length > 0) {
@@ -152,14 +305,15 @@ export default function BarPage() {
         const orderMap = {}
         orderInfo?.forEach(o => { orderMap[o.id] = o })
         const enriched = viewData.map(r => ({ ...r, order_number: orderMap[r.order_id]?.order_number, guest_status: orderMap[r.order_id]?.guest_status }))
-        setDrinkOrders(groupDrinkOrders(enriched, translations))
-      } else {
-        setDrinkOrders([])
+        newDrinkOrders = groupDrinkOrders(enriched, translations)
       }
     }
+    setDrinkOrders(newDrinkOrders)
+    const drinkIds = new Set()
+    newDrinkOrders.forEach(t => Object.values(t.orders).forEach(o => drinkIds.add(o.order_id)))
 
-    // Fetch all "ready" orders for this restaurant (need delivery)
     const { data: restaurantTables } = await supabase.from('tables').select('id, name, token').eq('restaurant_id', restaurant.id)
+    let newReadyOrders = []
     if (restaurantTables && restaurantTables.length > 0) {
       const tableIds = restaurantTables.map(t => t.id)
       const { data: ready } = await supabase
@@ -168,10 +322,22 @@ export default function BarPage() {
         .eq('status', 'open')
         .eq('guest_status', 'ready')
         .in('table_id', tableIds)
-      setReadyOrders(ready || [])
+      newReadyOrders = ready || []
     }
+    setReadyOrders(newReadyOrders)
+    const readyIds = new Set(newReadyOrders.map(o => o.id))
+
+    if (!isFirstFetch.current && soundEnabled) {
+      const newDrink = [...drinkIds].filter(id => !prevDrinkIds.current.has(id))
+      const newReady = [...readyIds].filter(id => !prevReadyIds.current.has(id))
+      if (newDrink.length > 0 || newReady.length > 0) playOrderDing()
+    }
+    prevDrinkIds.current = drinkIds
+    prevReadyIds.current = readyIds
+    isFirstFetch.current = false
+
     setLoading(false)
-  }, [translations, restaurant])
+  }, [translations, restaurant, soundEnabled])
 
   const fetchAllTables = useCallback(async () => {
     if (!restaurant) return
@@ -235,7 +401,7 @@ export default function BarPage() {
   }
 
   const closeTable = async (tableToken, tableName) => {
-    if (!confirm(`Luk ${getTableLabel(tableName, t.tableWord)}?`)) return
+    if (!confirm(`${t.confirmClose} ${getTableLabel(tableName, t.tableWord)}?`)) return
     setClosing(p => ({ ...p, [tableToken]: true }))
     try {
       await fetch('/api/close-table', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tableToken }) })
@@ -247,181 +413,174 @@ export default function BarPage() {
 
   const logout = async () => { await supabase.auth.signOut(); setUser(null); setRestaurant(null) }
 
-  if (authLoading) return <div style={styles.center}><p style={{color:'#aaa'}}>...</p></div>
-  if (!user || !restaurant) return <LoginScreen onLogin={handleLogin} />
-  if (loading) return <div style={styles.center}><p style={{color:'#aaa'}}>...</p></div>
+  if (authLoading) return <><style dangerouslySetInnerHTML={{__html:STYLES}}/><div className="bp-page"><div className="bp-empty"><div className="bp-empty-text">...</div></div></div></>
+  if (!user || !restaurant) return <><style dangerouslySetInnerHTML={{__html:STYLES}}/><LoginScreen onLogin={handleLogin} t={t} /></>
 
   return (
-    <div style={styles.page}>
-      <header style={styles.header}>
-        <span style={styles.headerTitle}>🍹 {restaurant.name} — {t.title}</span>
-        <div style={{display:'flex',gap:8}}>
-          {Object.keys(LANGS).map(l => (
-            <button key={l} onClick={() => changeLang(l)} style={{padding:'4px 12px',borderRadius:20,fontSize:13,fontWeight:600,cursor:'pointer',background:lang===l?'#0ea5e9':'transparent',color:lang===l?'#000':'#888',border:lang===l?'none':'1px solid #333'}}>{l.toUpperCase()}</button>
-          ))}
+    <>
+      <style dangerouslySetInnerHTML={{__html:STYLES}}/>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <div className="bp-page">
+        <header className="bp-header">
+          <div className="bp-brand">
+            <div className="bp-brand-name">{restaurant.name}</div>
+            <div className="bp-brand-page">{t.title}</div>
+          </div>
+          <div className="bp-langrow">
+            {Object.keys(LANGS).map(l => (
+              <button key={l} onClick={() => changeLang(l)} className={'bp-lang' + (lang===l?' active':'')}>{l.toUpperCase()}</button>
+            ))}
+          </div>
+          <button onClick={toggleSound} className={'bp-iconbtn' + (!soundEnabled?' muted':'')} title={t.sound}>
+            {soundEnabled ? '🔔' : '🔕'}
+          </button>
+          <button onClick={logout} className="bp-logout">{t.logout}</button>
+        </header>
+
+        <div className="bp-tabs">
+          <button onClick={() => setTab('drinks')} className={'bp-tab t-drinks' + (tab==='drinks'?' active':'')}>
+            🍹 {t.activeDrinks} {drinkOrders.length > 0 && <span className="bp-tab-count">{drinkOrders.length}</span>}
+          </button>
+          <button onClick={() => setTab('delivery')} className={'bp-tab t-delivery' + (tab==='delivery'?' active':'')}>
+            📦 {t.delivery} {readyOrders.length > 0 && <span className="bp-tab-count">{readyOrders.length}</span>}
+          </button>
+          <button onClick={() => setTab('tables')} className={'bp-tab t-tables' + (tab==='tables'?' active':'')}>
+            🪑 {t.allTables} {allTables.length > 0 && <span className="bp-tab-count">{allTables.length}</span>}
+          </button>
         </div>
-        <button onClick={logout} style={{padding:'6px 14px',background:'transparent',border:'1px solid #333',borderRadius:8,fontSize:13,cursor:'pointer',color:'#6b7280'}}>{t.logout}</button>
-      </header>
 
-      <div style={{display:'flex',gap:0,borderBottom:'1px solid #222',padding:'0 24px',overflowX:'auto'}}>
-        <button onClick={() => setTab('drinks')} style={{padding:'12px 20px',fontSize:14,fontWeight:600,cursor:'pointer',background:'transparent',border:'none',color:tab==='drinks'?'#0ea5e9':'#666',borderBottom:tab==='drinks'?'2px solid #0ea5e9':'2px solid transparent',whiteSpace:'nowrap'}}>
-          🍹 {t.activeDrinks} {drinkOrders.length > 0 && <span style={{background:'#0ea5e9',color:'#000',borderRadius:10,padding:'1px 7px',fontSize:11,marginLeft:6}}>{drinkOrders.length}</span>}
-        </button>
-        <button onClick={() => setTab('delivery')} style={{padding:'12px 20px',fontSize:14,fontWeight:600,cursor:'pointer',background:'transparent',border:'none',color:tab==='delivery'?'#22c55e':'#666',borderBottom:tab==='delivery'?'2px solid #22c55e':'2px solid transparent',whiteSpace:'nowrap'}}>
-          📦 Delivery {readyOrders.length > 0 && <span style={{background:'#22c55e',color:'#000',borderRadius:10,padding:'1px 7px',fontSize:11,marginLeft:6}}>{readyOrders.length}</span>}
-        </button>
-        <button onClick={() => setTab('tables')} style={{padding:'12px 20px',fontSize:14,fontWeight:600,cursor:'pointer',background:'transparent',border:'none',color:tab==='tables'?'#0ea5e9':'#666',borderBottom:tab==='tables'?'2px solid #0ea5e9':'2px solid transparent',whiteSpace:'nowrap'}}>
-          🪑 {t.allTables} {allTables.length > 0 && <span style={{background:'#444',color:'#fff',borderRadius:10,padding:'1px 7px',fontSize:11,marginLeft:6}}>{allTables.length}</span>}
-        </button>
-      </div>
-
-      {tab === 'drinks' && (
-        drinkOrders.length === 0
-          ? <div style={styles.emptyWrap}><div style={{fontSize:48}}>🍹</div><p style={{color:'#aaa',fontSize:18,marginTop:12}}>{t.noOrders}</p></div>
-          : <div style={styles.grid}>
-              {drinkOrders.map(table => (
-                <div key={table.table_token} style={styles.card}>
-                  <div style={styles.cardHeader}>
-                    <span style={styles.tableLabel}>{getTableLabel(table.table_label, t.tableWord)}</span>
-                  </div>
-                  {Object.values(table.orders).filter(o => o.drinks.length > 0).map(order => {
-                    const age = formatAge(order.created_at)
-                    const time = formatTime(order.created_at)
-                    return (
-                      <div key={order.order_id}>
-                        <div style={{padding:'6px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:'1px solid #1f1f1f'}}>
-                          <div>
-                            {order.order_number && <div style={{fontSize:11,color:'#0ea5e9',fontWeight:700,letterSpacing:'0.08em'}}>{t.order} #{order.order_number}</div>}
-                            <span style={{fontSize:14,fontWeight:600,color:'#f1f1f1'}}>{time}</span>
+        {tab === 'drinks' && (
+          drinkOrders.length === 0
+            ? <div className="bp-empty"><div className="bp-empty-icon">🍹</div><div className="bp-empty-text">{t.noOrders}</div></div>
+            : <div className="bp-grid">
+                {drinkOrders.map(table => (
+                  <div key={table.table_token + '-' + tick} className="bp-card">
+                    <div className="bp-card-head">
+                      <div className="bp-table-label">{getTableLabel(table.table_label, t.tableWord)}</div>
+                    </div>
+                    {Object.values(table.orders).filter(o => o.drinks.length > 0).map(order => {
+                      const age = formatAge(order.created_at)
+                      const time = formatTime(order.created_at)
+                      const isLate = age > 20
+                      return (
+                        <div key={order.order_id}>
+                          <div className="bp-order-row">
+                            <div>
+                              {order.order_number && <div className="bp-order-num">{t.order} #{order.order_number}</div>}
+                              <span className="bp-time">{time}</span>
+                            </div>
+                            <span className={'bp-age' + (isLate?' late':'')}>{age} min</span>
                           </div>
-                          <span style={{fontSize:12,color:age>20?'#ef4444':'#9ca3af'}}>{age} min</span>
-                        </div>
-                        {order.order_note && (
-                          <div style={{padding:'8px 16px',fontSize:13,color:'#f59e0b',fontStyle:'italic',display:'flex',gap:6,background:'#1f1a0e',borderBottom:'1px solid #333'}}>
-                            <span>📝</span><span>{order.order_note}</span>
+                          {order.order_note && (
+                            <div className="bp-note"><span>📝</span><span>{order.order_note}</span></div>
+                          )}
+                          <div className="bp-section-head">
+                            <span className="bp-section-dot" style={{background: BAR_ACCENT}}/>
+                            <span className="bp-section-name" style={{color: BAR_ACCENT}}>{t.drinks}</span>
                           </div>
-                        )}
-                        <div style={styles.drinksLabel}>
-                          <span style={{width:8,height:8,borderRadius:'50%',background:'#0ea5e9',display:'inline-block',marginRight:8}}/>
-                          <span style={{fontSize:13,fontWeight:700,textTransform:'uppercase',color:'#0ea5e9'}}>{t.drinks}</span>
+                          <div className="bp-lines">
+                            {order.drinks.map(line => {
+                              const isServed = !!served[line.line_id]
+                              return (
+                                <div key={line.line_id} className={'bp-line' + (isServed?' served':'')}>
+                                  <span className="bp-line-qty">{line.qty}×</span>
+                                  <span className="bp-line-name">{line.name}</span>
+                                  <button onClick={() => toggleServed(line.line_id)} className={'bp-check' + (isServed?' checked':'')}>✓</button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <div className="bp-card-actions">
+                            <button disabled={pending[order.order_id]} onClick={() => markDone(order.order_id)} className="bp-btn bp-btn-done">
+                              {pending[order.order_id] ? t.sending : '✓ ' + t.done}
+                            </button>
+                          </div>
                         </div>
-                        <div style={styles.lineList}>
-                          {order.drinks.map(line => {
-                            const isServed = !!served[line.line_id]
-                            return (
-                              <div key={line.line_id} style={{...styles.lineItem, opacity: isServed ? 0.4 : 1}}>
-                                <span style={{fontSize:14,color:'#6b7280',minWidth:24}}>{line.qty}×</span>
-                                <span style={{fontSize:16,flex:1,textDecoration:isServed?'line-through':'none'}}>{line.name}</span>
-                                <button onClick={() => toggleServed(line.line_id)} style={{width:32,height:32,borderRadius:'50%',border:'none',cursor:'pointer',fontSize:16,background:isServed?'#22c55e':'#2a2a2a',color:isServed?'white':'#666',flexShrink:0}}>✓</button>
-                              </div>
-                            )
-                          })}
-                        </div>
-                        <div style={{padding:'8px 16px 16px'}}>
-                          <button disabled={pending[order.order_id]} onClick={() => markDone(order.order_id)}
-                            style={{width:'100%',padding:'10px 0',background:'transparent',border:'1px solid #0ea5e9',borderRadius:8,fontSize:14,fontWeight:600,color:'#0ea5e9',opacity:pending[order.order_id]?0.5:1,cursor:'pointer'}}>
-                            {pending[order.order_id] ? t.sending : t.done}
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-      )}
-
-      {tab === 'delivery' && (
-        readyOrders.length === 0
-          ? <div style={styles.emptyWrap}><div style={{fontSize:48}}>📦</div><p style={{color:'#aaa',fontSize:18,marginTop:12}}>No orders ready for delivery</p></div>
-          : <div style={styles.grid}>
-              {readyOrders.map(order => {
-                const age = formatAge(order.created_at)
-                const itemCount = (order.order_lines||[]).reduce((s,l) => s+l.qty, 0)
-                return (
-                  <div key={order.id} style={{...styles.card, outline:'2px solid #22c55e'}}>
-                    <div style={{padding:'14px 16px',borderBottom:'1px solid #222'}}>
-                      {order.order_number && <div style={{fontSize:11,color:'#22c55e',fontWeight:700,letterSpacing:'0.08em',marginBottom:2}}>{t.order} #{order.order_number}</div>}
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span style={styles.tableLabel}>{getTableLabel(order.tables?.name, t.tableWord)}</span>
-                        <span style={{fontSize:12,color:age>20?'#ef4444':'#9ca3af'}}>{age} min</span>
-                      </div>
-                      <div style={{fontSize:13,color:'#22c55e',marginTop:6,fontWeight:600}}>{t.statusReady} · {itemCount} items</div>
-                    </div>
-                    <div style={styles.lineList}>
-                      {(order.order_lines||[]).map((line,i) => (
-                        <div key={i} style={{...styles.lineItem, opacity:1}}>
-                          <span style={{fontSize:14,color:'#6b7280',minWidth:24}}>{line.qty}×</span>
-                          <span style={{fontSize:15,flex:1}}>{line.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{padding:'12px 16px 16px'}}>
-                      <button disabled={delivering[order.id]} onClick={() => markDelivered(order.id)}
-                        style={{width:'100%',padding:'12px 0',background:'#22c55e',border:'none',borderRadius:8,fontSize:15,fontWeight:700,color:'#000',opacity:delivering[order.id]?0.5:1,cursor:'pointer'}}>
-                        {delivering[order.id] ? t.delivering : t.deliver}
-                      </button>
-                    </div>
+                      )
+                    })}
                   </div>
-                )
-              })}
-            </div>
-      )}
+                ))}
+              </div>
+        )}
 
-      {tab === 'tables' && (
-        allTables.length === 0
-          ? <div style={styles.emptyWrap}><div style={{fontSize:48}}>🪑</div><p style={{color:'#aaa',fontSize:18,marginTop:12}}>{t.noOrders}</p></div>
-          : <div style={styles.grid}>
-              {allTables.map(table => {
-                const bill = bills[table.token]
-                const isClosing = closing[table.token]
-                return (
-                  <div key={table.token} style={styles.card}>
-                    <div style={styles.cardHeader}>
-                      <span style={styles.tableLabel}>{getTableLabel(table.name, t.tableWord)}</span>
-                    </div>
-                    {bill && (
-                      <div style={{padding:'12px 16px'}}>
-                        <div style={{fontSize:12,color:'#6b7280',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>{t.bill}</div>
-                        {bill.orders && bill.orders.flatMap(o => o.lines).map((l,i) => (
-                          <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:14,padding:'3px 0',color:'#ccc'}}>
-                            <span>{l.qty}× {l.name}</span><span>€{(l.price*l.qty).toFixed(2)}</span>
+        {tab === 'delivery' && (
+          readyOrders.length === 0
+            ? <div className="bp-empty"><div className="bp-empty-icon">📦</div><div className="bp-empty-text">{t.noDeliv}</div></div>
+            : <div className="bp-grid">
+                {readyOrders.map(order => {
+                  const age = formatAge(order.created_at)
+                  const itemCount = (order.order_lines||[]).reduce((s,l) => s+l.qty, 0)
+                  const isLate = age > 20
+                  return (
+                    <div key={order.id + '-' + tick} className={'bp-card ready' + (isLate?' late':'')}>
+                      <div style={{padding:'14px 18px', borderBottom:'1px solid #F0E9DC'}}>
+                        {order.order_number && <div className="bp-order-num" style={{color:'#16A34A'}}>{t.order} #{order.order_number}</div>}
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center', marginTop:4}}>
+                          <div className="bp-table-label">{getTableLabel(order.tables?.name, t.tableWord)}</div>
+                          <span className={'bp-age' + (isLate?' late':'')}>{age} min</span>
+                        </div>
+                        <div className="bp-ready-meta">{t.statusReady} · {itemCount} {t.drinks.toLowerCase()}</div>
+                      </div>
+                      <div className="bp-lines" style={{paddingTop:12}}>
+                        {(order.order_lines||[]).map((line,i) => (
+                          <div key={i} className="bp-line">
+                            <span className="bp-line-qty">{line.qty}×</span>
+                            <span className="bp-line-name">{line.name}</span>
                           </div>
                         ))}
-                        <div style={{display:'flex',justifyContent:'space-between',fontSize:17,fontWeight:700,color:'white',marginTop:10,paddingTop:10,borderTop:'1px solid #333'}}>
-                          <span>{t.total}</span><span>€{bill.grandTotal?.toFixed(2)}</span>
-                        </div>
                       </div>
-                    )}
-                    <div style={{padding:'12px 16px',display:'flex',gap:8}}>
-                      <button onClick={() => fetchBill(table.token)} style={{flex:1,padding:'10px 0',background:'transparent',border:'1px solid #444',borderRadius:8,fontSize:14,fontWeight:600,color:'#aaa',cursor:'pointer'}}>
-                        {bill ? '▲ Skjul' : `📋 ${t.bill}`}
-                      </button>
-                      <button disabled={isClosing} onClick={() => closeTable(table.token, table.name)}
-                        style={{flex:1,padding:'10px 0',background:'transparent',border:'1px solid #dc2626',borderRadius:8,fontSize:14,fontWeight:600,color:'#dc2626',opacity:isClosing?0.5:1,cursor:'pointer'}}>
-                        {isClosing ? t.closing : t.closeTable}
-                      </button>
+                      <div className="bp-card-actions">
+                        <button disabled={delivering[order.id]} onClick={() => markDelivered(order.id)} className="bp-btn-deliver">
+                          {delivering[order.id] ? t.delivering : '📦 ' + t.deliver}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-      )}
-    </div>
-  )
-}
+                  )
+                })}
+              </div>
+        )}
 
-const styles = {
-  page:       {minHeight:'100dvh',background:'#0d0d0d',color:'#f1f1f1',fontFamily:'system-ui, sans-serif',paddingBottom:40},
-  header:     {display:'flex',alignItems:'center',gap:16,padding:'20px 24px',borderBottom:'1px solid #222',position:'sticky',top:0,background:'#0d0d0d',zIndex:10},
-  headerTitle:{fontSize:22,fontWeight:700,flex:1},
-  grid:       {display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))',gap:16,padding:24},
-  card:       {background:'#1a1a1a',borderRadius:14,border:'1px solid #2a2a2a',overflow:'hidden'},
-  cardHeader: {display:'flex',alignItems:'center',gap:10,padding:'14px 16px',borderBottom:'1px solid #222'},
-  tableLabel: {fontSize:18,fontWeight:700,flex:1},
-  drinksLabel:{display:'flex',alignItems:'center',padding:'12px 16px 4px'},
-  lineList:   {padding:'4px 16px 8px',display:'flex',flexDirection:'column',gap:8},
-  lineItem:   {display:'flex',gap:8,alignItems:'center',transition:'opacity 0.2s'},
-  emptyWrap:  {display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'calc(100dvh - 120px)'},
-  center:     {display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'100dvh',background:'#0d0d0d',color:'#f1f1f1'},
+        {tab === 'tables' && (
+          allTables.length === 0
+            ? <div className="bp-empty"><div className="bp-empty-icon">🪑</div><div className="bp-empty-text">{t.noOrders}</div></div>
+            : <div className="bp-grid">
+                {allTables.map(table => {
+                  const bill = bills[table.token]
+                  const isClosing = closing[table.token]
+                  return (
+                    <div key={table.token} className="bp-card">
+                      <div className="bp-card-head">
+                        <div className="bp-table-label">{getTableLabel(table.name, t.tableWord)}</div>
+                      </div>
+                      {bill && (
+                        <div className="bp-bill-box">
+                          <div className="bp-bill-title">{t.bill}</div>
+                          {bill.orders && bill.orders.flatMap(o => o.lines).map((l,i) => (
+                            <div key={i} className="bp-bill-row">
+                              <span>{l.qty}× {l.name}</span><span>€{(l.price*l.qty).toFixed(2)}</span>
+                            </div>
+                          ))}
+                          <div className="bp-bill-total">
+                            <span className="bp-bill-total-label">{t.total}</span>
+                            <span className="bp-bill-total-val">€{bill.grandTotal?.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
+                      <div className="bp-card-actions" style={{padding:'14px 18px'}}>
+                        <button onClick={() => fetchBill(table.token)} className="bp-btn bp-btn-bill">
+                          {bill ? '▲ ' + t.hide : '📋 ' + t.bill}
+                        </button>
+                        <button disabled={isClosing} onClick={() => closeTable(table.token, table.name)} className="bp-btn bp-btn-close">
+                          {isClosing ? t.closing : t.closeTable}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+        )}
+      </div>
+    </>
+  )
 }
